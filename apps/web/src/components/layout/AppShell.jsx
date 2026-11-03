@@ -16,7 +16,9 @@ export default function AppShell({ role }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { pathname } = useLocation();
 
-  useEffect(() => setDrawerOpen(false), [pathname]);
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : '';
     return () => {

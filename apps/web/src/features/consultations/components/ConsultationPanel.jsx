@@ -76,7 +76,10 @@ function ChatTab({ consult }) {
   const [messages, setMessages] = useState(consult.chat);
   const [text, setText] = useState('');
   const endRef = useRef(null);
-  useEffect(() => endRef.current?.scrollIntoView({ block: 'end' }), [messages]);
+  // Block body: scrollIntoView() returns a Promise in current Chrome, and an effect must return nothing or a cleanup function.
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages]);
   return (
     <div className="flex h-full flex-col">
       <ul className="flex-1 space-y-3 overflow-y-auto">
