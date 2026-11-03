@@ -1,0 +1,340 @@
+{
+  "brand": {
+    "tagline": "Daryeel Caafimaad oo Aan Xad Lahayn."
+  },
+  "common": {
+    "all": "Dhammaan",
+    "back": "Dib u noqo",
+    "close": "Xir",
+    "search": "Raadi",
+    "viewAll": "Eeg Dhammaan",
+    "remove": "Ka saar",
+    "language": "Luqadda",
+    "lightMode": "U beddel muuqaalka iftiinka",
+    "darkMode": "U beddel muuqaalka mugdiga",
+    "notifications": "Ogeysiisyada",
+    "openMenu": "Fur liiska",
+    "switchView": "Beddel muuqaalka",
+    "signOut": "Ka bax"
+  },
+  "roles": {
+    "patient": "Bukaan",
+    "doctor": "Dhakhtar",
+    "admin": "Maamule",
+    "superAdmin": "Maamulaha Sare"
+  },
+  "gender": {
+    "female": "Dumar",
+    "male": "Rag"
+  },
+  "greeting": {
+    "morning": "Subax wanaagsan, {name}",
+    "afternoon": "Galab wanaagsan, {name}",
+    "evening": "Fiid wanaagsan, {name}"
+  },
+  "days": {
+    "mon": "Isn",
+    "tue": "Tal",
+    "wed": "Arb",
+    "thu": "Kha",
+    "fri": "Jim",
+    "sat": "Sab",
+    "sun": "Axd"
+  },
+  "nav": {
+    "main": "Liiska ugu muhiimsan",
+    "dashboard": "Guddiga",
+    "home": "Hoyga",
+    "findDoctors": "Raadi Dhakhaatiir",
+    "doctors": "Dhakhaatiirta",
+    "myAppointments": "Ballamahayga",
+    "appointments": "Ballamaha",
+    "medicalRecords": "Diiwaannada Caafimaadka",
+    "records": "Diiwaanno",
+    "prescriptions": "Warqadaha Daawada",
+    "payments": "Lacag-bixinta",
+    "messages": "Fariimaha",
+    "profile": "Akoonkayga",
+    "availability": "Waqtiyada Diyaarka",
+    "patients": "Bukaannada",
+    "earnings": "Dakhliga",
+    "verification": "Xaqiijinta",
+    "paymentsRefunds": "Lacagaha & Celinta",
+    "reports": "Warbixinno & Falanqayn",
+    "reportsShort": "Warbixinno",
+    "auditLogs": "Diiwaanka Hubinta",
+    "settings": "Dejinta",
+    "more": "Kale",
+    "needHelp": "Caawimaad ma rabtaa?",
+    "contactSupport": "La xiriir Taageerada"
+  },
+  "specialty": {
+    "general": "Guud",
+    "cardiology": "Wadnaha",
+    "dermatology": "Maqaarka",
+    "pediatrics": "Carruurta",
+    "gynecology": "Caafimaadka Haweenka",
+    "mentalHealth": "Caafimaadka Maskaxda",
+    "nutrition": "Nafaqada",
+    "orthopedics": "Lafaha"
+  },
+  "specialist": {
+    "general": "Dhakhtar Guud",
+    "cardiology": "Dhakhtarka Wadnaha",
+    "dermatology": "Dhakhtarka Maqaarka",
+    "pediatrics": "Dhakhtarka Carruurta",
+    "gynecology": "Dhakhtarka Haweenka",
+    "mentalHealth": "Dhakhtarka Maskaxda",
+    "nutrition": "Khabiirka Nafaqada",
+    "orthopedics": "Dhakhtarka Lafaha"
+  },
+  "tags": {
+    "heartHealth": "Caafimaadka Wadnaha",
+    "hypertension": "Dhiig-karka",
+    "heartDisease": "Cudurrada Wadnaha",
+    "skinCare": "Daryeelka Maqaarka",
+    "acne": "Finanka",
+    "allergy": "Xasaasiyadda",
+    "childHealth": "Caafimaadka Carruurta",
+    "vaccination": "Tallaalka",
+    "growth": "Koritaanka",
+    "checkup": "Baaritaan Guud",
+    "fever": "Qandho",
+    "chronicCare": "Cudurrada Raaga"
+  },
+  "status": {
+    "inSession": "Hadda Socda",
+    "waiting": "Sugaya",
+    "upcoming": "Soo Socda"
+  },
+  "visitType": {
+    "generalConsultation": "La-tashi Guud",
+    "followUp": "Dabagal",
+    "consultation": "La-tashi"
+  },
+  "landing": {
+    "nav": {
+      "home": "Hoyga",
+      "doctors": "Dhakhaatiirta",
+      "specialties": "Takhasusyada",
+      "howItWorks": "Sida ay u Shaqeyso",
+      "about": "Nagu Saabsan",
+      "login": "Gal",
+      "getStarted": "Bilow"
+    },
+    "hero": {
+      "badge": "Daryeel Caafimaad oo Online ah oo Qof Walba",
+      "titleLine1": "Daryeel Caafimaad",
+      "titleLine2": "oo Aan Xad Lahayn",
+      "subtitle": "La tasho dhakhaatiir la xaqiijiyay oo ka kala jooga Soomaaliya iyo adduunka oo dhan, wakhti kasta, meel kasta.",
+      "book": "Qabso La-tashi",
+      "find": "Raadi Dhakhtar",
+      "imageAlt": "Dhakhtarad dhoolacaddeynaysa oo xiran jaakad cad, xijaab iyo stethoscope"
+    },
+    "features": {
+      "video": "La-tashi Muuqaal ah",
+      "prescription": "Daawo-qoris Online ah",
+      "payment": "Lacag-bixin Ammaan ah",
+      "history": "Taariikhda Caafimaadka"
+    },
+    "stats": {
+      "doctors": "Dhakhaatiir La Xaqiijiyay",
+      "consultations": "La-tashiyo",
+      "satisfaction": "Qanacsanaanta Bukaanka"
+    },
+    "specialties": {
+      "eyebrow": "Takhasusyada",
+      "title": "Daryeel marxalad kasta oo nolosha ah",
+      "subtitle": "Laga bilaabo baaritaannada caadiga ah ilaa talo takhasus leh — hel dhakhtarka saxda ah daqiiqado gudahood.",
+      "count": "{count} dhakhtar",
+      "browse": "Eeg dhakhaatiirta"
+    },
+    "doctors": {
+      "eyebrow": "Kuwa ugu qiimeynta sarreeya",
+      "title": "La kulan dhakhaatiirteenna la xaqiijiyay",
+      "subtitle": "Dhakhtar kasta waxaa shatigiisa hubiya kooxdayada caafimaadka ka hor inta uusan la-tashi bixin.",
+      "viewAll": "Eeg dhammaan dhakhaatiirta"
+    },
+    "how": {
+      "eyebrow": "Sida ay u shaqeyso",
+      "title": "Dhakhtar ku arag saddex tallaabo oo fudud",
+      "step1Title": "Hel dhakhtarkaaga",
+      "step1Body": "Ku raadi magac, takhasus ama xaalad, isbarbardhig qiimeynta, luqadaha iyo kharashka.",
+      "step2Title": "Ballan qabso, si ammaan ah u bixi",
+      "step2Body": "Dooro wakhti kugu habboon oo si ammaan ah ugu bixi lacag mobile ama kaar.",
+      "step3Title": "Muuqaal ku la tasho",
+      "step3Body": "Ka soo gal taleefankaaga, isla markiiba hel warqadda daawada iyo qoraallada."
+    },
+    "about": {
+      "eyebrow": "Ku saabsan Fogaan Dawo",
+      "title": "Dhakhaatiir la isku halleyn karo oo u soo dhowaanaya qoys kasta oo Soomaaliyeed",
+      "body": "Fogaan Dawo waxay isku xirtaa bukaannada Soomaaliya iyo qurbaha iyo dhakhaatiir aqoon leh — af-Soomaali ama Ingiriisi, meel kasta oo aad joogto.",
+      "point1": "Dhakhtar kasta shatigiisa waa la xaqiijiyay",
+      "point2": "Laba luqadood: Soomaali & Ingiriisi",
+      "point3": "La-tashiyo qarsoodi ah oo sir ah",
+      "point4": "Ku rakib taleefankaaga — u shaqeysa sida app",
+      "cta": "Samee akoon bilaash ah",
+      "ctaDoctor": "Ku biir dhakhtar ahaan"
+    },
+    "footer": {
+      "rights": "Xuquuqda oo dhan way xifdisan tahay."
+    }
+  },
+  "auth": {
+    "login": "Gal",
+    "register": "Isdiiwaangeli",
+    "welcomeBack": "Ku soo dhowow mar kale — gal si aad u sii wadato.",
+    "createAccount": "Akoonkaaga ku samee hal daqiiqo.",
+    "fullName": "Magaca oo buuxa",
+    "emailOrPhone": "Iimayl ama Taleefan",
+    "password": "Furaha sirta",
+    "showPassword": "Muuji furaha sirta",
+    "hidePassword": "Qari furaha sirta",
+    "forgot": "Ma ilowday furaha sirta?",
+    "orContinue": "ama ku sii wad",
+    "demoAccess": "Gelitaan tijaabo — dooro muuqaal",
+    "phaseNotice": "Adeegyada gelitaanka waxay la imaanayaan backend-ka Wajiga 2.",
+    "backHome": "Ku noqo bogga hore",
+    "panelTitle": "La tasho dhakhaatiir la xaqiijiyay meel kasta",
+    "panelBody": "Ballan qabso, lacag bixi oo la yeelo la-tashiyo muuqaal ah dhakhaatiir la isku halleyn karo gudaha iyo dibadda.",
+    "secure": "Xogtaada caafimaad way qarsoon tahay oo waa sir."
+  },
+  "patient": {
+    "subtitle": "Caafimaadkaagu waa mudnaanteenna.",
+    "stats": {
+      "upcoming": "Ballanta Soo Socota",
+      "upcomingShort": "Soo socda",
+      "completed": "La-tashiyada La Dhammeeyay",
+      "prescriptions": "Warqadaha Daawada",
+      "records": "Diiwaannada Caafimaadka",
+      "recordsShort": "Diiwaanno"
+    },
+    "nextAppointment": "Ballanta Xigta",
+    "minutes": "{n} daqiiqo",
+    "joinCall": "Ku biir Wicitaanka",
+    "join": "Ku biir",
+    "reschedule": "Wakhti kale u beddel",
+    "videoConsultation": "La-tashi Muuqaal ah",
+    "findDoctor": "Raadi Dhakhtar",
+    "findDoctorSub": "Ku raadi magac, takhasus ama xaalad.",
+    "searchPlaceholder": "Raadi dhakhaatiir, tusaale: Wadnaha…",
+    "bookConsultation": "Qabso La-tashi",
+    "bookConsultationSub": "Hel oo ballan ka qabso dhakhaatiir la xaqiijiyay",
+    "myVisits": "Booqashooyinkayga"
+  },
+  "doctors": {
+    "title": "Raadi Dhakhtar",
+    "subtitle": "Hel oo ballan ka qabso dhakhaatiir la xaqiijiyay.",
+    "specialty": "Takhasus",
+    "allSpecialties": "Dhammaan Takhasusyada",
+    "sortBy": "U kala saar",
+    "sort": {
+      "rating": "Kala saar: Qiimeynta ugu sarreysa",
+      "priceLow": "Kala saar: Qiimaha ugu jaban",
+      "reviews": "Kala saar: Faallooyinka ugu badan"
+    },
+    "reviews": "faallo",
+    "perConsultation": "la-tashi",
+    "bookAppointment": "Qabso Ballan",
+    "verified": "Dhakhtar la xaqiijiyay",
+    "addFavorite": "Ku keydi kuwa aad jeceshahay",
+    "removeFavorite": "Ka saar kuwa aad jeceshahay",
+    "resultCount": "{count} dhakhtar ayaa diyaar ah",
+    "emptyTitle": "Ma jiro dhakhtar ku habboon raadintaada",
+    "emptyBody": "Isku day magac, takhasus ama xaalad kale.",
+    "clearFilters": "Tirtir shaandhada"
+  },
+  "booking": {
+    "title": "Qabso Ballan",
+    "selectDate": "Dooro taariikh",
+    "selectTime": "Wakhtiyada banaan",
+    "videoNote": "La-tashi muuqaal ah · 30 daqiiqo",
+    "chooseSlot": "Dooro wakhti",
+    "confirm": "Xaqiiji {time}",
+    "phaseNotice": "Ballan-qabsashada online-ka ah waxay furmaysaa marka backend-ka la xiro, Wajiga 2."
+  },
+  "doctor": {
+    "welcome": "Ku soo dhowow, {name}",
+    "dashboard": "Guddiga Dhakhtarka",
+    "subtitle": "Halkan waa guudmarka shaqadaada maanta.",
+    "todayDate": "Maanta, {date}",
+    "stats": {
+      "today": "Ballamaha Maanta",
+      "todayShort": "Ballamaha",
+      "waiting": "Bukaannada Sugaya",
+      "waitingShort": "Sugaya",
+      "completed": "La Dhammeeyay",
+      "earnings": "Dakhliga"
+    },
+    "todaysAppointments": "Ballamaha Maanta",
+    "yourSchedule": "Jadwalkaaga",
+    "selectDay": "Dooro maalin",
+    "noSlots": "Weli ballan looma qabsan maalintan.",
+    "viewSchedule": "Eeg Jadwalka",
+    "nextPatient": "Bukaanka Xiga",
+    "inMinutes": "{n} daqiiqo kadib",
+    "startCall": "Wicitaan muuqaal ah la bilow {name}"
+  },
+  "admin": {
+    "title": "Guddiga Maamulka",
+    "subtitle": "Maamul madasha, isticmaalayaasha iyo hawlaha.",
+    "stats": {
+      "users": "Wadarta Isticmaalayaasha",
+      "usersShort": "Isticmaalayaal",
+      "doctors": "Dhakhaatiir",
+      "appointments": "Ballamo",
+      "revenue": "Dakhli"
+    },
+    "fromLastMonth": "bishii hore",
+    "appointmentsOverview": "Guudmarka Ballamaha",
+    "appointmentsTrend": "Isbeddelka Ballamaha",
+    "range": "Muddada",
+    "thisWeek": "Toddobaadkan",
+    "lastWeek": "Toddobaadkii Hore",
+    "doctorVerification": "Xaqiijinta Dhakhaatiirta",
+    "review": "Dib u eeg",
+    "submitted": "La soo gudbiyay: {date}"
+  },
+  "consult": {
+    "with": "La-tashi lala yeelanayo {name}",
+    "videoStage": "Wicitaan muuqaal",
+    "remoteFeed": "Muuqaalka {name}",
+    "selfView": "Kamaradaada",
+    "cameraOff": "Kamaradu way dansan tahay",
+    "muted": "Codkaagu wuu xiran yahay",
+    "sharing": "Shaashaddaada ayaad wadaagaysaa",
+    "goodConnection": "Xiriir xooggan",
+    "fullscreen": "Shaashad buuxda",
+    "endCall": "Dami Wicitaanka",
+    "ended": "La-tashigu wuu dhammaaday. Qoraallada waa la keydin doonaa marka backend-ka la xiro.",
+    "controls": {
+      "mic": "Cod",
+      "camera": "Kamarad",
+      "share": "Wadaag",
+      "chat": "Wada-hadal",
+      "more": "Kale"
+    },
+    "tabs": {
+      "consultation": "La-tashi",
+      "chat": "Wada-hadal",
+      "files": "Faylal"
+    },
+    "patientInfo": "Xogta Bukaanka",
+    "patientMeta": "{gender}, {age} sano",
+    "notes": "Qoraallada La-tashiga",
+    "sampleNotes": "Bukaanku wuxuu sheegay madax-xanuun iyo daal 3 maalmood ah. Qandho ma leh.",
+    "prescription": "Warqadda Daawada",
+    "addPrescription": "Ku dar Daawo",
+    "medication": "Daawada",
+    "dosage": "Qiyaasta",
+    "typeMessage": "Qor fariin…",
+    "send": "Dir",
+    "filesNote": "Faylasha la wadaago halkan ayay ka muuqan doonaan."
+  },
+  "comingSoon": {
+    "title": "Dhowaan",
+    "heading": "{page} waa soo socotaa",
+    "body": "Qaybtan waxay ka mid tahay wajiga dhismaha ee xiga. Liiska iyo naqshaddu way diyaar u yihiin.",
+    "back": "Ku noqo guddiga"
+  }
+}

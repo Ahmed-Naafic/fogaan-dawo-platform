@@ -1,0 +1,340 @@
+{
+  "brand": {
+    "tagline": "Healthcare Without Borders."
+  },
+  "common": {
+    "all": "All",
+    "back": "Back",
+    "close": "Close",
+    "search": "Search",
+    "viewAll": "View All",
+    "remove": "Remove",
+    "language": "Language",
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode",
+    "notifications": "Notifications",
+    "openMenu": "Open menu",
+    "switchView": "Switch view",
+    "signOut": "Sign out"
+  },
+  "roles": {
+    "patient": "Patient",
+    "doctor": "Doctor",
+    "admin": "Admin",
+    "superAdmin": "Super Admin"
+  },
+  "gender": {
+    "female": "Female",
+    "male": "Male"
+  },
+  "greeting": {
+    "morning": "Good morning, {name}",
+    "afternoon": "Good afternoon, {name}",
+    "evening": "Good evening, {name}"
+  },
+  "days": {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
+  },
+  "nav": {
+    "main": "Main navigation",
+    "dashboard": "Dashboard",
+    "home": "Home",
+    "findDoctors": "Find Doctors",
+    "doctors": "Doctors",
+    "myAppointments": "My Appointments",
+    "appointments": "Appointments",
+    "medicalRecords": "Medical Records",
+    "records": "Records",
+    "prescriptions": "Prescriptions",
+    "payments": "Payments",
+    "messages": "Messages",
+    "profile": "Profile",
+    "availability": "Availability",
+    "patients": "Patients",
+    "earnings": "Earnings",
+    "verification": "Verification",
+    "paymentsRefunds": "Payments & Refunds",
+    "reports": "Reports & Analytics",
+    "reportsShort": "Reports",
+    "auditLogs": "Audit Logs",
+    "settings": "Settings",
+    "more": "More",
+    "needHelp": "Need Help?",
+    "contactSupport": "Contact Support"
+  },
+  "specialty": {
+    "general": "General",
+    "cardiology": "Cardiology",
+    "dermatology": "Dermatology",
+    "pediatrics": "Pediatrics",
+    "gynecology": "Women’s Health",
+    "mentalHealth": "Mental Health",
+    "nutrition": "Nutrition",
+    "orthopedics": "Orthopedics"
+  },
+  "specialist": {
+    "general": "General Practitioner",
+    "cardiology": "Cardiologist",
+    "dermatology": "Dermatologist",
+    "pediatrics": "Pediatrician",
+    "gynecology": "Gynecologist",
+    "mentalHealth": "Psychiatrist",
+    "nutrition": "Nutritionist",
+    "orthopedics": "Orthopedist"
+  },
+  "tags": {
+    "heartHealth": "Heart Health",
+    "hypertension": "Hypertension",
+    "heartDisease": "Heart Disease",
+    "skinCare": "Skin Care",
+    "acne": "Acne",
+    "allergy": "Allergy",
+    "childHealth": "Child Health",
+    "vaccination": "Vaccination",
+    "growth": "Growth",
+    "checkup": "Check-up",
+    "fever": "Fever",
+    "chronicCare": "Chronic Care"
+  },
+  "status": {
+    "inSession": "In Session",
+    "waiting": "Waiting",
+    "upcoming": "Upcoming"
+  },
+  "visitType": {
+    "generalConsultation": "General Consultation",
+    "followUp": "Follow-up",
+    "consultation": "Consultation"
+  },
+  "landing": {
+    "nav": {
+      "home": "Home",
+      "doctors": "Doctors",
+      "specialties": "Specialties",
+      "howItWorks": "How It Works",
+      "about": "About",
+      "login": "Login",
+      "getStarted": "Get Started"
+    },
+    "hero": {
+      "badge": "Online Healthcare for Everyone",
+      "titleLine1": "Healthcare",
+      "titleLine2": "Without Borders",
+      "subtitle": "Consult with verified doctors from Somalia and around the world, anytime, anywhere.",
+      "book": "Book a Consultation",
+      "find": "Find a Doctor",
+      "imageAlt": "Smiling doctor in a white coat and hijab with a stethoscope"
+    },
+    "features": {
+      "video": "Video Consultation",
+      "prescription": "E-Prescription",
+      "payment": "Secure Payment",
+      "history": "Medical History"
+    },
+    "stats": {
+      "doctors": "Verified Doctors",
+      "consultations": "Consultations",
+      "satisfaction": "Patient Satisfaction"
+    },
+    "specialties": {
+      "eyebrow": "Specialties",
+      "title": "Care for every stage of life",
+      "subtitle": "From everyday check-ups to specialist advice — find the right doctor in minutes.",
+      "count": "{count} doctors",
+      "browse": "Browse doctors"
+    },
+    "doctors": {
+      "eyebrow": "Top rated",
+      "title": "Meet our verified doctors",
+      "subtitle": "Every doctor is licence-checked by our medical team before they can consult.",
+      "viewAll": "View all doctors"
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "title": "See a doctor in three simple steps",
+      "step1Title": "Find your doctor",
+      "step1Body": "Search by name, specialty or condition and compare ratings, languages and fees.",
+      "step2Title": "Book & pay securely",
+      "step2Body": "Choose a time that suits you and pay safely with mobile money or card.",
+      "step3Title": "Consult by video",
+      "step3Body": "Join from your phone and receive your e-prescription and notes right after."
+    },
+    "about": {
+      "eyebrow": "About Fogaan Dawo",
+      "title": "Bringing trusted doctors closer to every Somali family",
+      "body": "Fogaan Dawo connects patients in Somalia and the diaspora with qualified doctors — in Somali or English, wherever you are.",
+      "point1": "Every doctor licence-verified",
+      "point2": "Fully bilingual: Somali & English",
+      "point3": "Private, encrypted consultations",
+      "point4": "Install on your phone — works like an app",
+      "cta": "Create free account",
+      "ctaDoctor": "Join as a doctor"
+    },
+    "footer": {
+      "rights": "All rights reserved."
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "welcomeBack": "Welcome back — sign in to continue.",
+    "createAccount": "Create your account in a minute.",
+    "fullName": "Full name",
+    "emailOrPhone": "Email or Phone",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "forgot": "Forgot password?",
+    "orContinue": "or continue with",
+    "demoAccess": "Demo access — choose a view",
+    "phaseNotice": "Sign-in services arrive with the backend in Phase 2.",
+    "backHome": "Back to home",
+    "panelTitle": "Consult verified doctors anywhere",
+    "panelBody": "Book, pay and hold video consultations with trusted doctors locally and abroad.",
+    "secure": "Your health data stays private and encrypted."
+  },
+  "patient": {
+    "subtitle": "Your health, our priority.",
+    "stats": {
+      "upcoming": "Upcoming Appointment",
+      "upcomingShort": "Upcoming",
+      "completed": "Completed Consultations",
+      "prescriptions": "Prescriptions",
+      "records": "Medical Records",
+      "recordsShort": "Records"
+    },
+    "nextAppointment": "Next Appointment",
+    "minutes": "{n} min",
+    "joinCall": "Join Call",
+    "join": "Join",
+    "reschedule": "Reschedule",
+    "videoConsultation": "Video Consultation",
+    "findDoctor": "Find a Doctor",
+    "findDoctorSub": "Search by name, specialty or condition.",
+    "searchPlaceholder": "Search doctors, e.g. Cardiologist…",
+    "bookConsultation": "Book a Consultation",
+    "bookConsultationSub": "Find and book verified doctors",
+    "myVisits": "My Visits"
+  },
+  "doctors": {
+    "title": "Find a Doctor",
+    "subtitle": "Discover and book appointments with verified doctors.",
+    "specialty": "Specialty",
+    "allSpecialties": "All Specialties",
+    "sortBy": "Sort by",
+    "sort": {
+      "rating": "Sort: Top Rated",
+      "priceLow": "Sort: Lowest Price",
+      "reviews": "Sort: Most Reviewed"
+    },
+    "reviews": "reviews",
+    "perConsultation": "consultation",
+    "bookAppointment": "Book Appointment",
+    "verified": "Verified doctor",
+    "addFavorite": "Save to favourites",
+    "removeFavorite": "Remove from favourites",
+    "resultCount": "{count} doctors available",
+    "emptyTitle": "No doctors match your search",
+    "emptyBody": "Try another name, specialty or condition.",
+    "clearFilters": "Clear filters"
+  },
+  "booking": {
+    "title": "Book Appointment",
+    "selectDate": "Select a date",
+    "selectTime": "Available times",
+    "videoNote": "Video consultation · 30 minutes",
+    "chooseSlot": "Choose a time slot",
+    "confirm": "Confirm for {time}",
+    "phaseNotice": "Online booking goes live with the backend in Phase 2."
+  },
+  "doctor": {
+    "welcome": "Welcome, {name}",
+    "dashboard": "Doctor Dashboard",
+    "subtitle": "Here’s your practice overview for today.",
+    "todayDate": "Today, {date}",
+    "stats": {
+      "today": "Today’s Appointments",
+      "todayShort": "Appointments",
+      "waiting": "Waiting Patients",
+      "waitingShort": "Waiting",
+      "completed": "Completed",
+      "earnings": "Earnings"
+    },
+    "todaysAppointments": "Today’s Appointments",
+    "yourSchedule": "Your Schedule",
+    "selectDay": "Select day",
+    "noSlots": "No appointments booked for this day yet.",
+    "viewSchedule": "View Schedule",
+    "nextPatient": "Next Patient",
+    "inMinutes": "in {n} min",
+    "startCall": "Start video call with {name}"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage the platform, users and operations.",
+    "stats": {
+      "users": "Total Users",
+      "usersShort": "Users",
+      "doctors": "Doctors",
+      "appointments": "Appointments",
+      "revenue": "Revenue"
+    },
+    "fromLastMonth": "from last month",
+    "appointmentsOverview": "Appointments Overview",
+    "appointmentsTrend": "Appointments Trend",
+    "range": "Date range",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "doctorVerification": "Doctor Verification",
+    "review": "Review",
+    "submitted": "Submitted: {date}"
+  },
+  "consult": {
+    "with": "Consultation with {name}",
+    "videoStage": "Video call",
+    "remoteFeed": "Video of {name}",
+    "selfView": "Your camera",
+    "cameraOff": "Camera off",
+    "muted": "You are muted",
+    "sharing": "You are sharing your screen",
+    "goodConnection": "Strong connection",
+    "fullscreen": "Toggle full screen",
+    "endCall": "End Call",
+    "ended": "Consultation ended. Notes will be saved once the backend is connected.",
+    "controls": {
+      "mic": "Mic",
+      "camera": "Camera",
+      "share": "Share",
+      "chat": "Chat",
+      "more": "More"
+    },
+    "tabs": {
+      "consultation": "Consultation",
+      "chat": "Chat",
+      "files": "Files"
+    },
+    "patientInfo": "Patient Information",
+    "patientMeta": "{gender}, {age} years",
+    "notes": "Consultation Notes",
+    "sampleNotes": "Patient reports headache and fatigue for 3 days. No fever.",
+    "prescription": "Prescription",
+    "addPrescription": "Add Prescription",
+    "medication": "Medication",
+    "dosage": "Dosage",
+    "typeMessage": "Type a message…",
+    "send": "Send",
+    "filesNote": "Shared files will appear here."
+  },
+  "comingSoon": {
+    "title": "Coming soon",
+    "heading": "{page} is on the way",
+    "body": "This section is part of the next build phase. The navigation and design are ready for it.",
+    "back": "Back to dashboard"
+  }
+}

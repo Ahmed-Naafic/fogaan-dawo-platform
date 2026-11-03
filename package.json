@@ -1,0 +1,26 @@
+{
+  "name": "fogaan-dawo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Fogaan Dawo App — bilingual telemedicine platform (monorepo).",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npm run dev -w @fogaan-dawo/web",
+    "dev:api": "npm run dev -w @fogaan-dawo/api",
+    "build": "npm run build -w @fogaan-dawo/web",
+    "preview": "npm run preview -w @fogaan-dawo/web",
+    "start:api": "npm run start -w @fogaan-dawo/api",
+    "test": "node --test \"tests/**/*.test.js\"",
+    "test:unit": "node --test \"tests/unit/**/*.test.js\"",
+    "test:integration": "node --test \"tests/integration/**/*.test.js\"",
+    "check:i18n": "node scripts/check-i18n.mjs"
+  }
+}
