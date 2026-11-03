@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router';
 import { ArrowLeft, Bell, ChevronDown, LogOut, Menu, Repeat } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';

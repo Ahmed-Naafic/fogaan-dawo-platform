@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router';
 import ComingSoonPage from '@/components/shared/ComingSoonPage';
 import LandingPage from '@/features/landing/pages/LandingPage';
 import AuthPage from '@/features/auth/pages/AuthPage';
