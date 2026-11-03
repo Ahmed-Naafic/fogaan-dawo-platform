@@ -1,0 +1,62 @@
+/*
+ * Fogaan Dawo design tokens.
+ * Values are RGB channels so Tailwind can apply alpha (e.g. bg-primary/10).
+ * Extracted from design-reference/*.png — light and dark showcase suites.
+ */
+:root {
+  --bg: 245 247 250;            /* soft white  #F5F7FA */
+  --surface: 255 255 255;
+  --subtle: 243 246 249;        /* inputs, chips, nested panels */
+  --line: 228 233 239;
+  --ink: 16 32 46;              /* headings — navy-charcoal */
+  --muted: 96 112 128;
+
+  --primary: 14 133 126;        /* healthcare teal, AA on white */
+  --primary-hover: 11 112 106;
+  --primary-fg: 255 255 255;
+  --primary-soft: 226 244 241;
+
+  --sidebar: 16 47 70;          /* deep navy #102F46 */
+  --sidebar-active: 21 154 145; /* teal #159A91 */
+  --sidebar-ink: 214 226 234;
+  --sidebar-line: 36 70 94;
+
+  --success: 22 163 74;
+  --danger: 229 57 53;
+  --warning: 213 166 74;        /* warm gold #D5A64A */
+
+  --shadow-card: 0 1px 2px rgb(16 47 70 / 0.04), 0 4px 16px rgb(16 47 70 / 0.06);
+  --shadow-float: 0 12px 40px rgb(16 47 70 / 0.14);
+  --shadow-glow: 0 6px 18px rgb(21 154 145 / 0.28);
+
+  color-scheme: light;
+}
+
+.dark {
+  --bg: 5 17 27;
+  --surface: 11 30 42;
+  --subtle: 16 39 53;
+  --line: 26 58 74;
+  --ink: 238 245 248;
+  --muted: 148 168 182;
+
+  --primary: 52 226 198;        /* luminous mint-teal used for dark CTAs */
+  --primary-hover: 92 236 212;
+  --primary-fg: 4 36 38;
+  --primary-soft: 18 64 66;
+
+  --sidebar: 4 18 28;
+  --sidebar-active: 18 120 109;
+  --sidebar-ink: 214 226 234;
+  --sidebar-line: 22 48 62;
+
+  --success: 74 222 128;
+  --danger: 239 68 68;
+  --warning: 234 189 92;
+
+  --shadow-card: 0 0 0 1px rgb(52 226 198 / 0.05), 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-float: 0 16px 48px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 6px 22px rgb(52 226 198 / 0.3);
+
+  color-scheme: dark;
+}

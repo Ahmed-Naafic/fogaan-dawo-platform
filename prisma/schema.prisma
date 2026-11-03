@@ -1,0 +1,12 @@
+// Fogaan Dawo App — database schema.
+// Phase 1 (structure only): no models yet. Models are added module by module in Phase 2
+// and documented in docs/database.md. Prisma itself is installed when the first model lands.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
