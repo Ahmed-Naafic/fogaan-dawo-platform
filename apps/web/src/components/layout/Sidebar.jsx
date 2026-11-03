@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 import { Headphones, X } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
 import { useI18n } from '@/lib/i18n';

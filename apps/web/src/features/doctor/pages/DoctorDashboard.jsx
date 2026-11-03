@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router';
 import { ArrowRight, CalendarDays, ChevronRight, CircleCheck, Database, Hourglass, Users, Video } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import Avatar from '@/components/ui/Avatar';

@@ -1,4 +1,4 @@
-import { useLocation, useOutletContext } from 'react-router-dom';
+import { useLocation, useOutletContext } from 'react-router';
 import { Construction } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import Button from '@/components/ui/Button';
