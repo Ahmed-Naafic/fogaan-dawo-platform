@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
   ArrowRight,
@@ -27,7 +27,8 @@ import Logo from '@/components/shared/Logo';
 import { getSpecialtyIcon } from '@/components/shared/SpecialtyIcon';
 import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/lib/i18n';
-import { getDoctors, getPlatformStats, getSpecialties } from '@/services';
+import { getPlatformStats, getSpecialties } from '@/services';
+import { searchDoctors } from '@/features/doctors/services/doctorDirectoryApi';
 import { DoctorCard } from '@/features/doctors/components/DoctorCard';
 import BookingSheet from '@/features/appointments/components/BookingSheet';
 import heroLight from '@/assets/images/hero-light.jpg';
@@ -110,10 +111,10 @@ function Hero() {
           </h1>
           <p className="mt-5 max-w-[30rem] text-base leading-relaxed text-muted sm:text-lg">{t('landing.hero.subtitle')}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button to="/patient/doctors" size="lg" className="px-7">
+            <Button to="/doctors" size="lg" className="px-7">
               {t('landing.hero.book')} <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button to="/patient/doctors" size="lg" variant="outline" className="px-7">
+            <Button to="/doctors" size="lg" variant="outline" className="px-7">
               <Search className="h-4 w-4" /> {t('landing.hero.find')}
             </Button>
           </div>
@@ -161,7 +162,7 @@ function Specialties() {
           {getSpecialties().map((s) => (
             <button
               key={s.key}
-              onClick={() => navigate(`/patient/doctors?specialty=${s.key}`)}
+              onClick={() => navigate(`/doctors?specialty=${s.key}`)}
               className="card group flex flex-col items-start gap-4 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-float sm:p-5"
             >
               <IconTile icon={getSpecialtyIcon(s.icon)} tone={s.tone} />
@@ -182,8 +183,18 @@ function Specialties() {
 
 function FeaturedDoctors() {
   const { t } = useI18n();
-  const [favorites, setFavorites] = useState(() => new Set(['dr-hodan-axmed']));
+  const [favorites, setFavorites] = useState(() => new Set());
   const [booking, setBooking] = useState(null);
+  const [doctors, setDoctors] = useState(null);
+  useEffect(() => {
+    let live = true;
+    searchDoctors({ sort: 'rating', pageSize: 3 })
+      .then((d) => live && setDoctors(d.items))
+      .catch(() => live && setDoctors([]));
+    return () => {
+      live = false;
+    };
+  }, []);
   const toggle = (id) =>
     setFavorites((f) => {
       const n = new Set(f);
@@ -195,16 +206,15 @@ function FeaturedDoctors() {
       <div className="mx-auto max-w-site px-4 sm:px-6">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <SectionTitle center={false} eyebrow={t('landing.doctors.eyebrow')} title={t('landing.doctors.title')} subtitle={t('landing.doctors.subtitle')} />
-          <Button to="/patient/doctors" variant="outline">
+          <Button to="/doctors" variant="outline">
             {t('landing.doctors.viewAll')} <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {getDoctors()
-            .slice(0, 3)
-            .map((d) => (
-              <DoctorCard key={d.id} doctor={d} favorite={favorites.has(d.id)} onToggleFavorite={() => toggle(d.id)} onBook={setBooking} />
-            ))}
+          {doctors === null
+            ? Array.from({ length: 3 }, (_, i) => <div key={i} className="card h-80 animate-pulse" aria-hidden="true" />)
+            : doctors.map((d) => <DoctorCard key={d.id} doctor={d} profileHref={`/doctors/${d.id}`} favorite={favorites.has(d.id)} onToggleFavorite={() => toggle(d.id)} onBook={setBooking} />)}
+          {doctors?.length === 0 && <p className="card col-span-full px-6 py-10 text-center text-sm text-muted">{t('landing.doctors.empty')}</p>}
         </div>
       </div>
       {booking && <BookingSheet doctor={booking} onClose={() => setBooking(null)} />}

@@ -2,14 +2,10 @@ import { NavLink } from 'react-router';
 import { Headphones, X } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
 import { useI18n } from '@/lib/i18n';
-import { getAdminStats } from '@/services';
 import { cn } from '@/lib/cn';
 
-const badgeSources = {
-  pendingVerification: () => getAdminStats().pendingVerification,
-};
-
-export default function Sidebar({ items, home, onNavigate, onClose, className }) {
+/** `badges`: live counts keyed by the nav item's `badge` name (e.g. { pendingVerification: 3 }). */
+export default function Sidebar({ items, home, onNavigate, onClose, className, badges = {} }) {
   const { t } = useI18n();
   return (
     <aside
@@ -29,7 +25,7 @@ export default function Sidebar({ items, home, onNavigate, onClose, className })
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 scrollbar-none" aria-label={t('nav.main')}>
         {items.map(({ to, label, icon: Icon, end, badge }) => {
-          const count = badge ? badgeSources[badge]?.() : null;
+          const count = badge ? badges[badge] : null;
           return (
             <NavLink
               key={to}

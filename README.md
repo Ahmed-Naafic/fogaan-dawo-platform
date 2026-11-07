@@ -7,8 +7,8 @@ This is a monorepo built on npm workspaces:
 | Path | What |
 |---|---|
 | `apps/web` | React + Vite + Tailwind web client: landing, patient, doctor and admin experiences, video consultation, PWA |
-| `apps/api` | Node + Express API. **Structure only** for now: a health endpoint and the module conventions. |
-| `prisma/` | Schema skeleton, migrations folder, seed entry point |
+| `apps/api` | Node + Express API: health endpoint plus the database services (booking, payments, refunds, ledger, verification, medical history, notes). No HTTP feature routes yet. |
+| `prisma/` | PostgreSQL (Neon) schema with 37 models, migrations and the development seed. See [docs/database.md](docs/database.md). |
 | `tests/` | `node:test` suites (`unit/`, `integration/`) |
 | `design-reference/` | The approved visual specs: `web-light.png`, `web-dark.png`, `mobile-approved.png` |
 | `docs/` | `architecture.md`, `database.md`, `api.md` |
@@ -56,7 +56,7 @@ See [docs/architecture.md](docs/architecture.md) for the folder-by-folder guide.
 ## Phase status
 
 - **Phase 1 (done):** the visual foundation, built to match `design-reference/`. All data is static mock data behind `apps/web/src/services/`.
-- **Phase 2 (next):** authentication, the database models, booking, payments and realtime features in `apps/api`.
+- **Phase 2 (in progress):** the database is implemented (Prisma + Neon); see `docs/database.md`. Next: authentication, the HTTP API, provider payments and realtime features.
 
 Before launch:
 

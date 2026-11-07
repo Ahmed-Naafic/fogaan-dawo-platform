@@ -1,9 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
-import { Link, useNavigate, useOutletContext } from 'react-router';
-import { ArrowLeft, Bell, ChevronDown, LogOut, Menu, Repeat } from 'lucide-react';
+import { useNavigate, useOutletContext } from 'react-router';
+import { ArrowLeft, Bell, ChevronDown, LogOut, Menu, Repeat, ShieldCheck, UserRound } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import ThemeToggle from '@/components/shared/ThemeToggle';
+import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/features/auth/AuthProvider';
+import NotificationBell from '@/features/notifications/components/NotificationBell';
+import { errorMessageKey } from '@/features/auth/authForm';
+import { ROLE_HOME, roleLabelKey } from '@/features/auth/roles';
 import useClickOutside from '@/hooks/useClickOutside';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/cn';
@@ -20,30 +25,46 @@ function IconButton({ children, className, ...props }) {
   );
 }
 
-function NotificationBell() {
-  const { t } = useI18n();
-  return (
-    <IconButton aria-label={t('common.notifications')}>
-      <Bell className="h-[19px] w-[19px]" />
-      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
-    </IconButton>
-  );
-}
+/** The active role's own profile page (administrators have none). */
+const PROFILE_PATH = Object.freeze({ PATIENT: '/patient/profile', DOCTOR: '/doctor/profile' });
 
-const ROLE_HOMES = [
-  { role: 'patient', to: '/patient' },
-  { role: 'doctor', to: '/doctor' },
-  { role: 'admin', to: '/admin' },
-];
-
-function ProfileMenu({ user, role }) {
+/** Profile menu: lists only the roles assigned to this account; switching goes through the API. */
+function ProfileMenu({ user }) {
   const { t } = useI18n();
+  const auth = useAuth();
+  const notify = useToast();
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const ref = useRef(null);
   const navigate = useNavigate();
 
   const close = useCallback(() => setOpen(false), []);
   useClickOutside(ref, open, close);
+
+  const run = async (action) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await action();
+    } catch (error) {
+      notify(t(errorMessageKey(error)), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  // Navigate only: the destination's route guard performs the switch (POST /auth/switch-role).
+  // Switching here as well would race with the guard of the page being left.
+  const chooseRole = (role) => {
+    setOpen(false);
+    navigate(ROLE_HOME[role]);
+  };
+  // Leave the protected area first; otherwise the route guard reacts to the sign-out and redirects to /login.
+  const signOut = (everywhere) =>
+    run(async () => {
+      setOpen(false);
+      navigate('/', { replace: true });
+      await (everywhere ? auth.logoutAll() : auth.logout());
+    });
 
   return (
     <div ref={ref} className="relative">
@@ -57,20 +78,70 @@ function ProfileMenu({ user, role }) {
       </button>
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-60 rounded-xl border border-line bg-surface p-1.5 shadow-float">
-          <p className="px-3 pb-1 pt-2 text-2xs font-bold uppercase tracking-wider text-muted">{t('common.switchView')}</p>
-          {ROLE_HOMES.map((r) => (
+          {auth.session.roles.length > 1 && (
+            <>
+              <p className="px-3 pb-1 pt-2 text-2xs font-bold uppercase tracking-wider text-muted">{t('common.switchView')}</p>
+              {auth.session.roles.map((r) => (
+                <button
+                  key={r}
+                  disabled={busy}
+                  aria-current={r === auth.session.activeRole || undefined}
+                  onClick={() => chooseRole(r)}
+                  className={cn('flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium hover:bg-subtle disabled:opacity-60', r === auth.session.activeRole ? 'text-primary' : 'text-ink')}
+                >
+                  <Repeat className="h-4 w-4" /> {t(roleLabelKey(r))}
+                </button>
+              ))}
+              <div className="my-1 border-t border-line" />
+            </>
+          )}
+          {PROFILE_PATH[auth.session.activeRole] && (
             <button
-              key={r.role}
-              onClick={() => navigate(r.to)}
-              className={cn('flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium hover:bg-subtle', r.role === role ? 'text-primary' : 'text-ink')}
+              disabled={busy}
+              onClick={() => {
+                setOpen(false);
+                navigate(PROFILE_PATH[auth.session.activeRole]);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-subtle disabled:opacity-60"
             >
-              <Repeat className="h-4 w-4" /> {t(`roles.${r.role}`)}
+              <UserRound className="h-4 w-4" /> {t('profile.menu')}
             </button>
-          ))}
+          )}
+          <button
+            disabled={busy}
+            onClick={() => {
+              setOpen(false);
+              navigate('/account/security');
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-subtle disabled:opacity-60"
+          >
+            <ShieldCheck className="h-4 w-4" /> {t('accountSecurity.menu')}
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => {
+              setOpen(false);
+              navigate('/account/notifications');
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-subtle disabled:opacity-60"
+          >
+            <Bell className="h-4 w-4" /> {t('notifications.title')}
+          </button>
           <div className="my-1 border-t border-line" />
-          <Link to="/" className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-subtle">
+          <button
+            disabled={busy}
+            onClick={() => signOut(false)}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-subtle disabled:opacity-60"
+          >
             <LogOut className="h-4 w-4" /> {t('common.signOut')}
-          </Link>
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => signOut(true)}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-subtle disabled:opacity-60"
+          >
+            <LogOut className="h-4 w-4" /> {t('common.signOutAll')}
+          </button>
         </div>
       )}
     </div>
@@ -83,7 +154,7 @@ function ProfileMenu({ user, role }) {
  * Mobile: compact row (menu or back) with title below, as in the mobile references.
  */
 export default function PageHeader({ title, subtitle, wave = false, back, mobileTitle, className }) {
-  const { user, role, openMenu } = useOutletContext();
+  const { user, openMenu } = useOutletContext();
   const { t } = useI18n();
   const navigate = useNavigate();
 
@@ -104,7 +175,7 @@ export default function PageHeader({ title, subtitle, wave = false, back, mobile
           <ThemeToggle className="h-9 w-9 border-transparent bg-transparent" />
           <LanguageSwitcher className="[&>button]:h-9 [&>button]:border-transparent [&>button]:bg-transparent [&>button]:px-2" />
           <NotificationBell />
-          <ProfileMenu user={user} role={role} />
+          <ProfileMenu user={user} />
         </div>
       </div>
 
@@ -126,7 +197,7 @@ export default function PageHeader({ title, subtitle, wave = false, back, mobile
           <ThemeToggle />
           <NotificationBell />
           <span className="mx-1 h-8 w-px bg-line" />
-          <ProfileMenu user={user} role={role} />
+          <ProfileMenu user={user} />
         </div>
       </div>
     </header>
