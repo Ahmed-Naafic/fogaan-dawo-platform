@@ -15,6 +15,12 @@ import DoctorPatientDetailPage from '@/features/doctor/pages/DoctorPatientDetail
 import MyEarningsPage from '@/features/doctor/pages/MyEarningsPage';
 import AdminLayout from '@/features/admin/layouts/AdminLayout';
 import AdminDashboard from '@/features/admin/pages/AdminDashboard';
+import AdminPatientsPage from '@/features/admin/pages/AdminPatientsPage';
+import AdminPatientDetailPage from '@/features/admin/pages/AdminPatientDetailPage';
+import AdminAppointmentsPage from '@/features/admin/pages/AdminAppointmentsPage';
+import AdminAppointmentDetailPage from '@/features/admin/pages/AdminAppointmentDetailPage';
+import AdminReportsPage from '@/features/admin/pages/AdminReportsPage';
+import AdminAuditLogsPage from '@/features/admin/pages/AdminAuditLogsPage';
 import FindDoctorsPage from '@/features/doctors/pages/FindDoctorsPage';
 import VideoConsultationPage from '@/features/video/pages/VideoConsultationPage';
 import RequireRole from '@/features/auth/components/RequireRole';
@@ -145,6 +151,12 @@ export default function AppRouter() {
         <Route path="medical-records" element={<AdminMedicalRecordsPage />} />
         <Route path="verification" element={<DoctorVerificationPage />} />
         <Route path="verification/:doctorId" element={<DoctorApplicationReviewPage />} />
+        <Route path="patients" element={<AdminPatientsPage />} />
+        <Route path="patients/:patientId" element={<AdminPatientDetailPage />} />
+        <Route path="appointments" element={<AdminAppointmentsPage />} />
+        <Route path="appointments/:appointmentId" element={<AdminAppointmentDetailPage />} />
+        <Route path="reports" element={<AdminReportsPage />} />
+        <Route path="audit-logs" element={<AdminAuditLogsPage />} />
         <Route path="*" element={<ComingSoonPage />} />
       </Route>
 

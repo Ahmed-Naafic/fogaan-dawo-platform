@@ -40,12 +40,20 @@ export const Permission = Object.freeze({
   medicalRecordsMonitor: 'medical-records:monitor',
   /** Read one's own calculated consultation earnings (doctor). */
   ownEarningsRead: 'earnings:read:own',
+  /** List patient accounts, see their appointments and payments, suspend and reactivate them (no clinical data). */
+  patientsManage: 'patients:manage',
+  /** Read-only monitoring of every appointment (admin). */
+  appointmentsMonitor: 'appointments:monitor',
+  /** Platform activity reports (admin). */
+  reportsRead: 'reports:read',
+  /** Platform audit trail, excluding clinical records (admin). */
+  auditRead: 'audit:read',
 });
 
 export const ROLE_PERMISSIONS = Object.freeze({
   PATIENT: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.ownDoctorApplicationManage, Permission.ownAppointmentsManage, Permission.ownConsultationsJoin, Permission.ownMedicalHistoryManage, Permission.ownPrescriptionsRead, Permission.consultationDocumentsManage]),
   DOCTOR: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.ownDoctorApplicationManage, Permission.ownDoctorProfileRead, Permission.ownAvailabilityManage, Permission.doctorAppointmentsManage, Permission.ownConsultationsJoin, Permission.ownDoctorProfileManage, Permission.assignedPatientRecordsRead, Permission.assignedPrescriptionsWrite, Permission.consultationDocumentsManage, Permission.ownEarningsRead]),
-  ADMIN: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.rolesAssign, Permission.doctorsVerify, Permission.doctorsManage, Permission.financeManage, Permission.medicalRecordsMonitor]),
+  ADMIN: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.rolesAssign, Permission.doctorsVerify, Permission.doctorsManage, Permission.financeManage, Permission.medicalRecordsMonitor, Permission.patientsManage, Permission.appointmentsMonitor, Permission.reportsRead, Permission.auditRead]),
 });
 
 export const permissionsFor = (role) => ROLE_PERMISSIONS[role] ?? [];

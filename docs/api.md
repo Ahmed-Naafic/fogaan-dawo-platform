@@ -435,6 +435,25 @@ A refund paid out posts REFUND plus two ADJUSTMENT entries (`PLATFORM_COMMISSION
 `DOCTOR_EARNING_REVERSAL`) linked to the original references. `doctor_earnings` amounts and
 `appointments.commission_rate_snapshot` are protected by database triggers.
 
+## Admin console (`/api/v1/admin/patients`, `/appointments`, `/reports`, `/audit-logs`)
+
+ADMIN role; each router checks its own permission. Responses are `Cache-Control: private, no-store`.
+Date filters use the admin finance range fields (`preset`, `fromDate`, `toDate`, `tz`); an invalid range is
+`400 FINANCE_RANGE_INVALID`. None of these endpoints return clinical data (date of birth, sex, address,
+emergency contact, visit reason, medical history, documents, prescriptions, notes or messages).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/admin/patients?tab=all\|active\|suspended&q=&page=&pageSize=` | `patients:manage`. `q` matches name, email or phone. Items `{ patientId, userId, name, email, phone, status, registeredAt, lastLoginAt, appointments, totalPaid, suspension }`; plus `counts` per tab. |
+| GET | `/api/v1/admin/patients/:patientId` | `{ patient: { …row, preferredLanguage, roles, isDoctor, canSuspend, suspendBlocker }, appointments (≤50: id, status, start/end, fee, doctor), payments (≤50: amount, refunded, status, provider, paidAt) }`. `404` if unknown. |
+| POST | `/api/v1/admin/patients/:patientId/suspend` | Body `{ reason }` (10–500 chars); needs the client header. One transaction: user `SUSPENDED` (every request re-checks, so access stops at once), all sessions revoked, every future `PENDING_PAYMENT`/`CONFIRMED`/`WAITING` appointment `CANCELLED` (slot released back to `AVAILABLE`, status history, reminders cancelled, doctor notified), a full refund request for each paid one, audit `SUSPEND` / `PatientAccount`. Errors: `PATIENT_ALREADY_SUSPENDED` (409), `PATIENT_ACCOUNT_PROTECTED` (403, administrators), `PATIENT_IS_ACTIVE_DOCTOR` (409 — suspend the doctor from Admin › Doctors first), `SELF_ACTION_FORBIDDEN`. Returns `{ cancelledAppointments, refundRequests, patient }`. |
+| POST | `/api/v1/admin/patients/:patientId/reactivate` | Body `{ reason? }`. `SUSPENDED` → `ACTIVE`; cancelled appointments stay cancelled. Audit `UPDATE` / `PatientAccount`. `PATIENT_NOT_SUSPENDED` (409). |
+| GET | `/api/v1/admin/appointments?preset=&…&status=&q=&page=&pageSize=` | `appointments:monitor`. Range applies to the start time (default `all`); `q` matches patient or doctor name. `{ range, statusCounts, items: [{ id, status, bookingType, start/end, fee, rescheduled, bookedAt, paymentStatus, patient, doctor }], total, page, pageSize }`. |
+| GET | `/api/v1/admin/appointments/:appointmentId` | The list item plus `cancellationReason`, `cancelledAt`, `rescheduleCount`, `commissionRate`, `statusHistory`, `payment`, `refunds`, `consultation` (status and times only) and `earning`. Read-only. |
+| GET | `/api/v1/admin/reports/overview?preset=&…` | `reports:read`. Default `30d`. `{ users: { newPatients, newDoctors, totalPatients, activeDoctors }, appointments: { total, booked, byStatus, paid, completed, noShow, cancelled, completionRate, noShowRate, cancellationRate }, topSpecialties, topDoctors, granularity: day\|month, trend: [{ period, appointments, completed, cancelled }] }`. Appointments count by start time, bookings by creation time; rates are fractions (or `null`). Money stays in Admin finance reports. |
+| GET | `/api/v1/admin/reports/export?preset=&…` | The same figures as CSV (formula-safe cells). 20 per minute. |
+| GET | `/api/v1/admin/audit-logs?preset=&…&action=&entityType=&actorUserId=&q=&page=&pageSize=` | `audit:read`. Default `7d`. Excludes clinical audit types (`Prescription`, `MedicalDocument`, `MedicalHistoryEntry`, `PatientMedicalHistoryAccess`, `SecurityEvent` — see Admin medical records). `q` matches the actor's name. Items `{ id, at, action, entityType, entityRef, actor: { userId, name, role }, oldValues, newValues }`; values pass an allow-list of non-personal keys and ids become 8-character references. Also returns `entityTypes` for the filter. |
+
 ## Profiles (Phase 9)
 
 Every private endpoint acts on the signed-in user only — no user, patient or entry owner id is accepted from
