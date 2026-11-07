@@ -62,6 +62,9 @@ export async function stream(req, res) {
         if (item) send('notification', { item, ...(await service.unreadCount(req.auth)) });
       } else if (event.type === 'sync') {
         send('sync', { unreadCount: event.unreadCount });
+      } else if (event.type === 'message' || event.type === 'message-read') {
+        // Ids only: the client reloads the conversation through the authorised messages API.
+        send(event.type, { appointmentId: event.appointmentId, messageId: event.messageId ?? null });
       }
     } catch {
       /* the next event or the reconnect resynchronises */

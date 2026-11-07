@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router';
 import { navigation } from '@/app/navigation';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { listApplications, VERIFICATION_CHANGED } from '@/features/admin/services/verificationApi';
+import { MESSAGES_CHANGED, unreadCount as messagesUnread } from '@/features/messaging/services/messagingApi';
 import { NotificationsProvider } from '@/features/notifications/NotificationsProvider';
 import useOwnPhoto from '@/features/profile/useOwnPhoto';
 import Sidebar from './Sidebar';
@@ -47,6 +48,22 @@ export default function AppShell({ role }) {
     return () => {
       cancelled = true;
       window.removeEventListener(VERIFICATION_CHANGED, load);
+    };
+  }, [role, pathname]);
+
+  // Patient / doctor: unread messages — on navigation and whenever a message arrives or is read.
+  useEffect(() => {
+    if (role !== 'patient' && role !== 'doctor') return undefined;
+    let cancelled = false;
+    const load = () =>
+      messagesUnread()
+        .then((d) => !cancelled && setBadges({ unreadMessages: d.unreadMessages }))
+        .catch(() => {});
+    load();
+    window.addEventListener(MESSAGES_CHANGED, load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(MESSAGES_CHANGED, load);
     };
   }, [role, pathname]);
   useEffect(() => {

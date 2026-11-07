@@ -194,7 +194,7 @@ export default function AppointmentDetailPage({ viewer = 'PATIENT' }) {
               </p>
             )}
             {isPatient && data.status === 'CONFIRMED' && !data.actions.reschedule.allowed && (
-              <p className="mt-3 text-right text-2xs text-muted">{t(`appointments.rescheduleBlocked.${data.actions.reschedule.blocker}`)}</p>
+              <p className="mt-3 text-right text-2xs text-muted">{t(`appointments.rescheduleBlocked.${data.actions.reschedule.blocker}`, { hours: data.policy?.freeRescheduleMinHours ?? 24 })}</p>
             )}
           </Card>
           {!isPatient && data.patient?.id && (

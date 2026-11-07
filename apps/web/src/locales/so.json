@@ -945,7 +945,7 @@
     "rescheduleBlocked": {
       "NOT_CONFIRMED": "Ballamaha la bixiyay oo keliya ayaa dib loo dhigi karaa.",
       "ALREADY_RESCHEDULED": "Dib-u-dhigista bilaashka ah horay ayaa loogu isticmaalay ballantan.",
-      "TOO_LATE": "Dib-u-dhigista bilaashka ah waa la heli karaa ilaa 24 saacadood ka hor ballanta.",
+      "TOO_LATE": "Dib-u-dhigista bilaashka ah waa la heli karaa ilaa {hours} saacadood ka hor ballanta.",
       "PATIENT_ONLY": ""
     },
     "history": "Taariikhda",
@@ -957,7 +957,7 @@
     "refund": {
       "none": "Wax lacag ah lama bixin, sidaa darteed wax la celiyo ma jiraan. Wakhtiga waa la siinayaa bukaan kale.",
       "amount": "Lacag-celin: {amount} ({percent})",
-      "rules": "In ka badan 24 saacadood ka hor: 100 %. Inta u dhexeysa 2 iyo 24 saacadood: 50 %. In ka yar 2 saacadood: lacag-celin ma jirto.",
+      "rules": "In ka badan {full} saacadood ka hor: 100 %. Inta u dhexeysa {partial} iyo {full} saacadood: 50 %. In ka yar {partial} saacadood: lacag-celin ma jirto.",
       "doctorRule": "Marka dhakhtarku joojiyo, bukaanka si buuxda ayaa lacagta loogu celiyaa waana la ogeysiiyaa."
     },
     "reasonRequired": "Sababta (waa qasab, bukaanka ayaa arkaya)",
@@ -987,7 +987,7 @@
     "reschedule": {
       "NOT_CONFIRMED": "Ballamaha la bixiyay oo keliya ayaa dib loo dhigi karaa.",
       "ALREADY_RESCHEDULED": "Dib-u-dhigista bilaashka ah horay ayaa loo isticmaalay.",
-      "TOO_LATE": "Dib-u-dhigista bilaashka ah waxay xirantaa 24 saacadood ka hor ballanta."
+      "TOO_LATE": "Dib-u-dhigista bilaashka ah way u xirantay ballantan."
     }
   },
   "payments": {
@@ -2131,7 +2131,9 @@
       "NOT_FOUND": "Diiwaankan lama helin.",
       "RATE_LIMITED": "Codsiyo badan. Fadlan wax yar sug oo isku day mar kale.",
       "NETWORK_ERROR": "Lama gaari karin server-ka. Hubi xiriirkaaga.",
-      "GENERIC": "Wax baa khaldamay. Fadlan isku day mar kale."
+      "GENERIC": "Wax baa khaldamay. Fadlan isku day mar kale.",
+      "BOOKING_POLICY_INVALID": "Qiimayaal qaar ayaa ka baxsan xadka. Hubi meelaha la calaamadeeyay.",
+      "BOOKING_POLICY_UNCHANGED": "Waxba isma beddelin."
     }
   },
   "adminPatients": {
@@ -2254,5 +2256,86 @@
     "system": "Nidaamka",
     "before": "Kahor",
     "after": "Kadib"
+  },
+  "adminSettings": {
+    "title": "Dejinta",
+    "subtitle": "Xeerarka ballan-qabsiga ee madasha oo dhan.",
+    "groups": {
+      "payments": {
+        "title": "Waqtiyada lacag-bixinta",
+        "body": "Inta wakhti la xajiyay loo hayo inta bukaanku lacagta bixinayo."
+      },
+      "reschedule": {
+        "title": "Dib-u-dhigis bilaash ah",
+        "body": "Inta jeer, iyo ilaa goorma, bukaanku bilaash u dib-u-dhigi karo ballan la bixiyay."
+      },
+      "refunds": {
+        "title": "Lacag-celinta joojinta",
+        "body": "Bukaannada joojiya ka hor xadka koowaad waxay helayaan 100 %, inta u dhexeysa labada xad 50 %, kadib waxba. Joojinta dhakhtarka mar walba si buuxda ayaa loo celiyaa."
+      }
+    },
+    "fields": {
+      "paymentHoldMinutes": "Ballan caadi ah: wakhtiga lacag-bixinta",
+      "followUpDeadlineHours": "Ballan dabagal: wakhtiga lacag-bixinta",
+      "maxFreeReschedules": "Dib-u-dhigis bilaash ah ballankiiba",
+      "freeRescheduleMinHours": "Dib-u-dhigista bilaashka ah waxay xirantaa ka hor ballanka",
+      "fullRefundMinHours": "Lacag-celin buuxda haddii la joojiyo in ka badan",
+      "partialRefundMinHours": "50 % lacag-celin haddii la joojiyo ugu yaraan"
+    },
+    "units": {
+      "minutes": "daqiiqo",
+      "hours": "saacadood ka hor",
+      "times": "jeer"
+    },
+    "default": "Caadi: {value}",
+    "errors": {
+      "range": "Geli tiro dhan oo u dhexeysa {min} iyo {max}.",
+      "order": "Waa inuu ka yaraadaa xadka lacag-celinta buuxda."
+    },
+    "save": "Kaydi isbeddellada",
+    "resetDefaults": "Ku celi kuwii caadiga ahaa",
+    "confirmTitle": "Ma dabaqaysaa {count} isbeddel?",
+    "change": "{field}: {from} → {to}",
+    "confirmBody": "Xeerarka cusub waxay khuseeyaan hadda wixii ka dambeeya ballamaha cusub, joojinta iyo dib-u-dhigista. Lacag-celinta jirta iyo waqtiyada lacag-bixinta dib looma xisaabinayo.",
+    "confirmSave": "Haa, dabaq",
+    "saved": "Xeerarka ballan-qabsiga waa la cusboonaysiiyay.",
+    "lastChanged": "Waxaa ugu dambeyntii beddelay {by} {when}.",
+    "usingDefaults": "Waxaa la isticmaalayaa xeerarka caadiga ah.",
+    "commissionTitle": "Komishanka madasha",
+    "commissionBody": "Waxaa lagu beddelaa dejinta Maaliyadda, oo leh xaqiijin iyo taariikh u gaar ah.",
+    "commissionLink": "Fur dejinta Maaliyadda",
+    "historyTitle": "Taariikhda isbeddellada",
+    "noHistory": "Weli isbeddel ma jiro."
+  },
+  "messages": {
+    "title": "Fariimaha",
+    "subtitlePatient": "U dir fariin dhakhtarkaaga ku saabsan ballan la bixiyay. Wadahadallada way furan yihiin ilaa {days} maalmood kadib la-tashiga.",
+    "subtitleDoctor": "Fariimaha bukaannadaada ee ku saabsan ballamahooda la bixiyay. Wadahadallada way furan yihiin ilaa {days} maalmood kadib la-tashiga.",
+    "conversations": "Wadahadallada",
+    "empty": "Weli wadahadal ma jiro. Wadahadal wuxuu furmaa marka ballan la bixiyo.",
+    "pick": "Dooro wadahadal.",
+    "you": "Adiga",
+    "noMessagesYet": "Weli fariin ma jirto.",
+    "startHint": "Dir fariinta ugu horreysa.",
+    "aboutAppointment": "Ballan {when}",
+    "older": "Tus fariimihii hore",
+    "placeholder": "Qor fariin…",
+    "send": "Dir",
+    "sent": "La diray",
+    "seen": "La arkay",
+    "back": "Ku noqo wadahadallada",
+    "closed": "Xiran",
+    "closedNote": "Wadahadalkani wuu xirmay. Weli waad akhrin kartaa.",
+    "closesOn": "Wuu furan yahay ilaa {when}. Xaaladaha degdegga ah, wac adeegyada gurmadka degdegga ah.",
+    "notEmergency": "Looma isticmaalo xaaladaha degdegga ah — wac adeegyada gurmadka degdegga ah.",
+    "errors": {
+      "CONVERSATION_NOT_FOUND": "Wadahadalkan lama heli karo.",
+      "CONVERSATION_CLOSED": "Wadahadalkani wuu xirmay, sidaas darteed fariimo cusub lama diri karo.",
+      "MESSAGING_PROFILE_REQUIRED": "Fariimaha waxaa heli kara bukaannada iyo dhakhaatiirta.",
+      "VALIDATION_ERROR": "Qor fariin aan ka badnayn 2,000 xaraf.",
+      "RATE_LIMITED": "Fariimo aad u degdeg ah ayaad dirtaa. Fadlan wax yar sug.",
+      "NETWORK_ERROR": "Lama gaari karin server-ka. Hubi xiriirkaaga.",
+      "GENERIC": "Wax baa khaldamay. Fadlan isku day mar kale."
+    }
   }
 }

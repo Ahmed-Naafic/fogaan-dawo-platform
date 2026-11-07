@@ -454,6 +454,52 @@ emergency contact, visit reason, medical history, documents, prescriptions, note
 | GET | `/api/v1/admin/reports/export?preset=&…` | The same figures as CSV (formula-safe cells). 20 per minute. |
 | GET | `/api/v1/admin/audit-logs?preset=&…&action=&entityType=&actorUserId=&q=&page=&pageSize=` | `audit:read`. Default `7d`. Excludes clinical audit types (`Prescription`, `MedicalDocument`, `MedicalHistoryEntry`, `PatientMedicalHistoryAccess`, `SecurityEvent` — see Admin medical records). `q` matches the actor's name. Items `{ id, at, action, entityType, entityRef, actor: { userId, name, role }, oldValues, newValues }`; values pass an allow-list of non-personal keys and ids become 8-character references. Also returns `entityTypes` for the filter. |
 
+### Booking rules (`/api/v1/admin/settings`)
+
+Permission `settings:manage`. The rules live in one `PlatformSetting` row (`booking_policy`); anything not
+stored falls back to the defaults, so behaviour only changes after an administrator saves. Rules are read
+when they are applied (reserving, cancelling, rescheduling, appointment detail) — existing holds, refunds
+and appointments are never recalculated. The 50 % partial-refund rate and the doctor/system full refund
+are fixed.
+
+| Field | Default | Range | Used by |
+|---|---|---|---|
+| `paymentHoldMinutes` | 10 | 5–60 | New standard reservations (slot `HELD` until then) |
+| `followUpDeadlineHours` | 48 | 1–168 | New follow-up reservations (capped at the slot start) |
+| `maxFreeReschedules` | 1 | 0–5 | Reschedule blocker `ALREADY_RESCHEDULED` |
+| `freeRescheduleMinHours` | 24 | 0–168 | Reschedule blocker `TOO_LATE` (must be more than this many hours ahead) |
+| `fullRefundMinHours` | 24 | 1–168 | Patient cancellation: more than this → 100 % |
+| `partialRefundMinHours` | 2 | 0–72 | Patient cancellation: at least this → 50 %, below → 0 %; must be less than `fullRefundMinHours` |
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/admin/settings` | `{ bookingPolicy: { values, defaults, limits, updatedAt, updatedBy, history (≤20: at, by, before, after) }, commission: { percent, managedIn } }`. Commission is read-only here (Admin finance settings). |
+| PUT | `/api/v1/admin/settings/booking-policy` | Body: all six fields as integers plus `confirm: true`; needs the client header. `400 BOOKING_POLICY_INVALID` (with per-field details), `409 BOOKING_POLICY_UNCHANGED`. Audit `UPDATE` / `PlatformSetting` / `booking_policy` with only the changed fields. Returns the same shape as GET. |
+
+Patient/doctor appointment detail responses now include `policy: { fullRefundMinHours, partialRefundMinHours,
+freeRescheduleMinHours, maxFreeReschedules }` so the cancellation and reschedule wording matches the rules in force.
+
+## Messages (`/api/v1/messages`)
+
+PATIENT or DOCTOR role, permission `messages:own`. One text conversation per **paid** appointment
+(`CONFIRMED`, `WAITING`, `IN_PROGRESS`, `COMPLETED`), between the patient and the assigned doctor only;
+administrators have no access. Writing is open from payment until **7 days** after the consultation ended
+(or the slot ended if no call took place); after that the conversation is read-only. Anything that is not
+the viewer's eligible appointment is the same `404 CONVERSATION_NOT_FOUND`. Responses are
+`Cache-Control: private, no-store`. Messages are stored in `messages` (`appointment_id`, optional
+`consultation_id` once the call exists, `read_at` = when the other participant opened it).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/messages/conversations` | Conversations that have messages or are still open, latest activity first: `{ items: [{ appointmentId, appointmentStatus, startAtUtc, counterpart: { userId, name, role, specialty?, photoUrl }, open, closesAt, lastMessage, unread }], unreadTotal, windowDays }`. The patient's photo URL is the doctor's gated route; the doctor's is the public directory photo. |
+| GET | `/api/v1/messages/conversations/:appointmentId?before=<messageId>` | `{ conversation, messages (≤50, oldest first: id, body, mine, createdAt, readAt), hasMore }`; `before` pages back. |
+| POST | `/api/v1/messages/conversations/:appointmentId/messages` | Body `{ body }` (trimmed, 1–2000 chars); client header required; `MESSAGE_RATE_LIMIT_MAX` per minute (default 30). `201` with the message. `409 CONVERSATION_CLOSED` after the window. Publishes a `message` event to both participants. |
+| POST | `/api/v1/messages/conversations/:appointmentId/read` | Marks the other person's messages read (`{ marked }`); publishes `message-read`. |
+| GET | `/api/v1/messages/unread-count` | `{ unreadMessages }` for the menu badge. |
+
+The notification stream (`GET /api/v1/notifications/stream`) now also emits `message` and `message-read`
+events with `{ appointmentId, messageId }` only; clients reload through the endpoints above.
+
 ## Profiles (Phase 9)
 
 Every private endpoint acts on the signed-in user only — no user, patient or entry owner id is accepted from

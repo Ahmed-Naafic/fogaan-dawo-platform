@@ -2,6 +2,7 @@ import * as appointments from './adminAppointments.service.js';
 import * as audit from './adminAudit.service.js';
 import * as patients from './adminPatients.service.js';
 import * as reports from './adminReports.service.js';
+import * as settings from './adminSettings.service.js';
 
 /** Thin controllers for the admin console (ADMIN role; permissions enforced by each router). */
 
@@ -25,3 +26,9 @@ export async function reportExport(req, res) {
 }
 
 export const listAuditLogs = async (req, res) => res.json({ data: await audit.listAuditLogs(req.validatedQuery) });
+
+export const getSettings = async (_req, res) => res.json({ data: await settings.getSettings() });
+export const updateBookingPolicy = async (req, res) => {
+  const { confirm: _confirm, ...values } = req.body;
+  res.json({ data: await settings.updateBookingPolicy({ adminUserId: req.auth.user.id, values }) });
+};

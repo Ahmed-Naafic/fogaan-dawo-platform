@@ -13,6 +13,7 @@ import {
   adminAuditQuerySchema,
   adminPatientListQuerySchema,
   adminPatientParamsSchema,
+  bookingPolicySchema,
   reactivatePatientSchema,
   reportQuerySchema,
   suspendPatientSchema,
@@ -58,5 +59,13 @@ export function createAdminReportRouter() {
 export function createAdminAuditRouter() {
   const router = adminRouter(Permission.auditRead);
   router.get('/', validate({ query: adminAuditQuerySchema }), asyncHandler(c.listAuditLogs));
+  return router;
+}
+
+/** /api/v1/admin/settings — booking rules (settings:manage). Commission stays in Admin › Finance. */
+export function createAdminSettingsRouter() {
+  const router = adminRouter(Permission.settingsManage);
+  router.get('/', asyncHandler(c.getSettings));
+  router.put('/booking-policy', requireClientHeader, validate({ body: bookingPolicySchema }), asyncHandler(c.updateBookingPolicy));
   return router;
 }

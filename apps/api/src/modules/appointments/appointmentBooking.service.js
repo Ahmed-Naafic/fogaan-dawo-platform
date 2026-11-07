@@ -10,6 +10,7 @@ import * as appointmentRepository from './appointment.repository.js';
 import { cancellationPreview, refundAmount, refundRate, rescheduleBlocker } from './appointment.policy.js';
 import { cancelLockedAppointment, reserveSlot } from './appointment.service.js';
 import { assignedDoctorPhotoPath } from '../medical-history/medicalHistory.constants.js';
+import { getBookingPolicy } from '../settings/bookingPolicy.js';
 
 /**
  * Patient and doctor booking operations over HTTP. Every rule lives in an existing service or in
@@ -76,6 +77,7 @@ async function presentDetail(client, a, viewer, now) {
   const refunds = await appointmentRepository.findRefundsForAppointments(client, [...new Set([a.id, paid?.appointmentId].filter(Boolean))]);
   const status = displayStatus(a, now);
   const live = { ...a, status };
+  const policy = await getBookingPolicy(client);
   return {
     ...presentListItem(a, viewer, now),
     reason: a.reason ?? null,
@@ -91,11 +93,13 @@ async function presentDetail(client, a, viewer, now) {
     rescheduledTo: a.rescheduledAppointments[0] ? { id: a.rescheduledAppointments[0].id, startAtUtc: a.rescheduledAppointments[0].startAtUtc.toISOString() } : null,
     serverTime: now.toISOString(),
     actions: {
-      cancel: cancellationPreview(live, { paid: isPaid, now, cancelledBy: viewer }),
-      reschedule: viewer === 'PATIENT' ? { allowed: rescheduleBlocker(live, now) === null, blocker: rescheduleBlocker(live, now) } : { allowed: false, blocker: 'PATIENT_ONLY' },
+      cancel: cancellationPreview(live, { paid: isPaid, now, cancelledBy: viewer, policy }),
+      reschedule: viewer === 'PATIENT' ? { allowed: rescheduleBlocker(live, now, policy) === null, blocker: rescheduleBlocker(live, now, policy) } : { allowed: false, blocker: 'PATIENT_ONLY' },
       join: joinAction(a, { paymentStatus: paid?.payment.status ?? null, refunded: refunds.some((r) => r.status !== 'FAILED'), consultation: a.consultation, now }),
     },
     consultation: a.consultation ? { id: a.consultation.id, status: a.consultation.status } : null,
+    // The thresholds in force now, so the cancellation/reschedule wording matches what the server applies.
+    policy: { fullRefundMinHours: policy.fullRefundMinHours, partialRefundMinHours: policy.partialRefundMinHours, freeRescheduleMinHours: policy.freeRescheduleMinHours, maxFreeReschedules: policy.maxFreeReschedules },
   };
 }
 
@@ -143,7 +147,7 @@ async function cancelOwned({ id, ownerWhere, viewer, reason, actorUserId, now })
     const a = await loadOwned(tx, id, ownerWhere);
     if (displayStatus(a, now) === 'EXPIRED') throw ApiError.conflict('This reservation has already expired', undefined, BookingErrorCode.NOT_CANCELLABLE);
     const paid = (await findPaymentForAppointment(tx, a.id))?.payment.status === 'SUCCEEDED';
-    const rate = paid ? refundRate({ startAtUtc: a.startAtUtc, now, cancelledBy: viewer }) : 0;
+    const rate = paid ? refundRate({ startAtUtc: a.startAtUtc, now, cancelledBy: viewer, policy: await getBookingPolicy(tx) }) : 0;
     const label = viewer === 'DOCTOR' ? 'Cancelled by the doctor' : 'Cancelled by the patient';
     await cancelLockedAppointment(tx, a, { reason: reason ? `${label}: ${reason}` : label, changedBy: actorUserId, now, slotStatus: viewer === 'DOCTOR' ? 'CANCELLED' : 'AVAILABLE' });
     let refund = null;
@@ -175,7 +179,7 @@ export async function rescheduleMine(auth, id, { slotId }, now = new Date()) {
     newId = await withTransaction(async (tx) => {
       if (!(await lockRow(tx, 'appointments', id))) throw ApiError.notFound('Appointment not found');
       const original = await loadOwned(tx, id, { patientId: patient.id });
-      const blocker = rescheduleBlocker(original, now);
+      const blocker = rescheduleBlocker(original, now, await getBookingPolicy(tx));
       if (blocker) throw ApiError.conflict('This appointment cannot be rescheduled for free', { blocker }, BookingErrorCode.RESCHEDULE_NOT_ALLOWED);
       if (slotId === original.slotId) throw ApiError.badRequest('Choose a different time', [{ path: 'slotId', message: 'Same slot' }], 'VALIDATION_ERROR');
 

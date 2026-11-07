@@ -632,6 +632,7 @@ model Appointment {
   review                   Review?
   statusHistory            AppointmentStatusHistory[]
   reminders                AppointmentReminder[]
+  messages                 Message[]
 
   @@index([patientId, startAtUtc])
   @@index([doctorId, startAtUtc, status])
@@ -793,15 +794,21 @@ model ConsultationEvent {
   @@map("consultation_events")
 }
 
+/// Patient–doctor conversation of one paid appointment (text only). The consultation link is set once the
+/// call exists; read_at is when the OTHER participant first opened the message.
 model Message {
-  id             String       @id @default(uuid()) @db.Uuid
-  consultationId String       @map("consultation_id") @db.Uuid
-  senderUserId   String       @map("sender_user_id") @db.Uuid
-  body           String       @db.Text
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Restrict)
-  sender         User         @relation("MessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+  id             String        @id @default(uuid()) @db.Uuid
+  appointmentId  String        @map("appointment_id") @db.Uuid
+  consultationId String?       @map("consultation_id") @db.Uuid
+  senderUserId   String        @map("sender_user_id") @db.Uuid
+  body           String        @db.Text
+  readAt         DateTime?     @map("read_at") @db.Timestamptz(6)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  appointment    Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  consultation   Consultation? @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+  sender         User          @relation("MessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
 
+  @@index([appointmentId, createdAt])
   @@index([consultationId, createdAt])
   @@map("messages")
 }

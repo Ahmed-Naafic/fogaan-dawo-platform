@@ -32,5 +32,10 @@ const CODES = new Set([
   'NOT_FOUND',
   'RATE_LIMITED',
   'NETWORK_ERROR',
+  'BOOKING_POLICY_INVALID',
+  'BOOKING_POLICY_UNCHANGED',
 ]);
 export const adminConsoleErrorKey = (error) => `adminConsole.errors.${CODES.has(error?.code) ? error.code : 'GENERIC'}`;
+
+export const getSettings = () => apiRequest('/v1/admin/settings');
+export const updateBookingPolicy = (values) => apiRequest('/v1/admin/settings/booking-policy', { method: 'PUT', body: { ...values, confirm: true } });

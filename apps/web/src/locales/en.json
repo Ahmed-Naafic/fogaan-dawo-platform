@@ -945,7 +945,7 @@
     "rescheduleBlocked": {
       "NOT_CONFIRMED": "Only paid appointments can be rescheduled.",
       "ALREADY_RESCHEDULED": "The free reschedule has already been used for this appointment.",
-      "TOO_LATE": "Free rescheduling is available until 24 hours before the appointment.",
+      "TOO_LATE": "Free rescheduling is available until {hours} hours before the appointment.",
       "PATIENT_ONLY": ""
     },
     "history": "History",
@@ -957,7 +957,7 @@
     "refund": {
       "none": "Nothing has been paid, so there is nothing to refund. The time is released for other patients.",
       "amount": "Refund: {amount} ({percent})",
-      "rules": "More than 24 hours before: 100 %. Between 2 and 24 hours: 50 %. Less than 2 hours: no refund.",
+      "rules": "More than {full} hours before: 100 %. Between {partial} and {full} hours: 50 %. Less than {partial} hours: no refund.",
       "doctorRule": "When a doctor cancels, the patient is always refunded in full and notified."
     },
     "reasonRequired": "Reason (required, shown to the patient)",
@@ -987,7 +987,7 @@
     "reschedule": {
       "NOT_CONFIRMED": "Only paid appointments can be rescheduled.",
       "ALREADY_RESCHEDULED": "The free reschedule has already been used.",
-      "TOO_LATE": "Free rescheduling closes 24 hours before the appointment."
+      "TOO_LATE": "Free rescheduling has closed for this appointment."
     }
   },
   "payments": {
@@ -2131,7 +2131,9 @@
       "NOT_FOUND": "This record was not found.",
       "RATE_LIMITED": "Too many requests. Please wait a moment and try again.",
       "NETWORK_ERROR": "Could not reach the server. Check your connection.",
-      "GENERIC": "Something went wrong. Please try again."
+      "GENERIC": "Something went wrong. Please try again.",
+      "BOOKING_POLICY_INVALID": "Some values are out of range. Check the highlighted fields.",
+      "BOOKING_POLICY_UNCHANGED": "Nothing changed."
     }
   },
   "adminPatients": {
@@ -2254,5 +2256,86 @@
     "system": "System",
     "before": "Before",
     "after": "After"
+  },
+  "adminSettings": {
+    "title": "Settings",
+    "subtitle": "Booking rules for the whole platform.",
+    "groups": {
+      "payments": {
+        "title": "Payment deadlines",
+        "body": "How long a reserved time is held while the patient pays."
+      },
+      "reschedule": {
+        "title": "Free rescheduling",
+        "body": "How often, and until when, a patient can move a paid appointment for free."
+      },
+      "refunds": {
+        "title": "Cancellation refunds",
+        "body": "Patients who cancel earlier than the first cut-off get 100 %, between the two cut-offs 50 %, later nothing. Doctor cancellations are always refunded in full."
+      }
+    },
+    "fields": {
+      "paymentHoldMinutes": "Standard booking: time to pay",
+      "followUpDeadlineHours": "Follow-up booking: time to pay",
+      "maxFreeReschedules": "Free reschedules per appointment",
+      "freeRescheduleMinHours": "Free rescheduling closes before the appointment",
+      "fullRefundMinHours": "Full refund if cancelled more than",
+      "partialRefundMinHours": "50 % refund if cancelled at least"
+    },
+    "units": {
+      "minutes": "minutes",
+      "hours": "hours before",
+      "times": "times"
+    },
+    "default": "Default: {value}",
+    "errors": {
+      "range": "Enter a whole number from {min} to {max}.",
+      "order": "Must be smaller than the full-refund cut-off."
+    },
+    "save": "Save changes",
+    "resetDefaults": "Reset to defaults",
+    "confirmTitle": "Apply {count} change(s)?",
+    "change": "{field}: {from} → {to}",
+    "confirmBody": "New rules apply from now on to new bookings, cancellations and reschedules. Existing refunds and payment deadlines are not recalculated.",
+    "confirmSave": "Yes, apply",
+    "saved": "Booking rules updated.",
+    "lastChanged": "Last changed by {by} on {when}.",
+    "usingDefaults": "Using the default rules.",
+    "commissionTitle": "Platform commission",
+    "commissionBody": "Changed in Finance settings, with its own confirmation and history.",
+    "commissionLink": "Open Finance settings",
+    "historyTitle": "Change history",
+    "noHistory": "No changes yet."
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitlePatient": "Message your doctor about a paid appointment. Conversations stay open until {days} days after the consultation.",
+    "subtitleDoctor": "Messages from your patients about their paid appointments. Conversations stay open until {days} days after the consultation.",
+    "conversations": "Conversations",
+    "empty": "No conversations yet. A conversation opens when an appointment is paid.",
+    "pick": "Choose a conversation.",
+    "you": "You",
+    "noMessagesYet": "No messages yet.",
+    "startHint": "Send the first message.",
+    "aboutAppointment": "Appointment {when}",
+    "older": "Show earlier messages",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "sent": "Sent",
+    "seen": "Seen",
+    "back": "Back to conversations",
+    "closed": "Closed",
+    "closedNote": "This conversation has closed. You can still read it.",
+    "closesOn": "Open until {when}. For emergencies, call local emergency services.",
+    "notEmergency": "Not for emergencies — call local emergency services.",
+    "errors": {
+      "CONVERSATION_NOT_FOUND": "This conversation is not available.",
+      "CONVERSATION_CLOSED": "This conversation has closed, so new messages cannot be sent.",
+      "MESSAGING_PROFILE_REQUIRED": "Messages are available to patients and doctors.",
+      "VALIDATION_ERROR": "Write a message of up to 2,000 characters.",
+      "RATE_LIMITED": "You are sending messages too quickly. Please wait a moment.",
+      "NETWORK_ERROR": "Could not reach the server. Check your connection.",
+      "GENERIC": "Something went wrong. Please try again."
+    }
   }
 }

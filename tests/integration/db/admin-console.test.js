@@ -197,4 +197,48 @@ describe('admin console: patients, appointments, reports, audit logs (Neon, isol
     const clinical = await api('GET', '/api/v1/admin/audit-logs?preset=all&entityType=PatientMedicalHistoryAccess', { token: admin.token });
     assert.equal(clinical.body.data.items.some((i) => i.entityType === 'PatientMedicalHistoryAccess'), false);
   });
+
+  // Last: it changes platform-wide booking rules for the rest of this schema.
+  test('settings: defaults, validation, audited change applied to new holds and to refund previews', async () => {
+    const DEFAULTS = { paymentHoldMinutes: 10, followUpDeadlineHours: 48, maxFreeReschedules: 1, freeRescheduleMinHours: 24, fullRefundMinHours: 24, partialRefundMinHours: 2 };
+    const p = await account({ roles: ['PATIENT'] });
+    assert.equal((await api('GET', '/api/v1/admin/settings', { token: p.token })).status, 403);
+    const before = await api('GET', '/api/v1/admin/settings', { token: admin.token });
+    assert.equal(before.status, 200);
+    assert.deepEqual(before.body.data.bookingPolicy.values, DEFAULTS);
+    assert.equal(before.body.data.commission.percent, '15.00');
+
+    const put = (body) => api('PUT', '/api/v1/admin/settings/booking-policy', { token: admin.token, body });
+    assert.equal((await put({ ...DEFAULTS, paymentHoldMinutes: 15 })).status, 400); // no confirm
+    const badOrder = await put({ ...DEFAULTS, partialRefundMinHours: 30, confirm: true });
+    assert.equal(badOrder.body.error.code, 'BOOKING_POLICY_INVALID');
+    assert.equal((await put({ ...DEFAULTS, paymentHoldMinutes: 2, confirm: true })).body.error.code, 'BOOKING_POLICY_INVALID');
+    assert.equal((await put({ ...DEFAULTS, confirm: true })).body.error.code, 'BOOKING_POLICY_UNCHANGED');
+
+    // A paid appointment 10 h ahead: 50 % under the defaults (2–24 h band).
+    const d = await account({ roles: ['DOCTOR'], doctor: true });
+    const appt = await appointment(p.patient.id, d.doctor.id, 'CONFIRMED', 10, { paid: true });
+    const preview = async () => (await api('GET', `/api/v1/appointments/${appt.id}`, { token: p.token })).body.data;
+    assert.equal((await preview()).actions.cancel.rate, 0.5);
+
+    const saved = await put({ ...DEFAULTS, paymentHoldMinutes: 20, fullRefundMinHours: 6, partialRefundMinHours: 1, confirm: true });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.body.data.bookingPolicy.values.paymentHoldMinutes, 20);
+    assert.equal(saved.body.data.bookingPolicy.history.length, 1);
+    assert.deepEqual(saved.body.data.bookingPolicy.history[0].after, { paymentHoldMinutes: 20, fullRefundMinHours: 6, partialRefundMinHours: 1 });
+
+    const after = await preview();
+    assert.equal(after.actions.cancel.rate, 1); // 10 h > new 6 h cut-off
+    assert.equal(after.policy.fullRefundMinHours, 6);
+
+    // A new standard reservation is held for the new 20 minutes.
+    const slot = await prisma.availabilitySlot.create({ data: { doctorId: d.doctor.id, startAtUtc: new Date(Date.now() + 96 * 3_600_000), endAtUtc: new Date(Date.now() + 96 * 3_600_000 + 30 * 60_000), timeZoneSnapshot: 'Africa/Mogadishu' } });
+    const { reserveSlot } = await import('../../../apps/api/src/modules/appointments/appointment.service.js');
+    const now = new Date();
+    const held = await reserveSlot({ patientId: p.patient.id, slotId: slot.id, now });
+    assert.equal(held.holdExpiresAt.getTime() - now.getTime(), 20 * 60_000);
+
+    const audit = await api('GET', '/api/v1/admin/audit-logs?preset=all&entityType=PlatformSetting', { token: admin.token });
+    assert.deepEqual(audit.body.data.items[0].newValues, { paymentHoldMinutes: 20, fullRefundMinHours: 6, partialRefundMinHours: 1 });
+  });
 });

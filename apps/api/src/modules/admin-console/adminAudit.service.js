@@ -24,6 +24,8 @@ const SAFE_VALUE_KEYS = Object.freeze([
   'amount', 'outcome', 'simulated', 'reference', 'rate', 'value', 'consultationFee',
   // suspensions
   'cancelledAppointments', 'refundRequests',
+  // booking policy (Admin › Settings)
+  'paymentHoldMinutes', 'followUpDeadlineHours', 'maxFreeReschedules', 'freeRescheduleMinHours', 'fullRefundMinHours', 'partialRefundMinHours',
 ]);
 
 /** Keys that hold an id: shown only as a short reference. */

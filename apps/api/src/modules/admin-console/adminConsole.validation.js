@@ -42,3 +42,19 @@ export const adminAuditQuerySchema = z
     ...page,
   })
   .strict();
+
+/* ------------------------------------------------------------ settings */
+
+const wholeNumber = z.number().int();
+/** All six booking rules are sent together (ranges are checked by settings/bookingPolicy.js). */
+export const bookingPolicySchema = z
+  .object({
+    paymentHoldMinutes: wholeNumber,
+    followUpDeadlineHours: wholeNumber,
+    maxFreeReschedules: wholeNumber,
+    freeRescheduleMinHours: wholeNumber,
+    fullRefundMinHours: wholeNumber,
+    partialRefundMinHours: wholeNumber,
+    confirm: z.literal(true, { message: 'Confirm the change' }),
+  })
+  .strict();
