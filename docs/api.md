@@ -1,0 +1,472 @@
+# API
+
+- **Base URL:** `http://localhost:$PORT` (default `PORT` is 4000; the current `.env` sets 5000). In development the web app calls `/api/...` and Vite proxies it.
+- **Versioning:** feature endpoints live under `/api/v1`. `/api/health` is unversioned.
+- **Format:** JSON request and response bodies. Successful responses are `{ "data": ... }`.
+- **Errors:** every error is `{ "error": { "code": string, "message": string, "details"?: any } }`, where `code` is stable and machine-readable. Validation errors (`400 VALIDATION_ERROR`) list `details: [{ path, message }]`; submitted values are never echoed back.
+- **Auth:** send `Authorization: Bearer <accessToken>`. See [auth.md](auth.md) for the full design.
+- **Client header:** `X-Fogaan-Client: web | native`. It is required on `/auth/refresh` and `/auth/logout` (CSRF protection), and `native` changes how refresh tokens are delivered.
+
+## Health
+
+### `GET /api/health`
+`200` → `{ "status": "ok", "service": "fogaan-dawo-api", "uptimeSeconds": 12, "timestamp": "…" }`
+
+## Authentication (`/api/v1/auth`)
+
+### Common: the auth result
+
+`register`, `login`, `refresh` and `switch-role` all return:
+
+```json
+{
+  "data": {
+    "accessToken": "eyJ…",
+    "tokenType": "Bearer",
+    "expiresIn": 900,
+    "user": { "id": "…", "fullName": "Amina Cabdi", "email": "amina@example.com", "phone": "+252615550101",
+              "status": "ACTIVE", "preferredLanguage": "so", "timeZone": "Africa/Mogadishu",
+              "emailVerifiedAt": null, "phoneVerifiedAt": null, "lastLoginAt": "…", "createdAt": "…" },
+    "roles": ["PATIENT"],
+    "activeRole": "PATIENT",
+    "profiles": { "patient": { "id": "…" }, "doctor": null },
+    "session": { "id": "…", "expiresAt": "…" },
+    "refreshTokenExpiresAt": "…"
+  }
+}
+```
+
+How the refresh token is delivered:
+
+- **Web clients** (no header, or `X-Fogaan-Client: web`) receive it **only** in the `fd_refresh` cookie: `HttpOnly; SameSite=Strict; Path=/api/v1/auth`, plus `Secure` in production. It is never in the response body.
+- **Native clients** (`X-Fogaan-Client: native`) receive `"refreshToken": "v1.…"` in the body and must keep it in secure storage.
+
+Password hashes are never returned.
+
+### `POST /api/v1/auth/register`
+Creates a **patient** account (user + PATIENT role + patient profile) in one transaction, then signs the user in. It cannot create doctors or admins; unknown fields such as `role` are rejected.
+
+| Field | Rules |
+|---|---|
+| `fullName` | required, 2–160 characters |
+| `email` | optional; trimmed and lower-cased; must be valid |
+| `phone` | optional; international format, normalised to E.164 (`00252 61 555 0101` → `+252615550101`). Local numbers without a country code are rejected. |
+| `password` | 8 to 72 bytes, at least one letter and one number |
+| `passwordConfirmation` | must equal `password` |
+| `preferredLanguage` | optional, `en` or `so` |
+
+At least one of `email` or `phone` is required.
+
+| Status | Meaning |
+|---|---|
+| `201` | Created; returns the auth result |
+| `400` | `VALIDATION_ERROR` |
+| `409` | `EMAIL_TAKEN` or `PHONE_TAKEN` |
+| `429` | `RATE_LIMITED` |
+
+### `POST /api/v1/auth/login`
+Body: `{ "email": "…" | "phone": "…", "password": "…", "role"?: "PATIENT" | "DOCTOR" | "ADMIN" }`. Provide exactly one of `email` or `phone`.
+
+If `role` is omitted, the active role is the least-privileged usable role, in the order PATIENT, DOCTOR, ADMIN.
+
+| Status | Meaning |
+|---|---|
+| `200` | The auth result |
+| `401` | `INVALID_CREDENTIALS`, for a wrong password or an unknown account (identical response and timing, so account existence isn't disclosed) |
+| `403` | `ACCOUNT_SUSPENDED`, `ACCOUNT_DISABLED`, `ACCOUNT_NOT_ACTIVE`, `ROLE_NOT_ASSIGNED`, `ROLE_UNAVAILABLE` (for example a suspended doctor asking for DOCTOR) or `NO_USABLE_ROLE` |
+| `429` | `RATE_LIMITED` |
+
+### `POST /api/v1/auth/refresh`
+Requires the `X-Fogaan-Client` header. Web clients send the cookie; native clients send `{ "refreshToken": "…" }`.
+
+The refresh token is rotated on every call: the old token stops working, and the session keeps its absolute expiry. The active role is preserved unless it's no longer usable, in which case the session falls back to a usable role.
+
+| Status | Meaning |
+|---|---|
+| `200` | The auth result, with a new refresh token |
+| `401` | `REFRESH_TOKEN_INVALID`, `SESSION_REVOKED`, `SESSION_EXPIRED` or `REFRESH_TOKEN_REUSED` |
+| `403` | Account no longer active (the session is revoked), or `CLIENT_HEADER_REQUIRED` |
+
+`REFRESH_TOKEN_REUSED` means an already-rotated token was presented. **The whole session is revoked** and the event is audited.
+
+### `POST /api/v1/auth/logout`
+Requires the `X-Fogaan-Client` header. Ends the current session, identified by the bearer access token or else by the refresh token, and clears the cookie. Idempotent.
+
+`204` → no content.
+
+### `POST /api/v1/auth/logout-all`
+Requires authentication. Revokes **every** session of the user, including this one.
+
+`200` → `{ "data": { "revokedSessions": 3 } }`
+
+### `POST /api/v1/auth/switch-role`
+Requires authentication. Body: `{ "role": "PATIENT" | "DOCTOR" | "ADMIN" }`. Switches the session's active role to another role **already assigned** to the account. It never grants roles.
+
+| Status | Meaning |
+|---|---|
+| `200` | The auth result, with a new access token and a rotated refresh token |
+| `403` | `ROLE_NOT_ASSIGNED` or `ROLE_UNAVAILABLE` |
+| `400` | Unknown role |
+
+### `GET /api/v1/auth/me`
+Requires authentication.
+
+`200` → `{ "data": { "user": {…}, "roles": [...], "activeRole": "PATIENT", "permissions": [...], "profiles": {…}, "session": { "id", "expiresAt" } } }`
+
+### Google sign-in
+
+Server-side OpenID Connect authorization-code flow with PKCE (see [auth.md](auth.md#google-sign-in)). The browser never receives a Google token or the client secret, and no token is ever put in a URL.
+
+#### `GET /api/v1/auth/providers`
+Public. `200` → `{ "data": { "google": { "enabled": true } } }` (`false` when the API is not configured for Google).
+
+#### `POST /api/v1/auth/google/start`
+Public; needs `X-Fogaan-Client`; rate-limited like login. Body (strict, both optional): `{ "next": "/patient/doctors", "language": "en" | "so" }`. `next` must be an internal path; the web app re-checks it against the user's roles.
+
+`200` → `{ "data": { "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth?…" } }`, and sets the one-time `fd_oauth` cookie. The web app then navigates to `authorizationUrl`.
+
+`503 GOOGLE_UNAVAILABLE` when Google is not configured.
+
+#### `POST /api/v1/auth/google/link`
+Authenticated; needs `X-Fogaan-Client`. Body: `{ "language"? }`. Same response as `start`, bound to the signed-in user and session.
+
+| Status | Code | When |
+|---|---|---|
+| `403` | `GOOGLE_ADMIN_NOT_ALLOWED` | The account has the ADMIN role (administrators are password-only) |
+| `409` | `GOOGLE_ALREADY_CONNECTED` | A Google account is already connected |
+| `503` | `GOOGLE_UNAVAILABLE` | Not configured |
+
+#### `GET /api/v1/auth/google/callback`
+Google's redirect target (`GOOGLE_REDIRECT_URI`). Always answers `303` to the web app and clears `fd_oauth`:
+
+| Outcome | Redirect |
+|---|---|
+| Signed in / registered | `/auth/google/complete?next=…` and the normal `fd_refresh` cookie is set |
+| Connected (link) | `/account/security?google=connected` |
+| Sign-in failure | `/login?authError=<CODE>` |
+| Link failure | `/account/security?googleError=<CODE>` |
+
+Codes: `GOOGLE_CANCELLED`, `GOOGLE_FAILED`, `GOOGLE_STATE_INVALID` (missing/forged/expired/replayed attempt), `GOOGLE_EMAIL_UNVERIFIED`, `GOOGLE_EMAIL_EXISTS` (an account with that email exists and Google is not linked to it), `GOOGLE_ALREADY_LINKED` (that Google account belongs to another user), `GOOGLE_ALREADY_CONNECTED`, `GOOGLE_ADMIN_NOT_ALLOWED`, `GOOGLE_LINK_SESSION_INVALID`, `GOOGLE_UNAVAILABLE`, and the usual account codes `ACCOUNT_SUSPENDED`, `ACCOUNT_DISABLED`, `ACCOUNT_NOT_ACTIVE`, `NO_USABLE_ROLE`.
+
+The web page `/auth/google/complete` then calls `POST /auth/refresh` (normal rotation) to get the access token.
+
+#### `GET /api/v1/auth/methods`
+Authenticated. `200` →
+```json
+{ "data": {
+  "password": { "enabled": true },
+  "google": { "available": true, "allowed": true, "connected": true, "email": "name@gmail.com",
+              "connectedAt": "…", "lastUsedAt": "…", "canDisconnect": true } } }
+```
+`allowed` is `false` for administrators. `canDisconnect` is `false` when Google is the only way to sign in.
+
+#### `DELETE /api/v1/auth/google`
+Authenticated; needs `X-Fogaan-Client`. `200` → the same body as `/methods`. `404 GOOGLE_NOT_CONNECTED`; `409 LAST_SIGN_IN_METHOD` when the account has no password.
+
+### Access-token errors (every protected endpoint)
+
+| Status | Code | Meaning |
+|---|---|---|
+| `401` | `TOKEN_MISSING` | No bearer token was sent |
+| `401` | `TOKEN_INVALID` | Bad signature, wrong issuer or audience, or malformed |
+| `401` | `TOKEN_EXPIRED` | The access token has expired; call `/auth/refresh` |
+| `401` | `SESSION_REVOKED` / `SESSION_EXPIRED` | The session behind the token has ended |
+| `403` | `ACCOUNT_SUSPENDED` / `ACCOUNT_DISABLED` / `ACCOUNT_NOT_ACTIVE` | Checked on every request, so a still-valid JWT is not enough |
+| `403` | `ROLE_UNAVAILABLE` / `ROLE_NOT_ASSIGNED` | The token's role is no longer usable, for example a suspended doctor |
+| `403` | `ROLE_REQUIRED` / `PERMISSION_REQUIRED` | RBAC refused the request |
+
+## Administration (`/api/v1/admin`)
+
+All routes require an authenticated session whose **active role is ADMIN** and which has the `roles:assign` permission.
+
+### `POST /api/v1/admin/users/:userId/roles`
+Body: `{ "role": "ADMIN" }`. Only ADMIN can be granted here: PATIENT comes from registration, and DOCTOR only from approving a doctor application (see below). The grant is audited.
+
+| Status | Meaning |
+|---|---|
+| `201` | `{ "data": { "userId": "…", "roles": [...] } }` |
+| `400` | Not ADMIN, or invalid `userId` |
+| `401` / `403` | Not authenticated, or not acting as ADMIN |
+| `404` | User not found |
+| `409` | `ROLE_ALREADY_ASSIGNED` |
+
+## Doctor management
+
+Doctors register as an ordinary account (PATIENT role) and then apply. **The DOCTOR role is granted only when an admin approves the application.**
+
+Lifecycle (`doctor_profiles.verification_status`, mirrored by `verification_requests.status`):
+
+```
+NOT_SUBMITTED (draft) ──submit──▶ PENDING ──start-review──▶ UNDER_REVIEW
+        ▲                            │                          │
+        └──── edit + resubmit ◀── REJECTED ◀──reject (reason)───┤
+                                     approve ──▶ VERIFIED (+ DOCTOR role)
+```
+
+### `GET /api/v1/specialties`
+Public. Active specialties: `{ "data": [{ "id", "nameEn", "nameSo", "description" }] }`.
+
+### Applicant (`/api/v1/doctor-application`)
+Requires a session with the `doctor-application:manage:own` permission (PATIENT or DOCTOR active role).
+
+| Method and path | Purpose |
+|---|---|
+| `GET /` | The caller's application (`data: null` before the first save). Includes `status`, `editable`, `completion { percent, missing, readyToSubmit }`, current `documents`, `documentHistory`, `history` (requests and reviews) and `rejectionReason`. Storage keys are never returned. |
+| `PUT /` | Create or update the draft. Body (strict): `professionalName` 3–160, `specialtyId`, `licenceNumber` 3–60 (`A-Z 0-9 . / -` and space), `licenceCountry`, `consultationFee` 5–200 USD (≤ 2 decimals), `bio` 50–2000, `yearsExperience?` 0–60, `languages` (≥ 1 of `so en ar sw am om fr it`). Only while `NOT_SUBMITTED` or `REJECTED`, otherwise `409 APPLICATION_LOCKED`. |
+| `POST /documents/:documentType` | Upload a new version of `MEDICAL_LICENSE`, `IDENTITY_PROOF` or `QUALIFICATION`. The body is the raw file (`Content-Type: application/octet-stream`), the display name goes in `X-File-Name` (URI-encoded). Max 5 MB (`413`). Type is detected from the file's bytes — PDF, JPEG or PNG — never from the name or MIME type (`415 FILE_TYPE_NOT_ALLOWED`); empty files `400 FILE_EMPTY`. Rate-limited (`UPLOAD_RATE_LIMIT_MAX`, default 30 per 15 min). |
+| `GET /documents/:documentId/file` | Download one of the caller's own documents. Sent as an attachment with `Content-Security-Policy: default-src 'none'; sandbox` and `nosniff`. Another user's document is `404`. |
+| `POST /submit` | Submit for verification. `409 APPLICATION_INCOMPLETE` (with `details.missing`) unless every required item, including the medical licence, is present. Creates a `PENDING` verification request and notifies admins. |
+
+### Doctor (`/api/v1/doctors`)
+
+`GET /me` — active role DOCTOR with `doctor-profile:read:own`: the approved profile shown on the doctor dashboard (status, specialty, fee, languages, documents, completion).
+
+## Admin doctor management (`/api/v1/admin/doctors`)
+Active role ADMIN with the `doctors:manage` permission.
+
+| Method and path | Purpose |
+|---|---|
+| `GET /?tab=all\|verified\|pending\|rejected\|suspended&q=&page=&pageSize=` | Registered doctors (drafts excluded) with verification and account status, specialty, fee, licence, languages, contact details and, for suspended doctors, the latest suspension (reason, when, by whom, from the audit log). `counts` per tab; `q` searches name, email and licence number. |
+| `POST /:doctorId/suspend` | Body `{ "reason" }` (10–500 chars, required). Calls the existing `suspendDoctor` service: account SUSPENDED, future appointments cancelled with full refund requests, patients notified, one `SUSPEND` audit entry. `409 DOCTOR_ALREADY_SUSPENDED`; `403 SELF_ACTION_FORBIDDEN` for the admin's own doctor profile; `404` for drafts or unknown ids. The doctor loses DOCTOR access on the very next request and leaves public discovery. |
+
+## Appointments — patient (`/api/v1/appointments`)
+Active role PATIENT with `appointments:manage:own`. The patient is always the signed-in user; ids of other people's appointments are `404`. Writes are rate-limited (`BOOKING_RATE_LIMIT_MAX`, default 30 per 15 min).
+
+| Method and path | Purpose |
+|---|---|
+| `POST /` | Body `{ slotId, reason? }` (strict — no price or status from the client). Reserves the slot through `reserveSlot`: slot row locked, doctor must be verified + active, `PENDING_PAYMENT` with a 10-minute hold, slot HELD. `409 SLOT_UNAVAILABLE` if taken (one active booking per slot is also enforced by a unique index); `403 SELF_BOOKING_FORBIDDEN`. Returns the appointment with `holdExpiresAt` and `serverTime` for the countdown. |
+| `GET /?scope=upcoming\|past` | The patient's appointments. An unpaid hold past its deadline is shown as `EXPIRED`. |
+| `GET /:id` | Details: doctor, time, fee, payment (found through the reschedule chain), refunds, status history, and `actions` — the server-computed cancellation refund preview and whether the free reschedule is allowed (with the blocker). |
+| `POST /:id/cancel` | Body `{ reason? }`. Unpaid: released, no refund. Paid: refund request per the approved policy — more than 24 h before 100 %, 2–24 h 50 %, under 2 h none. The slot is offered again. |
+| `POST /:id/reschedule` | Body `{ slotId }`. One free reschedule, only for a CONFIRMED appointment more than 24 h ahead, to an open slot of the same doctor: a linked new CONFIRMED appointment (`originalAppointmentId`, paid by the original payment), the original becomes `RESCHEDULED` and its slot is released. `409 RESCHEDULE_NOT_ALLOWED` with `details.blocker` (`NOT_CONFIRMED`, `ALREADY_RESCHEDULED`, `TOO_LATE`). |
+
+## Appointments — doctor (`/api/v1/doctors/me/appointments`)
+Active role DOCTOR with `appointments:manage:doctor`: `GET /?scope=`, `GET /:id` (patient name, never contact details) and `POST /:id/cancel` with a required `reason` (10–500). A doctor cancellation is always a full refund; the slot is withdrawn and the patient notified.
+
+## Simulated payments and refunds (DEMO — no real provider, no real money)
+
+Providers `EVC_PLUS`, `ZAAD` and `EDAHAB` are **simulated adapters** (`apps/api/src/adapters/payment/`) behind one interface (`validateWallet`, `charge`, `checkStatus`, `refund`); a real provider later replaces one entry in the registry. The **server** decides each outcome from documented demo wallet numbers (last four digits `0001` fail, `0002` stays pending, `0003` pending then approved, `0004` refund fails, anything else succeeds); the client never sends an amount, a status or an outcome.
+
+| Method and path | Purpose |
+|---|---|
+| `GET /api/v1/appointments/:id/checkout` | Reservation, payment so far, methods, demo numbers, `serverTime` (patient's own only). |
+| `POST /api/v1/appointments/:id/payments` | Body `{ provider, wallet }` + required `Idempotency-Key` header (a repeat returns the first result, `replayed: true`). Appointment row locked; outcome `SUCCESS` (appointment CONFIRMED, ledger PAYMENT = COMMISSION + DOCTOR_EARNING, earning, slot BOOKED), `FAILED` (retry allowed while the hold is valid), `PENDING` (never confirms), or `EXPIRED` (hold over → Phase 4 expiry, slot released). `409 PAYMENT_ALREADY_SUCCEEDED`, `PAYMENT_PENDING`, `APPOINTMENT_NOT_PAYABLE`; `400 WALLET_INVALID`. Every attempt is audited with a unique `EVC-/ZAAD-/EDH-DEMO-…` reference. |
+| `POST /api/v1/appointments/:id/payments/refresh` | Re-asks the simulated provider about a PENDING attempt (or expires it with the reservation). |
+| `GET /api/v1/payments` | The patient's payments, attempts and refunds. |
+| `GET /api/v1/payments/:paymentId/receipt` | DEMO receipt PDF (owner only; successful payments only — `409 RECEIPT_UNAVAILABLE`). |
+
+Admin (`/api/v1/admin/finance`, ADMIN + `finance:manage`): `GET /overview` (simulated revenue, refunds, net, placeholder commission from the platform setting, pending/failed counts, by method), `GET /payments?status=&provider=&q=` (q: reference, patient or doctor), `GET /payments/:id` (attempts, append-only ledger, refunds, audit history), `GET /payments/:id/receipt`, `GET /refunds?status=&q=`, `POST /refunds/:id/process` (REQUESTED → PROCESSING claimed under a row lock, simulated refund, then the existing `completeRefund` / `failRefund`; `409 REFUND_NOT_REQUESTED` on a second attempt), `POST /refunds/:id/retry` (a FAILED refund requested again for the same amount, never above what remains refundable).
+
+Refund amounts follow the booking policy (patient > 24 h 100 %, 2–24 h 50 %, < 2 h none; doctor cancellation 100 %). Unpaid holds are released by the sweep in `server.js` (`HOLD_SWEEP_INTERVAL_SECONDS`, default 60), which also closes their open payment (attempt `EXPIRED`, payment `CANCELLED`).
+
+## Doctor availability (`/api/v1/doctors/me/availability`)
+
+Active role DOCTOR with `availability:manage:own`. The doctor is always the signed-in user; no doctor id is accepted. Reads work for any doctor; **every change requires a verified, active doctor** (`403 DOCTOR_NOT_BOOKABLE` for pending, rejected or suspended profiles — e.g. during licence re-verification). Changes are rate-limited (`AVAILABILITY_RATE_LIMIT_MAX`, default 60 per 15 min) and audited.
+
+**Time model.** Weekly hours are wall-clock times (`HH:MM`, 24 h) in the schedule's IANA zone (e.g. `Africa/Mogadishu`). Every stored instant — slots and blocks — is UTC. Each change re-plans the doctor's slots for the next 28 days in the same transaction.
+
+| Method and path | Purpose |
+|---|---|
+| `GET /` | `{ canManage, timeZone, slotDurationMinutes, horizonDays, rules: [{ id, dayOfWeek (0 = Sun), startTime, endTime, slotDurationMinutes, timeZone }], blocks: [{ id, startAt, endAt, reason }] }` (blocks that have not ended). |
+| `GET /calendar?from=YYYY-MM-DD&days=7&tz=` | The doctor's slots (every status) and blocks for `days` civil days starting `from`, grouped by date **in `tz`** (default: the schedule zone). |
+| `PUT /schedule` | Replace the weekly schedule ("Save changes"). Body: `{ timeZone, slotDurationMinutes: 20 \| 30, days: [{ dayOfWeek, periods: [{ startTime, endTime }] }] }`. Up to 4 periods per day (gaps between them are breaks); periods may not overlap and must fit at least one consultation. Unchanged periods keep their rule; removed ones are deactivated (kept for history). Response includes `slots: { created, removed }`. |
+| `DELETE /rules/:ruleId` | Remove one weekly period (soft). Another doctor's rule is `404`. |
+| `POST /blocks` | Block whole days `{ kind: "DAYS", timeZone, startDate, endDate, reason? }` (≤ 90 days) or a period `{ kind: "PERIOD", timeZone, date, startTime, endTime, reason? }`. Converted to UTC using the zone. `409 BLOCK_OVERLAP`, `400 BLOCK_IN_PAST`; at most one year ahead. Open slots inside are withdrawn; held/booked slots are kept and counted in `keptBooked`. |
+| `DELETE /blocks/:blockId` | Remove a block that has not ended (past blocks stay as history, `409`). Another doctor's block is `404`. |
+
+**Slot generation rules:** future only; never inside a blocked period; never overlapping another slot (also enforced by the `availability_slots_no_overlap` exclusion constraint) or an active appointment; held/booked slots and slots with appointment history are never replaced; re-running changes nothing (idempotent). On daylight-saving days, wall times that do not exist are skipped, ambiguous times use the earlier instant, and a slot that would span the change is skipped.
+
+**Daily job:** `npm run slots:sync` rolls the 28-day window forward for every verified doctor and withdraws unbooked slots of doctors who are no longer verified + active. It goes through `db-guard` (on production it needs `ALLOW_PRODUCTION_DB=true`).
+
+## Public doctor directory (`/api/v1/doctors`)
+
+No login. Only doctors that are VERIFIED, ACTIVE and whose account is ACTIVE are ever returned; others are `404`. Responses contain public fields only — never licence numbers, documents, verification records, email, phone or user ids. Rate-limited per IP (`PUBLIC_RATE_LIMIT_MAX`, default 300 per 5 min).
+
+| Method and path | Purpose |
+|---|---|
+| `GET /?q=&specialtyId=&language=&minFee=&maxFee=&sort=&page=&pageSize=` | Search by doctor name or specialty (English or Somali), filter by specialty, language and fee range. `sort`: `rating` (default), `priceLow`, `priceHigh`, `reviews`, `soonest`. Items: `{ id, name, specialty, consultationFee, currency, languages, yearsExperience, verified, rating, reviewCount, nextAvailableAt }`. Unknown query keys are rejected. |
+| `GET /:doctorId` | Public profile: the above plus `bio`, `verifiedSince` (month), `timeZone` (the doctor's schedule zone) and `slotDurationMinutes`. |
+| `GET /:doctorId/slots?from=&days=7&tz=` | Open (AVAILABLE, future) slots grouped by civil date **in the viewer's zone `tz`**: `{ timeZone, doctorTimeZone, from, days: [{ date, slots: [{ id, startAtUtc, endAtUtc }] }] }`. Browsing never creates a booking or payment. |
+
+### Admin verification (`/api/v1/admin/doctor-applications`)
+Active role ADMIN with the `doctors:verify` permission.
+
+| Method and path | Purpose |
+|---|---|
+| `GET /?tab=pending\|verified\|rejected` | Applications per tab (pending includes `UNDER_REVIEW`) plus `counts` for all three tabs. Drafts are never listed. |
+| `GET /:doctorId` | Full application including applicant contact details, documents, previous versions and history. |
+| `GET /:doctorId/documents/:documentId/file` | Secure document download (same headers as above). |
+| `POST /:doctorId/start-review` | `PENDING → UNDER_REVIEW`. |
+| `POST /:doctorId/approve` | Body `{ "notes"? }`. Sets VERIFIED, grants the DOCTOR role, notifies the applicant. |
+| `POST /:doctorId/reject` | Body `{ "reason" }` (10–1000 chars, shown to the applicant). No role is granted; the applicant may edit and resubmit. |
+
+Decisions: `403 SELF_REVIEW_FORBIDDEN` when the admin is the applicant; `409 INVALID_STATUS_TRANSITION` for an already-decided application. Every save, upload, submission, decision and role grant is written to `audit_logs`; earlier requests, reviews and document versions are never overwritten.
+
+## Planned modules
+
+Not implemented yet: `appointments` (booking, rescheduling) · `consultations` · `prescriptions` · `payments` · `messages` · `records` · `admin` (reports, audit-log views).
+
+The database services for several of these already exist in `apps/api/src/modules` (see [database.md](database.md)); their HTTP routes come with each module.
+
+## Notifications (`/api/v1/notifications`)
+
+Any signed-in user (patient, doctor or admin); every call acts on the caller's own notifications only (another user's id is `404`). Writes need `X-Fogaan-Client`. Notifications are created only by backend services, inside the transaction of the event, with a per-user event key so the same event is never stored twice. Text is rendered when read, in `lang` (`en` | `so`) and the reader's time zone `tz` (times are stored in UTC). Email and SMS are not used.
+
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/?lang&tz&unread=true&limit=1..50&cursor` | Newest first; `{ items, nextCursor, unreadCount }`. Items: `{ id, kind, type, title, body, url, read, readAt, createdAt }` |
+| `GET` | `/unread-count` | `{ unreadCount }` |
+| `GET` | `/stream?lang&tz` | Server-Sent Events: `ready`, `notification` (`{ item, unreadCount }`), `sync` (`{ unreadCount }`). Bearer auth; closes after 10 min, clients reconnect |
+| `PATCH` | `/:id` | `{ "read": true | false }` |
+| `POST` | `/read-all` | Marks all as read |
+| `DELETE` | `/:id` | Deletes one notification |
+| `GET` / `PUT` | `/preferences` | `{ inAppEnabled, pushEnabled, remindersEnabled, push: { available, publicKey, devices } }`. `inAppEnabled` affects optional notifications (reminders) only; essential ones are always kept |
+| `POST` | `/push-subscriptions` | Body: the browser's `PushSubscription.toJSON()`. HTTPS endpoints of known push services only (`400 PUSH_ENDPOINT_NOT_ALLOWED`); `503 PUSH_UNAVAILABLE` without VAPID keys. One row per browser; several devices per user |
+| `DELETE` | `/push-subscriptions` | `{ "endpoint" }` — this device only |
+
+Push payloads contain only a title, a short text (names and times), an in-app link and a tag — never diagnoses, notes, cancellation reasons or records. Subscriptions answered with `404`/`410` by the push service are deleted.
+
+**Reminders** (`appointment_reminders`): 24 h, 1 h and 10 min before every CONFIRMED appointment, for patient and doctor. The API's reminder sweep (every minute) plans missing rows, cancels those of appointments that are no longer confirmed, and sends due ones after re-checking the appointment status. A reminder missed by more than its grace window (3 h / 20 min / 7 min) is skipped rather than sent late.
+
+## Video consultations (`/api/v1/consultations`)
+
+One-to-one, peer-to-peer WebRTC calls between an appointment's own patient and its assigned doctor.
+Signed-in PATIENT or DOCTOR (active role), `ownConsultationsJoin` permission, `X-Fogaan-Client` header on
+writes. Someone else's appointment/consultation answers **404**. Nothing is recorded.
+
+**Eligibility (enforced on every join, ticket and admit):** appointment `CONFIRMED`/`WAITING`/`IN_PROGRESS`;
+covered by a `SUCCEEDED` payment (following reschedule links) with no requested/processing/paid refund;
+inside the join window **[start − 10 min, end + 15 min]** (UTC, inclusive); doctor verified and active.
+Errors (409): `CONSULTATION_NOT_JOINABLE`, `CONSULTATION_NOT_PAID`, `CONSULTATION_TOO_EARLY`,
+`CONSULTATION_TOO_LATE` (details: `opensAt`, `closesAt`), `CONSULTATION_ENDED`; 403 `DOCTOR_NOT_ACTIVE`,
+`CONSULTATION_DOCTOR_ONLY`; 409 `PATIENT_NOT_WAITING`.
+
+| Method | Path | Who | Effect |
+|---|---|---|---|
+| POST | `/:appointmentId/join` | patient, doctor | Creates the consultation once (row lock + unique key), records `PATIENT_JOINED`/`DOCTOR_JOINED`; a patient enters the waiting room (appointment `CONFIRMED → WAITING`, doctor notified once). Returns `{ consultation, signaling: { ticket, expiresAt, path }, iceServers }`. |
+| POST | `/:consultationId/ticket` | patient, doctor | A fresh signaling ticket (reconnect). |
+| GET | `/:consultationId` | patient, doctor | State: `status`, `admission` (`WAITING`/`REJECTED`/`IN_CALL`/`ENDED`/`NOT_JOINED`), window, names, `startedAt`, `durationSeconds`, `endedBy`, presence, `serverTime`; the doctor also gets the note. |
+| POST | `/:consultationId/admit` | doctor | `IN_PROGRESS`, `admittedAt`, `startedAt` (once), `DOCTOR_ADMITTED` + `CALL_STARTED`, appointment `IN_PROGRESS`, patient notified. |
+| POST | `/:consultationId/reject` | doctor | `DOCTOR_REJECTED`; nothing is completed or cancelled; patient notified; the patient may wait again. |
+| POST | `/:consultationId/leave` | patient, doctor | `PATIENT_LEFT`/`DOCTOR_LEFT`; the call is **not** ended. |
+| POST | `/:consultationId/end` | doctor | `COMPLETED`, `endedAt`, server `durationSeconds`, `endedBy = DOCTOR`, `CALL_ENDED`, appointment `COMPLETED`, note locked 24 h after completion (existing rule), patient notified. |
+| PUT | `/:consultationId/note` | doctor | Existing `saveNote` rules (fields `complaint`, `assessment`, `diagnosis`, `advice`, `share*`). |
+
+Appointment details (`GET /api/v1/appointments/:id`, `GET /api/v1/doctors/me/appointments/:id`) include
+`actions.join: { allowed, blocker, opensAt, closesAt }` and `consultation: { id, status }`.
+
+### Signaling WebSocket — `/api/v1/consultations/signal`
+
+- No query string is accepted (tickets/tokens never go in URLs). Browser `Origin` must be in `CORS_ORIGIN`.
+- First message within 5 s: `{ "type": "auth", "ticket": "…" }`. Tickets are 256-bit random, single-use, valid
+  60 s, bound to user + role + consultation (only a hash is kept, in memory). The user must still be that
+  consultation's participant. Close codes: 4001 bad/expired/reused ticket, 4003 not a participant,
+  4008 rate limited, 4009 replaced by a newer connection of the same participant, 4010 consultation ended,
+  1009 frame over 64 KB.
+- Server → client: `ready`, `presence {patient, doctor}`, `state-changed` (re-read GET state), `negotiate`
+  (doctor: create a new offer), relayed messages, `error {code}`.
+- Client → server (relayed only after admission, rebuilt from validated fields): `offer` (doctor), `answer`
+  (patient), `candidate`, `media {audio, video}`, `restart` (patient asks for an ICE restart), `ping`.
+- Unexpected socket closes record `PARTICIPANT_DISCONNECTED`; the next connection records
+  `PARTICIPANT_RECONNECTED`. SDP and candidates are never logged or stored.
+- In-process hub: running several API instances needs sticky sessions or a shared pub/sub.
+
+### Deployment notes
+
+- HTTPS is required for camera/microphone access (except `localhost`).
+- The reverse proxy must forward WebSocket upgrades for `/api/v1/consultations/signal` (e.g. nginx
+  `proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade";`)
+  and allow long-lived connections (idle timeout > 30 s; the server pings every 20 s).
+- Media flows browser-to-browser (UDP). **STUN only:** calls fail on some carrier-grade NAT / restrictive
+  networks; users then see a clear message with Try again / Audio only. A TURN server (e.g. coturn on 443/TLS
+  with short-lived credentials) is the fix and plugs into `apps/api/src/config/webrtc.js`.
+
+## Admin finance (`/api/v1/admin/finance`)
+
+ADMIN role + `finance:manage`; writes also need `X-Fogaan-Client`. All payments are **simulated**
+(EVC Plus / ZAAD / eDahab demo adapters) — no real money moves and no provider is contacted.
+
+**Date ranges** (every report): `preset` = `today` | `7d` | `30d` | `month` | `all` | `custom`
+(+ `fromDate`, `toDate` as `YYYY-MM-DD`, inclusive, max 366 days) and `tz` (IANA zone, default
+`Africa/Mogadishu`). Ranges are half-open `[from, to)` on calendar days in that zone. Error
+`FINANCE_RANGE_INVALID` (400).
+
+**Definitions.** Gross payment volume = successful payments by `paid_at` (not net revenue). Refunds =
+refunds paid out by `processed_at`. Platform commission / doctor earnings = the split **saved when each
+payment succeeded** (`doctor_earnings`, rate in `appointments.commission_rate_snapshot`) minus the share
+reversed by refunds, allocated cumulatively from that same snapshot. The current commission setting is
+never used for history.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/overview?preset…` | Gross volume, refunds, net after refunds, platform & doctor earnings, payment counts by status, open/failed/rejected refunds, by method, current rate. No range = all time. |
+| GET | `/payments?status&provider&q&preset…&page&pageSize` | Search by payment id, appointment id, provider reference, patient or doctor name. Each item has `refundState` (`NONE`/`REQUESTED`/`PARTIAL`/`FULL`). |
+| GET | `/payments/:id` | Attempts, appointment, saved `allocation` (gross, rate, commission, doctor earning), ledger, audit. |
+| GET | `/refunds?status&q&preset…` | Status `REQUESTED` (pending) / `PROCESSING` / `SUCCEEDED` (completed) / `FAILED` / `REJECTED`. |
+| GET | `/refunds/:id` | Refund, original payment (+ remaining refundable), appointment, decision history. |
+| POST | `/refunds/:id/process` | Approve: simulated payout (existing rules); records reviewer. Concurrent approvals → one 200, one 409. |
+| POST | `/refunds/:id/reject` | `{ reason }` (10–500 chars). `REQUESTED` → `REJECTED`, reviewer/time/reason stored and audited, patient notified, amount released. |
+| POST | `/refunds/:id/retry` | A failed refund is requested again. |
+| GET | `/doctor-earnings?preset…&q&page` | Per doctor: paid & completed consultations, gross, refunds, refund deductions, commission, net. **Calculated only — no payouts exist** (`paidOut: null`). |
+| GET | `/reports?preset…` | Revenue summary, by method, refund summary, commission (incl. by saved rate), doctor earnings, daily (≤ 92 days) and monthly trends. |
+| GET | `/reports/export?type=summary\|payments\|refunds\|doctor-earnings&preset…` | CSV (UTF-8 BOM). No contact details or wallet numbers; formula-looking cells are prefixed with `'`. |
+| GET | `/settings` | Current commission (fraction + percent, who/when) and change history. |
+| PUT | `/settings/commission` | `{ percent: "0"–"100" (≤ 2 decimals), confirm: true }`. Audited (old, new, admin). Applies to **new reservations only**. `COMMISSION_INVALID` / `COMMISSION_UNCHANGED`. |
+
+**Ledger.** Append-only (`financial_transactions`, unique `reference`). A successful payment posts
+PAYMENT = PLATFORM_COMMISSION + DOCTOR_EARNING (metadata: appointment, patient, doctor, rate, source).
+A refund paid out posts REFUND plus two ADJUSTMENT entries (`PLATFORM_COMMISSION_REVERSAL`,
+`DOCTOR_EARNING_REVERSAL`) linked to the original references. `doctor_earnings` amounts and
+`appointments.commission_rate_snapshot` are protected by database triggers.
+
+## Profiles (Phase 9)
+
+Every private endpoint acts on the signed-in user only — no user, patient or entry owner id is accepted from
+the client. Writes need `X-Fogaan-Client`. Request bodies are strict (unknown keys → `400 VALIDATION_ERROR`),
+so roles, statuses, verification fields, email and phone can never be changed through them.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/me/profile` | PATIENT role. Personal details, emergency contact, address, account (created, status, roles, sign-in methods), `completeness` (informational only), `nameLocked`. |
+| PATCH | `/api/v1/me/profile` | PATIENT role. Any of `fullName`, `preferredLanguage`, `dateOfBirth` (YYYY-MM-DD / null), `sex` (`FEMALE`/`MALE`/`PREFER_NOT_TO_SAY`/null), `address` ({city, addressLine} / null), `emergencyContact` ({name, relationship, phone E.164} / null). Email and phone are read-only (no change-verification flow yet). `409 NAME_LOCKED_BY_DOCTOR_PROFILE` when a submitted/verified doctor tries to rename. Audit stores field names only. |
+| GET | `/api/v1/me/photo` | Own photo (any role), `image/jpeg`, `Cache-Control: private, no-store`. |
+| PUT | `/api/v1/me/photo` | Raw bytes (≤ 2 MB). JPEG/PNG only, detected from the bytes; 64–6000 px per side, ≤ 24 MP; decoded and re-encoded with sharp to a 512×512 JPEG with **no EXIF/XMP/IPTC/ICC** (GPS and camera data removed). Stored privately under a generated key; the previous file is deleted. `413`, `415 PHOTO_TYPE_NOT_ALLOWED`, `422 PHOTO_INVALID` / `PHOTO_DIMENSIONS`. |
+| DELETE | `/api/v1/me/photo` | Removes the photo. |
+| GET | `/api/v1/me/medical-history?includeArchived=true` | PATIENT role, own history only. Each entry: type, title, description, recordedAt, `source` (PATIENT/DOCTOR), `authorName` (doctor entries), `canEdit`, `canArchive`, `archivedAt`. |
+| POST | `/api/v1/me/medical-history` | `{ entryType, title, description?, recordedAt? }`. Types: ALLERGY, CONDITION, MEDICATION, SURGERY, FAMILY_HISTORY, OTHER. |
+| PATCH | `/api/v1/me/medical-history/entries/:entryId` | Own (patient-written) entries only. Doctor-written → `403 HISTORY_DOCTOR_ENTRY_READ_ONLY`; archived → `409 HISTORY_ENTRY_ARCHIVED`; another patient's → `404`. |
+| POST | `/api/v1/me/medical-history/entries/:entryId/archive` | Archive any entry in the own history (including doctor-written). Archived entries are frozen. |
+| GET | `/api/v1/doctors/me/profile` | DOCTOR role (verified). Professional details, `qualifications`, photo, `verification` (status, verifiedAt, latest request, re-verification), licence (private), `listedPublicly`, `completeness`. |
+| PATCH | `/api/v1/doctors/me/profile` | DOCTOR role, verified + active. Any of `bio`, `qualifications`, `yearsExperience`, `consultationFee` (new bookings only — appointments keep `fee_amount`), `languages`. Name, specialty, licence and verification fields are refused. `409 DOCTOR_PROFILE_LOCKED`. |
+| POST | `/api/v1/doctors/me/licence?licenceNumber&licenceCountry&confirm=true` | Raw bytes (PDF/JPEG/PNG ≤ 5 MB). Replaces the licence **and starts Option A re-verification** in one transaction: PENDING + new verification request, DOCTOR role removed (PATIENT kept), weekly availability rules deactivated, open slots withdrawn; admins notified. |
+| GET | `/api/v1/doctors/:doctorId/photo` | Public, listed (verified + active) doctors only; otherwise 404. |
+| POST | `/api/v1/auth/password` | `{ currentPassword, newPassword, newPasswordConfirmation }`. Rate-limited, re-authenticates with the current password, revokes every **other** session (the current one keeps working and rotating), audited without the password. `400 CURRENT_PASSWORD_INVALID`, `409 PASSWORD_NOT_SET` (Google-only accounts). |
+
+Public doctor responses (`/api/v1/doctors`, `/api/v1/doctors/:id`) now include `photoUrl` (relative to the API
+base, e.g. `/v1/doctors/<id>/photo?v=…`) and, on the detail, `qualifications`. Contact details, licence data,
+documents, verification notes and storage keys are never included.
+
+**Medical history integrity (database trigger `medical_history_entries_protect`).** Rows cannot be deleted;
+`source`, `created_by_user_id`, `medical_history_id`, `consultation_id` and `created_at` cannot change; an
+archived row cannot be updated. Consultation notes and prescriptions remain separate records.
+
+**Re-verification and availability.** Revoking doctor privileges (licence replacement or rejection) also
+deactivates the weekly availability rules, so neither approval nor the daily slot sync republishes old
+availability: the doctor publishes again after re-approval.
+
+### Assigned doctor: read-only patient information (Phase 9 addition)
+
+Rule (one function, `authorizeAssignedDoctor`): the signed-in doctor is VERIFIED + ACTIVE and `appointmentId`
+is **that doctor's own appointment with that patient** in `CONFIRMED`, `WAITING`, `IN_PROGRESS` or
+`COMPLETED`. Knowing a patient id grants nothing; every denial is the same `403 PATIENT_ACCESS_DENIED`
+(`DOCTOR_NOT_ACTIVE` for a suspended/unverified doctor). Responses are `Cache-Control: private, no-store`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/doctors/me/patients/:patientId/medical-history?appointmentId=` | `{ appointment: { id, status, activeConsultation }, patient: { id, name, age, sex, photoUrl, emergencyContact }, entries }`. `emergencyContact` only while the appointment is `IN_PROGRESS`. Never address, email, phone or account data. Entries are read-only (`canEdit` only on the doctor's own entries; never `canArchive`). Audited: `OTHER` / `PatientMedicalHistoryAccess` with `{ action: VIEW_MEDICAL_HISTORY, doctorId, patientId, appointmentId, consultationId, appointmentStatus, emergencyContactShown, entryCount }` — no medical content. |
+| GET | `/api/v1/doctors/me/patients/:patientId/photo?appointmentId=` | The patient's photo for the assigned doctor (same rule), `image/jpeg`, audited as `VIEW_PATIENT_PHOTO`. |
+
+The doctor's appointment list/detail (`/api/v1/doctors/me/appointments…`) and the consultation state now
+include `patient.id` and `patient.photoUrl` (the gated route above, only for eligible statuses; `null`
+otherwise). Patient-facing responses are unchanged. Doctors still add entries / edit their own entries only
+through the existing medical-history service rules (no new write endpoint).
