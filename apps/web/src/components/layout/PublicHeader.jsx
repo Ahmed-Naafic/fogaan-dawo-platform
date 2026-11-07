@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { Link } from 'react-router';
 import Logo from '@/components/shared/Logo';
 import Button from '@/components/ui/Button';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
@@ -8,12 +9,17 @@ import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/cn';
 
 const LINKS = [
-  { href: '#home', label: 'landing.nav.home' },
-  { href: '#doctors', label: 'landing.nav.doctors' },
-  { href: '#specialties', label: 'landing.nav.specialties' },
-  { href: '#how-it-works', label: 'landing.nav.howItWorks' },
-  { href: '#about', label: 'landing.nav.about' },
+  { href: '/#home', label: 'landing.nav.home' },
+  { href: '/doctors', label: 'landing.nav.doctors' },
+  { href: '/#specialties', label: 'landing.nav.specialties' },
+  { href: '/#how-it-works', label: 'landing.nav.howItWorks' },
+  { href: '/#about', label: 'landing.nav.about' },
 ];
+
+/** Section anchors on the landing page use <a>; real pages use client-side navigation. */
+function NavLink({ href, ...props }) {
+  return href.includes('#') ? <a href={href} {...props} /> : <Link to={href} {...props} />;
+}
 
 export default function PublicHeader() {
   const { t } = useI18n();
@@ -38,9 +44,9 @@ export default function PublicHeader() {
         <Logo />
         <nav className="ml-auto hidden items-center gap-7 lg:flex" aria-label={t('nav.main')}>
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="text-[13.5px] font-semibold text-ink/80 transition-colors hover:text-primary">
+            <NavLink key={l.href} href={l.href} className="text-[13.5px] font-semibold text-ink/80 transition-colors hover:text-primary">
               {t(l.label)}
-            </a>
+            </NavLink>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2.5 lg:ml-6">
@@ -68,9 +74,9 @@ export default function PublicHeader() {
         <div className="border-t border-line bg-surface px-4 pb-5 pt-2 shadow-float lg:hidden">
           <nav className="flex flex-col" aria-label={t('nav.main')}>
             {LINKS.map((l) => (
-              <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="border-b border-line py-3.5 text-[15px] font-semibold">
+              <NavLink key={l.href} href={l.href} onClick={() => setOpen(false)} className="border-b border-line py-3.5 text-[15px] font-semibold">
                 {t(l.label)}
-              </a>
+              </NavLink>
             ))}
           </nav>
           <div className="mt-4 flex items-center gap-2.5">

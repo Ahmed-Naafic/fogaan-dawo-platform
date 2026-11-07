@@ -12,6 +12,7 @@ import { useI18n } from '@/lib/i18n';
 import { formatTime } from '@/lib/format';
 import { cn } from '@/lib/cn';
 import { getDoctorStats, getTodaysAppointments } from '@/services';
+import ProfessionalProfileCard from '../components/ProfessionalProfileCard';
 
 const STATUS = {
   inSession: { tone: 'teal', icon: Video, chip: 'bg-primary-soft text-primary' },
@@ -155,6 +156,11 @@ export default function DoctorDashboard() {
         }
         wave
       />
+
+      {/* Real verification + professional profile (one responsive card for both layouts) */}
+      <div className="mb-4 lg:mb-6">
+        <ProfessionalProfileCard />
+      </div>
 
       {/* Mobile */}
       <div className="space-y-4 lg:hidden">

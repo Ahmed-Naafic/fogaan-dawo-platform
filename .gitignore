@@ -15,3 +15,6 @@ coverage/
 .DS_Store
 Thumbs.db
 *.log
+
+# Private uploaded documents (local storage adapter) — never commit
+storage/

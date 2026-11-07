@@ -18,9 +18,23 @@
     "build": "npm run build -w @fogaan-dawo/web",
     "preview": "npm run preview -w @fogaan-dawo/web",
     "start:api": "npm run start -w @fogaan-dawo/api",
-    "test": "node --test \"tests/**/*.test.js\"",
+    "test": "node --env-file-if-exists=.env --env-file-if-exists=.env.development --test --test-concurrency=1 \"tests/**/*.test.js\"",
     "test:unit": "node --test \"tests/unit/**/*.test.js\"",
-    "test:integration": "node --test \"tests/integration/**/*.test.js\"",
-    "check:i18n": "node scripts/check-i18n.mjs"
+    "test:integration": "node --env-file-if-exists=.env --env-file-if-exists=.env.development --test --test-concurrency=1 \"tests/integration/**/*.test.js\"",
+    "test:db": "node --env-file-if-exists=.env --env-file-if-exists=.env.development --test --test-concurrency=1 \"tests/integration/db/**/*.test.js\"",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "db:validate": "prisma validate",
+    "db:format": "prisma format",
+    "db:generate": "prisma generate",
+    "db:status": "node --env-file-if-exists=.env scripts/db-guard.mjs && prisma migrate status",
+    "db:migrate:deploy": "node --env-file-if-exists=.env scripts/db-guard.mjs && prisma migrate deploy",
+    "db:seed": "node --env-file-if-exists=.env scripts/db-guard.mjs seed && prisma db seed",
+    "db:studio": "node --env-file-if-exists=.env scripts/db-guard.mjs && prisma studio",
+    "slots:sync": "node --env-file-if-exists=.env scripts/db-guard.mjs && node --env-file-if-exists=.env scripts/sync-slots.mjs",
+    "test:e2e": "node --env-file-if-exists=.env --env-file-if-exists=.env.development tests/e2e/auth-flows.e2e.mjs"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "node prisma/seed.js"
   }
 }

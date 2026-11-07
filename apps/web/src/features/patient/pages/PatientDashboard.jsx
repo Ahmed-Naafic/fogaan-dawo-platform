@@ -21,7 +21,7 @@ import IconTile from '@/components/ui/IconTile';
 import { Input } from '@/components/ui/Input';
 import StatCard from '@/components/ui/StatCard';
 import { getSpecialtyIcon } from '@/components/shared/SpecialtyIcon';
-import BookingSheet from '@/features/appointments/components/BookingSheet';
+import { useToast } from '@/components/ui/Toast';
 import { useI18n } from '@/lib/i18n';
 import { formatDate, greetingKey } from '@/lib/format';
 import { getNextAppointment, getPatientStats, getSpecialties } from '@/services';
@@ -191,7 +191,7 @@ export default function PatientDashboard() {
   const { t } = useI18n();
   const stats = getPatientStats();
   const apt = getNextAppointment();
-  const [rescheduling, setRescheduling] = useState(false);
+  const notify = useToast(); // rescheduling arrives with appointment booking (next phase)
 
   return (
     <>
@@ -219,12 +219,10 @@ export default function PatientDashboard() {
           <StatCard icon={FolderOpen} tone="blue" label={t('patient.stats.records')} value={stats.records} />
         </div>
         <div className="grid gap-6 xl:grid-cols-[1.15fr_1fr]">
-          <NextAppointmentCard apt={apt} onReschedule={() => setRescheduling(true)} />
+          <NextAppointmentCard apt={apt} onReschedule={() => notify(t('booking.rescheduleNotice'))} />
           <FindDoctorCard />
         </div>
       </div>
-
-      {rescheduling && <BookingSheet doctor={apt.doctor} onClose={() => setRescheduling(false)} />}
     </>
   );
 }

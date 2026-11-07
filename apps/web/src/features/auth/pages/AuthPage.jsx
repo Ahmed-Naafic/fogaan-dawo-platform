@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
-import { ArrowLeft, Eye, EyeOff, Lock, Mail, ShieldCheck, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router';
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, Mail, ShieldCheck, User } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
@@ -10,17 +10,12 @@ import ThemeToggle from '@/components/shared/ThemeToggle';
 import { useToast } from '@/components/ui/Toast';
 import { useI18n } from '@/lib/i18n';
 import onboarding from '@/assets/images/onboarding.jpg';
-
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true">
-      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9Z" />
-      <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7Z" />
-      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A11.9 11.9 0 0 1 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44Z" />
-      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9Z" />
-    </svg>
-  );
-}
+import { useAuth } from '../AuthProvider';
+import GoogleIcon from '../components/GoogleIcon';
+import { googleErrorKey, googleNextParam } from '../googleAuth';
+import * as authApi from '../services/authApi';
+import { errorMessageKey, fieldsForError, validateAuthForm } from '../authForm';
+import { roleLabelKey, safeNext } from '../roles';
 
 function AppleIcon() {
   return (
@@ -30,16 +25,101 @@ function AppleIcon() {
   );
 }
 
-const ROLE_HOME = { patient: '/patient', doctor: '/doctor', admin: '/admin' };
+// Public account types. ADMIN is never offered: admins are granted by an administrator only.
+// Both choices create the same base account (the API never accepts a role at registration). Choosing
+// DOCTOR then continues to the doctor application; the DOCTOR role is granted only when an
+// administrator approves it.
+const REGISTER_ACCOUNT_TYPES = ['PATIENT', 'DOCTOR'];
+const EMPTY_FORM = { fullName: '', identifier: '', password: '', passwordConfirmation: '' };
+const INVALID_FIELD = 'border-danger/70 focus:border-danger focus:ring-danger/10';
 
 export default function AuthPage({ mode: initialMode = 'login' }) {
-  const { t } = useI18n();
-  const navigate = useNavigate();
+  const { t, lang } = useI18n();
   const notify = useToast();
+  const auth = useAuth();
   const [params] = useSearchParams();
   const [mode, setMode] = useState(initialMode);
   const [showPw, setShowPw] = useState(false);
-  const [role, setRole] = useState(params.get('role') === 'doctor' ? 'doctor' : 'patient');
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [invalid, setInvalid] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const next = params.get('next');
+  const [accountType, setAccountType] = useState(params.get('role') === 'doctor' ? 'DOCTOR' : 'PATIENT');
+  const doctorSelected = mode === 'register' && accountType === 'DOCTOR';
+  const [destination, setDestination] = useState(null);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  // Outcome code from Google's redirect (only a code travels in the URL, never a token).
+  const [googleError, setGoogleError] = useState(() => params.get('authError'));
+
+  // Tell the user once if they were sent here because their session ended.
+  useEffect(() => {
+    if (auth.endedReason && next) notify(t('authErrors.SESSION_EXPIRED'), 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on arrival
+  }, []);
+
+  // One redirect only: where this sign-in should lead (set on success), otherwise the user's dashboard
+  // for an already signed-in visitor. A separate navigate() call would race with this redirect.
+  if (destination) return <Navigate to={destination} replace />;
+  if (auth.status === 'authenticated' && !submitting) {
+    return <Navigate to={safeNext(next, auth.session)} replace />;
+  }
+
+  const field = (name) => ({
+    value: values[name],
+    onChange: (e) => {
+      setValues((v) => ({ ...v, [name]: e.target.value }));
+      if (invalid[name]) setInvalid((s) => ({ ...s, [name]: false }));
+    },
+    'aria-invalid': invalid[name] || undefined,
+    inputClassName: invalid[name] ? INVALID_FIELD : undefined,
+  });
+
+  const switchMode = (m) => {
+    setMode(m);
+    setInvalid({});
+  };
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    if (submitting) return;
+    const { errors, payload } = validateAuthForm(mode, values, { language: lang });
+    if (payload === null) {
+      setInvalid(Object.fromEntries(Object.keys(errors).map((k) => [k, true])));
+      notify(t(Object.values(errors)[0]), 'error');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = mode === 'login' ? await auth.login(payload) : await auth.register(payload);
+      // Registering as a doctor continues to the doctor application (the account starts as a patient).
+      setDestination(mode === 'register' && accountType === 'DOCTOR' ? '/patient/doctor-application?welcome=1' : safeNext(next, result));
+    } catch (error) {
+      setInvalid(Object.fromEntries(fieldsForError(error).map((k) => [k, true])));
+      notify(t(errorMessageKey(error)), 'error');
+      setSubmitting(false);
+    }
+  }
+
+  async function continueWithGoogle() {
+    if (googleBusy) return;
+    setGoogleBusy(true);
+    setGoogleError(null);
+    try {
+      // Registering as a doctor continues to the doctor application, exactly like the form does.
+      const after = doctorSelected ? '/patient/doctor-application?welcome=1' : googleNextParam(next);
+      const { authorizationUrl } = await authApi.startGoogleSignIn({ next: after, language: lang });
+      window.location.assign(authorizationUrl);
+    } catch (error) {
+      setGoogleError(error.code);
+      setGoogleBusy(false);
+    }
+  }
+
+  const passwordToggle = (
+    <button type="button" onClick={() => setShowPw((v) => !v)} className="rounded-lg p-1.5 text-muted hover:text-ink" aria-label={showPw ? t('auth.hidePassword') : t('auth.showPassword')}>
+      {showPw ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+    </button>
+  );
 
   return (
     <div className="grid min-h-[100dvh] bg-bg lg:grid-cols-2">
@@ -76,9 +156,16 @@ export default function AuthPage({ mode: initialMode = 'login' }) {
             <p className="mt-1 text-sm text-muted">{mode === 'login' ? t('auth.welcomeBack') : t('auth.createAccount')}</p>
           </div>
 
+          {googleError && (
+            <div role="alert" data-google-error={googleError} className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/5 px-3.5 py-3 text-xs leading-relaxed text-danger">
+              <AlertCircle className="mt-px h-4 w-4 shrink-0" />
+              <span>{t(googleErrorKey(googleError))}</span>
+            </div>
+          )}
+
           <Tabs
             value={mode}
-            onChange={setMode}
+            onChange={switchMode}
             className="mb-6 p-1.5"
             items={[
               { value: 'login', label: t('auth.login') },
@@ -86,27 +173,32 @@ export default function AuthPage({ mode: initialMode = 'login' }) {
             ]}
           />
 
-          <form
-            className="space-y-3.5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate(ROLE_HOME[role]);
-            }}
-          >
-            {mode === 'register' && <Input icon={User} placeholder={t('auth.fullName')} aria-label={t('auth.fullName')} autoComplete="name" />}
-            <Input icon={Mail} placeholder={t('auth.emailOrPhone')} aria-label={t('auth.emailOrPhone')} autoComplete="username" />
+          <form className="space-y-3.5" onSubmit={onSubmit} noValidate aria-busy={submitting || undefined}>
+            {mode === 'register' && (
+              <Input icon={User} name="fullName" placeholder={t('auth.fullName')} aria-label={t('auth.fullName')} autoComplete="name" {...field('fullName')} />
+            )}
+            <Input icon={Mail} name="identifier" placeholder={t('auth.emailOrPhone')} aria-label={t('auth.emailOrPhone')} autoComplete="username" {...field('identifier')} />
             <Input
               icon={Lock}
+              name="password"
               type={showPw ? 'text' : 'password'}
               placeholder={t('auth.password')}
               aria-label={t('auth.password')}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              trailing={
-                <button type="button" onClick={() => setShowPw((v) => !v)} className="rounded-lg p-1.5 text-muted hover:text-ink" aria-label={showPw ? t('auth.hidePassword') : t('auth.showPassword')}>
-                  {showPw ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
-                </button>
-              }
+              trailing={passwordToggle}
+              {...field('password')}
             />
+            {mode === 'register' && (
+              <Input
+                icon={Lock}
+                name="passwordConfirmation"
+                type={showPw ? 'text' : 'password'}
+                placeholder={t('auth.confirmPassword')}
+                aria-label={t('auth.confirmPassword')}
+                autoComplete="new-password"
+                {...field('passwordConfirmation')}
+              />
+            )}
             {mode === 'login' && (
               <div className="text-right">
                 <button type="button" onClick={() => notify(t('auth.phaseNotice'))} className="text-xs font-bold text-primary hover:underline">
@@ -115,25 +207,38 @@ export default function AuthPage({ mode: initialMode = 'login' }) {
               </div>
             )}
 
-            <fieldset className="rounded-xl border border-dashed border-line p-3">
-              <legend className="px-1.5 text-2xs font-semibold uppercase tracking-wider text-muted">{t('auth.demoAccess')}</legend>
-              <div className="grid grid-cols-3 gap-1.5">
-                {Object.keys(ROLE_HOME).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRole(r)}
-                    aria-pressed={role === r}
-                    className={`rounded-lg py-2 text-xs font-semibold transition-colors ${role === r ? 'bg-primary-soft text-primary ring-1 ring-primary/40' : 'text-muted hover:bg-subtle'}`}
-                  >
-                    {t(`roles.${r}`)}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+            {mode === 'register' && (
+              <fieldset className="rounded-xl border border-dashed border-line p-3">
+                <legend className="px-1.5 text-2xs font-semibold uppercase tracking-wider text-muted">{t('auth.accountType')}</legend>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {REGISTER_ACCOUNT_TYPES.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setAccountType(r)}
+                      aria-pressed={accountType === r}
+                      className={`rounded-lg py-2 text-xs font-semibold transition-colors ${accountType === r ? 'bg-primary-soft text-primary ring-1 ring-primary/40' : 'text-muted hover:bg-subtle'}`}
+                    >
+                      {t(roleLabelKey(r))}
+                    </button>
+                  ))}
+                </div>
+                {doctorSelected && (
+                  <p id="doctor-signup-note" role="note" className="mt-2.5 px-1 text-xs leading-relaxed text-muted">
+                    {t('auth.doctorSignupNote')}
+                  </p>
+                )}
+              </fieldset>
+            )}
 
-            <Button type="submit" size="lg" className="w-full">
-              {mode === 'login' ? t('auth.login') : t('auth.register')}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={submitting}
+              aria-describedby={doctorSelected ? 'doctor-signup-note' : undefined}
+            >
+              {submitting ? t('auth.pleaseWait') : mode === 'login' ? t('auth.login') : t('auth.register')}
             </Button>
           </form>
 
@@ -141,7 +246,7 @@ export default function AuthPage({ mode: initialMode = 'login' }) {
             <span className="h-px flex-1 bg-line" /> {t('auth.orContinue')} <span className="h-px flex-1 bg-line" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="secondary" onClick={() => notify(t('auth.phaseNotice'))} aria-label="Google">
+            <Button variant="secondary" onClick={continueWithGoogle} disabled={googleBusy} aria-label={t('googleAuth.continue')} aria-busy={googleBusy || undefined}>
               <GoogleIcon /> Google
             </Button>
             <Button variant="secondary" onClick={() => notify(t('auth.phaseNotice'))} aria-label="Apple">

@@ -18,7 +18,7 @@
     { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ],
   "shortcuts": [
-    { "name": "Find a Doctor", "url": "/patient/doctors", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Find a Doctor", "url": "/doctors", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Doctor Dashboard", "url": "/doctor", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }
