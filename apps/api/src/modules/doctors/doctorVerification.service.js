@@ -1,4 +1,4 @@
-import { getPrivateObject } from '../../adapters/storage/privateStorage.js';
+import { getPrivateObject, signedDownloadUrl } from '../../adapters/storage/privateStorage.js';
 import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { lockRow, withTransaction } from '../../utils/transaction.js';
@@ -56,6 +56,15 @@ export async function getApplicationDocumentFile({ doctorId, documentId }) {
   const doc = profile && profile.verificationStatus !== 'NOT_SUBMITTED' ? await doctorRepository.findDocumentForDownload(prisma, { doctorId, documentId }) : null;
   if (!doc) throw ApiError.notFound('Document not found');
   return { buffer: await getPrivateObject(doc.fileKey), fileName: doc.fileName, mimeType: doc.mimeType };
+}
+
+/** Short-lived signed URL for an administrator reviewing a submitted application (audited first). */
+export async function getApplicationDocumentUrl({ doctorId, documentId, actorUserId }) {
+  const profile = await doctorRepository.findDoctorById(prisma, doctorId);
+  const doc = profile && profile.verificationStatus !== 'NOT_SUBMITTED' ? await doctorRepository.findDocumentForDownload(prisma, { doctorId, documentId }) : null;
+  if (!doc) throw ApiError.notFound('Document not found');
+  await auditRepository.createAuditLog(prisma, { actorUserId, action: 'OTHER', entityType: 'DoctorDocument', entityId: doc.id, newValues: { action: 'SIGNED_URL_ISSUED', by: 'ADMIN', doctorId } });
+  return signedDownloadUrl(doc.fileKey, { downloadName: doc.fileName });
 }
 
 /**

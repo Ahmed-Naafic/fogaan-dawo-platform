@@ -11,6 +11,11 @@ export async function get(req, res) {
   res.json({ data: await verificationService.getApplication(req.params.doctorId) });
 }
 
+export async function documentUrl(req, res) {
+  res.set('Cache-Control', 'private, no-store');
+  res.json({ data: await verificationService.getApplicationDocumentUrl({ ...req.params, actorUserId: req.auth.user.id }) });
+}
+
 export async function downloadDocument(req, res) {
   sendPrivateDocument(res, await verificationService.getApplicationDocumentFile(req.params));
 }

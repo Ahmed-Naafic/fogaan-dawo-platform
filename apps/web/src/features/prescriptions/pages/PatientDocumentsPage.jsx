@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ClipboardList, FolderOpen, NotebookText, Search, Upload } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
@@ -37,11 +37,13 @@ export default function PatientDocumentsPage() {
   const [archiving, setArchiving] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  const latest = useRef(0); // ignore responses superseded by a newer load (e.g. toggling "show archived")
   const load = useCallback(() => {
+    const id = (latest.current += 1);
     setData(undefined);
     Promise.all([listMyPrescriptions({ pageSize: 50 }), listMySummaries(), listMyDocuments({ includeArchived: showArchived })])
-      .then(([rx, summaries, docs]) => setData({ rx: rx.items, summaries: summaries.items, docs: docs.items }))
-      .catch(() => setData(null));
+      .then(([rx, summaries, docs]) => id === latest.current && setData({ rx: rx.items, summaries: summaries.items, docs: docs.items }))
+      .catch(() => id === latest.current && setData(null));
   }, [showArchived]);
   useEffect(load, [load]);
 

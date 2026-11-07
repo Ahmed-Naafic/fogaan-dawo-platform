@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import sharp from 'sharp';
-import { getPrivateObject, putPrivateObject, removePrivateObject } from '../../adapters/storage/privateStorage.js';
+import { getPrivateObject, putPrivateObject, removePrivateObject, signedDownloadUrl } from '../../adapters/storage/privateStorage.js';
+import { consumeUploadIntent, createUploadIntent } from '../storage/uploadIntent.service.js';
 import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { detectDocumentType, safeDisplayName } from '../../utils/fileType.js';
@@ -135,6 +136,7 @@ export async function uploadDocument(auth, consultationId, { buffer, fileName, c
   if (!ELIGIBLE_APPOINTMENT_STATUSES.includes(c.appointment.status)) {
     throw ApiError.conflict('Documents can be shared only for a consultation that took place', { status: c.appointment.status }, DocumentErrorCode.notEligible);
   }
+  if (!DOCUMENT_CATEGORIES.includes(category)) throw ApiError.badRequest('Unknown document category');
   const type = await validateMedicalDocument(buffer);
   const fileKey = `medical-documents/${consultationId}/${randomUUID()}.${type.ext}`;
   await putPrivateObject(fileKey, buffer);
@@ -165,6 +167,41 @@ export async function uploadDocument(auth, consultationId, { buffer, fileName, c
     await removePrivateObject(fileKey).catch(() => {});
     throw error;
   }
+}
+
+/**
+ * Large-file upload, step 1 (the path used by the web app; required on Vercel, whose request bodies are
+ * limited to ~4.5 MB): authorise the participant and the consultation, then issue a staging upload URL.
+ */
+export async function initiateUpload(auth, consultationId, { category, description, fileName, size, contentType }) {
+  const { c } = await participation(prisma, auth, consultationId);
+  if (!ELIGIBLE_APPOINTMENT_STATUSES.includes(c.appointment.status)) {
+    throw ApiError.conflict('Documents can be shared only for a consultation that took place', { status: c.appointment.status }, DocumentErrorCode.notEligible);
+  }
+  return createUploadIntent(auth, {
+    purpose: 'medical-document',
+    target: { consultationId },
+    meta: { category, description: description ?? null, fileName: String(fileName ?? '').slice(0, 300) },
+    declared: { size, contentType },
+    maxBytes: MAX_MEDICAL_DOCUMENT_BYTES,
+  });
+}
+
+/**
+ * Step 2: claim the staged bytes, then the normal upload path re-authorises the caller and validates the
+ * real bytes (type from content, structure, size, SHA-256) before storing and recording the document.
+ */
+export async function finalizeUpload(auth, consultationId, uploadToken) {
+  await participation(prisma, auth, consultationId); // authorise before touching any staged bytes
+  const { buffer, meta } = await consumeUploadIntent(auth, uploadToken, { purpose: 'medical-document', target: { consultationId } });
+  return uploadDocument(auth, consultationId, { buffer, fileName: meta.fileName, category: meta.category, description: meta.description ?? undefined });
+}
+
+/** Short-lived signed download URL — only after the access check and an audit entry. */
+export async function getDownloadUrl(auth, id) {
+  const d = await accessibleDocument(prisma, auth, id);
+  await auditRepository.createAuditLog(prisma, { actorUserId: auth.user.id, action: 'OTHER', entityType: 'MedicalDocument', entityId: id, newValues: { action: 'SIGNED_URL_ISSUED', by: auth.activeRole } });
+  return signedDownloadUrl(d.fileKey, { downloadName: d.fileName });
 }
 
 export async function listForConsultation(auth, consultationId, { includeArchived = false } = {}) {

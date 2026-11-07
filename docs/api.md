@@ -10,7 +10,23 @@
 ## Health
 
 ### `GET /api/health`
-`200` → `{ "status": "ok", "service": "fogaan-dawo-api", "uptimeSeconds": 12, "timestamp": "…" }`
+`200` → `{ "status": "ok", "service": "fogaan-dawo-api", "uptimeSeconds": 12, "timestamp": "…" }` (liveness, no database access)
+
+### `GET /api/health/ready`
+Readiness: auth configuration is valid and the database answers within 5 s.
+`200` → `{ "status": "ready", "checks": { "config": true, "database": true }, "timestamp": "…" }`; otherwise `503` with `"status": "not_ready"`. Only check names and booleans are returned.
+
+## Scheduled jobs (`/api/internal/jobs`)
+
+These are for a scheduler (Vercel Cron or an external one), not for clients. Every request needs `Authorization: Bearer <CRON_SECRET>`. If `CRON_SECRET` is unset or shorter than 32 characters, they return `503 JOBS_DISABLED`. Wrong credentials return `401`.
+
+- `GET /api/internal/jobs/tick` runs expire-holds, reminders and notifications, in that order.
+- `GET /api/internal/jobs/expire-holds`, `/reminders` and `/notifications` each run one job.
+
+The response is `200` (or `500` if any job failed): `{ "ok": true, "results": { "<job>": { "ok": true, …counts, "ms": 120 } } }`. See [deployment-vercel.md](deployment-vercel.md).
+
+### Video signaling on serverless
+On the Vercel deployment, `/api/v1/consultations/signal` returns `503 SIGNALING_UNAVAILABLE`, because the WebSocket hub runs only in `src/server.js`.
 
 ## Authentication (`/api/v1/auth`)
 
@@ -470,3 +486,44 @@ The doctor's appointment list/detail (`/api/v1/doctors/me/appointments…`) and 
 include `patient.id` and `patient.photoUrl` (the gated route above, only for eligible statuses; `null`
 otherwise). Patient-facing responses are unchanged. Doctors still add entries / edit their own entries only
 through the existing medical-history service rules (no new write endpoint).
+
+### Doctor workspace: my patients and my earnings (`/api/v1/doctors/me`)
+
+DOCTOR role. Responses are `Cache-Control: private, no-store`. Rate limit: `PATIENT_RECORDS_RATE_LIMIT_MAX`
+per 15 minutes.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/doctors/me/patients?q=&page=&pageSize=` | Permission `patient-records:read:assigned`; doctor must be VERIFIED + ACTIVE. Only patients with at least one appointment with **this** doctor in `CONFIRMED`, `WAITING`, `IN_PROGRESS` or `COMPLETED` (cancelled/expired/rescheduled/no-show bookings never list a patient). `q` matches the name. Items `{ id, name, photoUrl, appointmentId, appointmentStatus, appointments, completedConsultations, lastVisitAt, nextVisitAt }` — `appointmentId` is the newest eligible appointment (what the photo URL and the Patient Information panel use). Patients with a visit ahead come first (soonest first), then by most recent visit. No age, sex or contact details (those stay behind the audited Patient Information route). `{ items, total, page, pageSize }`. |
+| GET | `/api/v1/doctors/me/patients/:patientId` | Same rule; otherwise `403 PATIENT_ACCESS_DENIED`. `{ patient: <list item>, appointments: [{ id, status, startAtUtc, endAtUtc, reason, bookingType, rescheduled }] }` — every appointment the doctor has had with the patient (any status), newest first. |
+| GET | `/api/v1/doctors/me/earnings?preset=&fromDate=&toDate=&tz=&status=&page=&pageSize=` | Permission `earnings:read:own`. The doctor's earning snapshots for consultations paid in the range (same range fields as admin finance; default `30d`). `status` ∈ `PENDING`, `AVAILABLE`, `PARTIALLY_REFUNDED`, `REFUNDED`. Each item `{ id, appointmentId, appointmentStatus, appointmentStartAt, patientName, paidAt, status, gross, commission, refunds, refundDeduction, net, currency }`; `refundDeduction` is the doctor's share of successful refunds (same allocation as admin finance). `{ simulated: true, currency, range, totals, statusCounts, items, total, page, pageSize, payoutsSupported: false }`. Calculated earnings only — no payouts exist. |
+
+## File storage (Supabase Storage / local driver)
+
+`STORAGE_DRIVER=local|supabase` (default `local`). Neon stays the database; Supabase is object storage only.
+Supabase credentials (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) are read by the API only; the API refuses to
+start if the key appears in a `VITE_*` variable. Private buckets (no anon/authenticated policies):
+`fd-verification` (doctor-documents/, 5 MB), `fd-photos` (avatars/, 1 MB), `fd-prescriptions` (prescriptions/,
+2 MB), `fd-medical` (medical-documents/, 10 MB), `fd-staging` (unvalidated uploads, removed after 24 h).
+Keys are unchanged and server-generated; uploads never overwrite.
+
+**Small files stay on the API path:** profile photos (re-encoded), licence replacement, prescription PDFs
+(streamed with the SHA-256 check on every download) and public doctor photos (listed doctors only).
+
+**Large files — staged upload (works within Vercel's ~4.5 MB body limit):**
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/v1/consultations/:id/documents/upload-url` | Participant only. `{ fileName, size, contentType, category, description? }` → `{ uploadToken, upload: { url, method, headers }, expiresAt, maxBytes }`. Declared size/type checked. |
+| PUT | `upload.url` | Browser sends the bytes to a random staging path (Supabase signed upload URL, or `/v1/storage/local/upload/:token` with the local driver; one use). |
+| POST | `/api/v1/consultations/:id/documents/finalize` | `{ uploadToken }`. Re-authorises, then the token must match the same user, role and consultation; the staged object is claimed (single use — concurrent finalisations: one wins), then validated (type from bytes, structure, ≤ 10 MB, SHA-256) and stored + recorded + audited + notified. Refused bytes are not kept. `UPLOAD_NOT_FOUND`, `UPLOAD_ALREADY_FINALISED`, `UPLOAD_INTENT_INVALID`. |
+| POST | `/api/v1/doctor-application/documents/:type/upload-url`, `/finalize` | Same flow for the applicant's verification documents (5 MB); stores `doctor_documents.sha256`. |
+
+**Signed downloads (issued only after the access check, each audited as `SIGNED_URL_ISSUED`, valid 60 s):**
+`GET /api/v1/medical-documents/:id/download-url`, `GET /api/v1/doctor-application/documents/:id/url`,
+`GET /api/v1/admin/doctor-applications/:doctorId/documents/:id/url` → `{ url, expiresAt }` (absolute for
+Supabase; relative to the API base for the local driver: `/v1/storage/local/download/:token`).
+
+Maintenance: `npm run storage:cleanup-staging` (removes staging uploads older than 24 h);
+`npm run storage:setup-dev` (creates/verifies the private buckets in the **development** project only).
+See `docs/vercel-realtime.md` for WebSocket/SSE/scheduler constraints on Vercel.

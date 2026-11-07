@@ -22,13 +22,19 @@ import { createMeRouter } from './modules/profiles/profile.routes.js';
 import { createPrescriptionRouter, createPublicPrescriptionRouter } from './modules/prescriptions/prescription.routes.js';
 import { createMedicalDocumentRouter } from './modules/medical-documents/medicalDocument.routes.js';
 import { createAdminRecordsRouter } from './modules/admin-records/adminRecords.routes.js';
+import { createLocalStorageRouter } from './modules/storage/storage.routes.js';
+import { createJobsRouter } from './modules/jobs/jobs.routes.js';
+import { SIGNAL_PATH } from './modules/consultations/consultation.signaling.js';
+import { ApiError } from './utils/ApiError.js';
 
 /**
  * Builds the Express app without listening, so tests can mount it on an ephemeral port.
  * Request flow: routes → middleware → controllers → services → repositories → Prisma.
  * Options (tests): { corsOrigins, authRateLimit: { limit, windowMs } }.
+ * `signalingAvailable: false` (serverless entry): the WebSocket signaling hub is not running in this
+ * process, so its path answers 503 SIGNALING_UNAVAILABLE instead of a misleading 404.
  */
-export function createApp({ corsOrigins, authRateLimit } = {}) {
+export function createApp({ corsOrigins, authRateLimit, signalingAvailable = true } = {}) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -43,6 +49,12 @@ export function createApp({ corsOrigins, authRateLimit } = {}) {
   });
 
   app.use('/api/health', healthRoutes);
+  app.use('/api/internal/jobs', createJobsRouter());
+  if (!signalingAvailable) {
+    app.all(SIGNAL_PATH, (_req, _res, next) =>
+      next(new ApiError(503, 'Video signaling is not available on this deployment', undefined, 'SIGNALING_UNAVAILABLE')),
+    );
+  }
   app.use('/api/v1/auth', createAuthRouter({ rateLimit: authRateLimit }));
   app.use('/api/v1/admin/users', createAdminUserRouter());
   app.use('/api/v1/specialties', createSpecialtyRouter());
@@ -60,6 +72,7 @@ export function createApp({ corsOrigins, authRateLimit } = {}) {
   app.use('/api/v1/public/prescriptions', createPublicPrescriptionRouter());
   app.use('/api/v1/medical-documents', createMedicalDocumentRouter());
   app.use('/api/v1/admin/medical-records', createAdminRecordsRouter());
+  app.use('/api/v1/storage/local', createLocalStorageRouter());
 
   app.use(notFound);
   app.use(errorHandler);

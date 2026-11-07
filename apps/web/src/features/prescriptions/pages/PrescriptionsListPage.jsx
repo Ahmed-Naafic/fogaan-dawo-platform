@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ChevronRight, ClipboardList } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
@@ -19,12 +19,14 @@ export default function PrescriptionsListPage({ viewer }) {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState(undefined);
+  const latest = useRef(0); // ignore responses of superseded filter/page requests
 
   const load = useCallback(() => {
+    const id = (latest.current += 1);
     setData(undefined);
     (isDoctor ? listDoctorPrescriptions : listMyPrescriptions)({ status: status || undefined, page })
-      .then(setData)
-      .catch(() => setData(null));
+      .then((d) => id === latest.current && setData(d))
+      .catch(() => id === latest.current && setData(null));
   }, [isDoctor, status, page]);
   useEffect(load, [load]);
 

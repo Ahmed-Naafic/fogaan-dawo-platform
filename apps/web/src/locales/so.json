@@ -651,7 +651,13 @@
     "VALIDATION_ERROR": "Fadlan hubi meelaha la calaamadeeyay.",
     "RATE_LIMITED": "Faylal badan ayaa la soo geliyay. Fadlan sug dhowr daqiiqo oo mar kale isku day.",
     "NETWORK_ERROR": "Lagama gaari karo adeegga. Hubi xiriirkaaga oo mar kale isku day.",
-    "GENERIC": "Wax qalad ah ayaa dhacay. Fadlan mar kale isku day."
+    "GENERIC": "Wax qalad ah ayaa dhacay. Fadlan mar kale isku day.",
+    "UPLOAD_INTENT_INVALID": "Soo gelintan lama dhammaystiri karo. Fadlan mar kale dooro faylka.",
+    "UPLOAD_NOT_FOUND": "Faylku ma iman ama wuu dhacay. Fadlan isku day mar kale.",
+    "UPLOAD_ALREADY_FINALISED": "Faylkan horay ayaa loo keydiyay.",
+    "UPLOAD_FAILED": "Soo gelintu ma dhammaan. Hubi xiriirkaaga oo isku day mar kale.",
+    "DOWNLOAD_LINK_INVALID": "Xiriirka soo dejintu wuu dhacay. Fadlan isku day mar kale.",
+    "DOWNLOAD_FAILED": "Soo dejintu ma dhammaan. Fadlan isku day mar kale."
   },
   "verification": {
     "title": "Xaqiijinta dhakhaatiirta",
@@ -1891,7 +1897,13 @@
     "DOCUMENT_ARCHIVED": "Dukumentigan horay ayaa loo kaydiyay.",
     "DOCUMENT_FORBIDDEN": "Bukaanka ama qofka wadaagay keliya ayaa kaydin kara dukumentigan.",
     "CONSULTATION_NOT_ELIGIBLE": "Dukumentiyada waxaa la wadaagi karaa oo keliya la-tashi dhacay.",
-    "DOCUMENT_INTEGRITY": "Dukumentigu wuu ku guuldareystay hubinta saxnaanta, lamana furin."
+    "DOCUMENT_INTEGRITY": "Dukumentigu wuu ku guuldareystay hubinta saxnaanta, lamana furin.",
+    "UPLOAD_INTENT_INVALID": "Soo gelintan lama dhammaystiri karo. Fadlan mar kale dooro faylka.",
+    "UPLOAD_NOT_FOUND": "Faylku ma iman ama wuu dhacay. Fadlan isku day mar kale.",
+    "UPLOAD_ALREADY_FINALISED": "Faylkan horay ayaa loo keydiyay.",
+    "UPLOAD_FAILED": "Soo gelintu ma dhammaan. Hubi xiriirkaaga oo isku day mar kale.",
+    "DOWNLOAD_LINK_INVALID": "Xiriirka soo dejintu wuu dhacay. Fadlan isku day mar kale.",
+    "DOWNLOAD_FAILED": "Soo dejintu ma dhammaan. Fadlan isku day mar kale."
   },
   "docs": {
     "title": "Dukumentiyada caafimaadka",
@@ -2044,5 +2056,43 @@
       "uploaded": "La soo geliyay",
       "archived": "La kaydiyay"
     }
+  },
+  "myPatients": {
+    "title": "Bukaannadayda",
+    "subtitle": "Bukaannada ballan la bixiyay kula yeeshay.",
+    "search": "Ku raadi bukaannada magac",
+    "visits": "{count} la dhammeeyay oo ka mid ah {total} ballan",
+    "next": "Xiga: {when}",
+    "last": "U dambeeyay: {when}",
+    "empty": "Weli bukaan ma jiro. Bukaannadu halkan ayay ka muuqdaan marka ay ballan la bixiyay kula yeeshaan.",
+    "noMatch": "Bukaan ku habboon raadintaada ma jiro.",
+    "error": "Bukaannada lama soo rari karin. Fadlan isku day mar kale.",
+    "inactive": "Akoonkaaga dhakhtar ma shaqaynayo, sidaas darteed macluumaadka bukaanka lama heli karo.",
+    "denied": "Waxaad arki kartaa oo keliya bukaannada ballan la bixiyay kula yeeshay.",
+    "detailSubtitle": "Guudmarka bukaanka",
+    "appointmentsTitle": "Ballamaha bukaankan"
+  },
+  "myEarnings": {
+    "title": "Dakhligayga",
+    "subtitle": "Waxa aad ka heshay la-tashiyada la bixiyay muddada la doortay.",
+    "statusFilter": "Xaaladda dakhliga",
+    "allStatuses": "Dhammaan xaaladaha",
+    "gross": "Lacagaha la-tashiga",
+    "commission": "Komishanka madasha",
+    "deductions": "Ka-goynta lacag-celinta",
+    "net": "Dakhligaaga",
+    "empty": "Muddadan la-tashi la bixiyay ma jiro.",
+    "noPayouts": "Kuwani waa dakhli la xisaabiyay. Lacag-bixintu waa jilid, bixinta dakhliguna weli ma jirto, sidaas darteed lacag lama wareejin.",
+    "note": "Dakhligu wuxuu ku salaysan yahay lacagta iyo komishanka la keydiyay markii la-tashi kasta la bixiyay, laga jaray qaybtaada lacag-celin kasta.",
+    "col": {
+      "consultation": "La-tashi",
+      "status": "Xaalad"
+    }
+  },
+  "earningStatus": {
+    "PENDING": "Sugaya",
+    "AVAILABLE": "Diyaar",
+    "PARTIALLY_REFUNDED": "Qayb ahaan la celiyay",
+    "REFUNDED": "La celiyay"
   }
 }

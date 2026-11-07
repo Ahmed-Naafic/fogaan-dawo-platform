@@ -38,11 +38,13 @@ export const Permission = Object.freeze({
   consultationDocumentsManage: 'medical-documents:manage:participant',
   /** Metadata-only monitoring of prescriptions and medical documents (administrator; no clinical content). */
   medicalRecordsMonitor: 'medical-records:monitor',
+  /** Read one's own calculated consultation earnings (doctor). */
+  ownEarningsRead: 'earnings:read:own',
 });
 
 export const ROLE_PERMISSIONS = Object.freeze({
   PATIENT: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.ownDoctorApplicationManage, Permission.ownAppointmentsManage, Permission.ownConsultationsJoin, Permission.ownMedicalHistoryManage, Permission.ownPrescriptionsRead, Permission.consultationDocumentsManage]),
-  DOCTOR: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.ownDoctorApplicationManage, Permission.ownDoctorProfileRead, Permission.ownAvailabilityManage, Permission.doctorAppointmentsManage, Permission.ownConsultationsJoin, Permission.ownDoctorProfileManage, Permission.assignedPatientRecordsRead, Permission.assignedPrescriptionsWrite, Permission.consultationDocumentsManage]),
+  DOCTOR: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.ownDoctorApplicationManage, Permission.ownDoctorProfileRead, Permission.ownAvailabilityManage, Permission.doctorAppointmentsManage, Permission.ownConsultationsJoin, Permission.ownDoctorProfileManage, Permission.assignedPatientRecordsRead, Permission.assignedPrescriptionsWrite, Permission.consultationDocumentsManage, Permission.ownEarningsRead]),
   ADMIN: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.rolesAssign, Permission.doctorsVerify, Permission.doctorsManage, Permission.financeManage, Permission.medicalRecordsMonitor]),
 });
 

@@ -1,4 +1,6 @@
 import express, { Router } from 'express';
+import { z } from 'zod';
+import { requireClientHeader } from '../../middleware/requireClientHeader.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { requirePermission, requireRole } from '../../middleware/authorize.js';
 import { availabilityRateLimiter, publicRateLimiter, uploadRateLimiter } from '../../middleware/rateLimit.js';
@@ -28,6 +30,7 @@ import {
 import * as verificationController from './doctorVerification.controller.js';
 import { attachDoctorProfileRoutes } from '../profiles/profile.routes.js';
 import { attachDoctorPrescriptionRoutes } from '../prescriptions/prescription.routes.js';
+import { attachDoctorWorkspaceRoutes } from '../doctor-workspace/doctorWorkspace.routes.js';
 
 /** GET /api/v1/specialties — public, for the application form. */
 export function createSpecialtyRouter() {
@@ -35,6 +38,11 @@ export function createSpecialtyRouter() {
   router.get('/', asyncHandler(applicationController.listSpecialties));
   return router;
 }
+
+const uploadInitiateSchema = z
+  .object({ fileName: z.string().trim().min(1).max(300), size: z.number().int().positive(), contentType: z.enum(['application/pdf', 'image/jpeg', 'image/png']) })
+  .strict();
+const uploadFinalizeSchema = z.object({ uploadToken: z.string().min(20).max(4096) }).strict();
 
 /** /api/v1/doctor-application — the signed-in user's OWN application only (no ids from the client). */
 export function createDoctorApplicationRouter() {
@@ -52,6 +60,10 @@ export function createDoctorApplicationRouter() {
     asyncHandler(applicationController.uploadDocument),
   );
   router.get('/documents/:documentId/file', validate({ params: documentIdParamsSchema }), asyncHandler(applicationController.downloadMine));
+  router.get('/documents/:documentId/url', validate({ params: documentIdParamsSchema }), asyncHandler(applicationController.documentUrl));
+  // Large files (browser → storage): authorised initiation, then validated finalisation.
+  router.post('/documents/:documentType/upload-url', uploadRateLimiter(), requireClientHeader, validate({ params: documentTypeParamsSchema, body: uploadInitiateSchema }), asyncHandler(applicationController.initiateUpload));
+  router.post('/documents/:documentType/finalize', uploadRateLimiter(), requireClientHeader, validate({ params: documentTypeParamsSchema, body: uploadFinalizeSchema }), asyncHandler(applicationController.finalizeUpload));
   return router;
 }
 
@@ -78,6 +90,7 @@ export function createDoctorRouter() {
   const publicReads = publicRateLimiter();
   attachDoctorProfileRoutes(router, { publicReads });
   attachDoctorPrescriptionRoutes(router);
+  attachDoctorWorkspaceRoutes(router);
   router.get('/', publicReads, validate({ query: directoryQuerySchema }), asyncHandler(directoryController.search));
   router.get('/:doctorId', publicReads, validate({ params: publicDoctorParamsSchema }), asyncHandler(directoryController.get));
   router.get('/:doctorId/slots', publicReads, validate({ params: publicDoctorParamsSchema, query: publicSlotsQuerySchema }), asyncHandler(directoryController.slots));
@@ -91,6 +104,7 @@ export function createAdminDoctorApplicationRouter() {
   router.get('/', validate({ query: adminListQuerySchema }), asyncHandler(verificationController.list));
   router.get('/:doctorId', validate({ params: doctorIdParamsSchema }), asyncHandler(verificationController.get));
   router.get('/:doctorId/documents/:documentId/file', validate({ params: doctorDocumentParamsSchema }), asyncHandler(verificationController.downloadDocument));
+  router.get('/:doctorId/documents/:documentId/url', validate({ params: doctorDocumentParamsSchema }), asyncHandler(verificationController.documentUrl));
   router.post('/:doctorId/start-review', validate({ params: doctorIdParamsSchema, body: startReviewSchema }), asyncHandler(verificationController.startReview));
   router.post('/:doctorId/approve', validate({ params: doctorIdParamsSchema, body: approveSchema }), asyncHandler(verificationController.approve));
   router.post('/:doctorId/reject', validate({ params: doctorIdParamsSchema, body: rejectSchema }), asyncHandler(verificationController.reject));

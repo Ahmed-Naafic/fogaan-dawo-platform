@@ -31,7 +31,10 @@
     "db:seed": "node --env-file-if-exists=.env scripts/db-guard.mjs seed && prisma db seed",
     "db:studio": "node --env-file-if-exists=.env scripts/db-guard.mjs && prisma studio",
     "slots:sync": "node --env-file-if-exists=.env scripts/db-guard.mjs && node --env-file-if-exists=.env scripts/sync-slots.mjs",
-    "test:e2e": "node --env-file-if-exists=.env --env-file-if-exists=.env.development tests/e2e/auth-flows.e2e.mjs"
+    "test:e2e": "node --env-file-if-exists=.env --env-file-if-exists=.env.development tests/e2e/auth-flows.e2e.mjs",
+    "storage:cleanup-staging": "node --env-file-if-exists=.env scripts/storage-cleanup-staging.mjs",
+    "storage:setup-dev": "node --env-file-if-exists=.env --env-file-if-exists=.env.development scripts/storage-setup-dev.mjs",
+    "test:storage:supabase-dev": "node --env-file-if-exists=.env --env-file-if-exists=.env.development --test tests/integration/storage/supabase-dev.test.js"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",

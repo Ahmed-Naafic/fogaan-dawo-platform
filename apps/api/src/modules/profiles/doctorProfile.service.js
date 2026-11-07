@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { putPrivateObject, removePrivateObject } from '../../adapters/storage/privateStorage.js';
 import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
@@ -120,6 +120,7 @@ export async function replaceMyLicence(auth, { buffer, fileName, licenceNumber, 
       fileName: safeDisplayName(fileName, type.ext),
       mimeType: type.mime,
       fileSize: buffer.length,
+      sha256: createHash('sha256').update(buffer).digest('hex'),
       allowedStatuses: ['VERIFIED'], // checked under the row lock
       actorUserId: auth.user.id,
       licenceDetails: { licenceNumber, licenceCountry },

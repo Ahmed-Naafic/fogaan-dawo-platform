@@ -651,7 +651,13 @@
     "VALIDATION_ERROR": "Please check the highlighted fields.",
     "RATE_LIMITED": "Too many uploads. Please wait a few minutes and try again.",
     "NETWORK_ERROR": "Cannot reach the server. Check your connection and try again.",
-    "GENERIC": "Something went wrong. Please try again."
+    "GENERIC": "Something went wrong. Please try again.",
+    "UPLOAD_INTENT_INVALID": "This upload can't be completed. Please choose the file again.",
+    "UPLOAD_NOT_FOUND": "The upload didn't arrive or has expired. Please try again.",
+    "UPLOAD_ALREADY_FINALISED": "This file was already saved.",
+    "UPLOAD_FAILED": "The upload didn't complete. Check your connection and try again.",
+    "DOWNLOAD_LINK_INVALID": "The download link expired. Please try again.",
+    "DOWNLOAD_FAILED": "The download didn't complete. Please try again."
   },
   "verification": {
     "title": "Doctor verification",
@@ -1891,7 +1897,13 @@
     "DOCUMENT_ARCHIVED": "This document is already archived.",
     "DOCUMENT_FORBIDDEN": "Only the patient or the person who shared it can archive this document.",
     "CONSULTATION_NOT_ELIGIBLE": "Documents can be shared only for a consultation that took place.",
-    "DOCUMENT_INTEGRITY": "The document failed its integrity check and was not opened."
+    "DOCUMENT_INTEGRITY": "The document failed its integrity check and was not opened.",
+    "UPLOAD_INTENT_INVALID": "This upload can't be completed. Please choose the file again.",
+    "UPLOAD_NOT_FOUND": "The upload didn't arrive or has expired. Please try again.",
+    "UPLOAD_ALREADY_FINALISED": "This file was already saved.",
+    "UPLOAD_FAILED": "The upload didn't complete. Check your connection and try again.",
+    "DOWNLOAD_LINK_INVALID": "The download link expired. Please try again.",
+    "DOWNLOAD_FAILED": "The download didn't complete. Please try again."
   },
   "docs": {
     "title": "Medical documents",
@@ -2044,5 +2056,43 @@
       "uploaded": "Uploaded",
       "archived": "Archived"
     }
+  },
+  "myPatients": {
+    "title": "My patients",
+    "subtitle": "Patients who have had a paid appointment with you.",
+    "search": "Search patients by name",
+    "visits": "{count} completed of {total} appointments",
+    "next": "Next: {when}",
+    "last": "Last: {when}",
+    "empty": "No patients yet. Patients appear here once they have a paid appointment with you.",
+    "noMatch": "No patients match your search.",
+    "error": "Patients could not be loaded. Please try again.",
+    "inactive": "Your doctor account is not active, so patient information is unavailable.",
+    "denied": "You can only view patients who have a paid appointment with you.",
+    "detailSubtitle": "Patient overview",
+    "appointmentsTitle": "Appointments with this patient"
+  },
+  "myEarnings": {
+    "title": "My earnings",
+    "subtitle": "What you earned from consultations paid in the selected period.",
+    "statusFilter": "Earning status",
+    "allStatuses": "All statuses",
+    "gross": "Consultation fees",
+    "commission": "Platform commission",
+    "deductions": "Refund deductions",
+    "net": "Your earnings",
+    "empty": "No paid consultations in this period.",
+    "noPayouts": "These are calculated earnings. Payments are simulated and payouts are not available yet, so no money has been transferred.",
+    "note": "Earnings are based on the fee and commission saved when each consultation was paid, minus your share of any refunds.",
+    "col": {
+      "consultation": "Consultation",
+      "status": "Status"
+    }
+  },
+  "earningStatus": {
+    "PENDING": "Pending",
+    "AVAILABLE": "Available",
+    "PARTIALLY_REFUNDED": "Partly refunded",
+    "REFUNDED": "Refunded"
   }
 }

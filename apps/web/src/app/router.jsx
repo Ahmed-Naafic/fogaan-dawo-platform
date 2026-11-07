@@ -10,6 +10,9 @@ import PatientLayout from '@/features/patient/layouts/PatientLayout';
 import PatientDashboard from '@/features/patient/pages/PatientDashboard';
 import DoctorLayout from '@/features/doctor/layouts/DoctorLayout';
 import DoctorDashboard from '@/features/doctor/pages/DoctorDashboard';
+import DoctorPatientsPage from '@/features/doctor/pages/DoctorPatientsPage';
+import DoctorPatientDetailPage from '@/features/doctor/pages/DoctorPatientDetailPage';
+import MyEarningsPage from '@/features/doctor/pages/MyEarningsPage';
 import AdminLayout from '@/features/admin/layouts/AdminLayout';
 import AdminDashboard from '@/features/admin/pages/AdminDashboard';
 import FindDoctorsPage from '@/features/doctors/pages/FindDoctorsPage';
@@ -116,6 +119,9 @@ export default function AppRouter() {
         <Route path="prescriptions/:prescriptionId" element={<PrescriptionDetailPage viewer="DOCTOR" />} />
         <Route path="appointments" element={<AppointmentsListPage viewer="DOCTOR" />} />
         <Route path="appointments/:appointmentId" element={<AppointmentDetailPage viewer="DOCTOR" />} />
+        <Route path="patients" element={<DoctorPatientsPage />} />
+        <Route path="patients/:patientId" element={<DoctorPatientDetailPage />} />
+        <Route path="earnings" element={<MyEarningsPage />} />
         <Route path="*" element={<ComingSoonPage />} />
       </Route>
 

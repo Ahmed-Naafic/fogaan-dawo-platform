@@ -138,6 +138,7 @@ class Page {
     this.b = browser;
     this.sid = sessionId;
     this.requests = [];
+    this.responses = []; // { url, status } of /api responses (diagnostics in failure messages)
     this.consoleErrors = [];
     this.loadWaiters = [];
   }
@@ -154,6 +155,9 @@ class Page {
   onEvent(method, params) {
     if (method === 'Network.requestWillBeSent' && params.request.url.includes('/api/')) {
       this.requests.push({ url: new URL(params.request.url).pathname, method: params.request.method, at: Date.now() });
+    }
+    if (method === 'Network.responseReceived' && params.response.url.includes('/api/')) {
+      this.responses.push({ url: new URL(params.response.url).pathname, status: params.response.status });
     }
     if (method === 'Runtime.exceptionThrown') this.consoleErrors.push(`exception: ${params.exceptionDetails.exception?.description ?? params.exceptionDetails.text}`);
     if (method === 'Runtime.consoleAPICalled' && params.type === 'error') this.consoleErrors.push(`console.error: ${params.args.map((a) => a.value ?? a.description).join(' ')}`);
@@ -1579,7 +1583,9 @@ try {
     await dr.click('[data-doc-upload]');
     check('doctor uploads a consultation document', await toast(dr, EN.docs.uploaded));
     await dr.waitFor(`document.querySelector('[data-consultation-summary]')`, 10_000).catch(() => {});
-    check('doctor summary shows every section with its share state', await dr.eval(`const s = document.querySelector('[data-consultation-summary]')?.innerText ?? ''; return s.includes('Doctor-only assessment text') && s.includes(${JSON.stringify(EN.summary.private)}) && s.includes(${JSON.stringify(EN.summary.shared)});`));
+    await dr.waitFor(`document.querySelector('[data-consultation-summary] [data-summary-section]')`, 10_000).catch(() => {});
+    // textContent: the section labels are styled uppercase, which innerText would apply.
+    check('doctor summary shows every section with its share state', await dr.eval(`const s = document.querySelector('[data-consultation-summary]')?.textContent ?? ''; return s.includes('Doctor-only assessment text') && s.includes(${JSON.stringify(EN.summary.private)}) && s.includes(${JSON.stringify(EN.summary.shared)});`));
 
     /* 21c. correction (replace) and cancellation from the detail page */
     await dr.goto(`${webOrigin}/doctor/prescriptions/${issued.id}?lang=en`);
@@ -1596,8 +1602,9 @@ try {
     const original = await db.prisma.prescription.findUniqueOrThrow({ where: { id: issued.id } });
     const replacement = await db.prisma.prescription.findFirst({ where: { replacesPrescriptionId: issued.id }, include: { items: { orderBy: { position: 'asc' } } } });
     check('correction issues a linked new prescription and keeps the original as REPLACED', original.status === 'REPLACED' && original.replacementReason?.startsWith('Dose corrected') && replacement?.status === 'VALID' && replacement.items[0].dose === '2 capsules');
+    await dr.waitFor(`document.querySelector('[data-rx-cancel-open]')`, 20_000).catch(() => {});
     await dr.click('[data-rx-cancel-open]');
-    await dr.waitFor(`document.querySelector('[data-rx-reason]')`);
+    await dr.waitFor(`document.querySelector('[data-rx-reason]')`, 15_000);
     await setValue(dr, '[data-rx-reason]', 'Patient reported the medicine is unavailable locally');
     await dr.click('[data-confirm]');
     await dr.waitFor(`document.querySelector('[data-rx-detail=CANCELLED]')`, 20_000).catch(() => {});
@@ -1617,12 +1624,20 @@ try {
     await pt.waitFor(`document.querySelector('[data-rx-detail=REPLACED]')`, 15_000).catch(() => {});
     check('patient sees the replaced original read-only, with the correction note', (await pt.hasText('Dose corrected after reviewing allergy history')) && (await pt.eval(`return !document.querySelector('[data-rx-doctor-actions], [data-rx-replace-open], [data-rx-cancel-open], textarea, input:not([type=file])');`)));
     const downloadsBefore = await db.prisma.auditLog.count({ where: { entityType: 'Prescription', entityId: issued.id, newValues: { path: ['action'], equals: 'PDF_DOWNLOADED' } } });
+    await pt.waitFor(`document.querySelector('[data-rx-download]') && !document.querySelector('[data-rx-download]').disabled`, 15_000).catch(() => {});
     await pt.click('[data-rx-download]');
-    await sleep(2000);
-    check('patient downloads the PDF (served after checksum verification)', (await db.prisma.auditLog.count({ where: { entityType: 'Prescription', entityId: issued.id, newValues: { path: ['action'], equals: 'PDF_DOWNLOADED' } } })) > downloadsBefore && !(await pt.hasText(EN.rxErrors.PRESCRIPTION_PDF_INTEGRITY)));
+    // The download is a private fetch (sign-in, ownership, SHA-256 check, audit) — allow for Neon latency.
+    for (let i = 0; i < 80; i += 1) {
+      const n = await db.prisma.auditLog.count({ where: { entityType: 'Prescription', entityId: issued.id, newValues: { path: ['action'], equals: 'PDF_DOWNLOADED' } } });
+      if (n > downloadsBefore) break;
+      await sleep(250);
+    }
+    const pdfDiag = async () => `responses=${JSON.stringify(pt.responses.filter((r) => r.url.endsWith('/pdf')))} toasts=${JSON.stringify(await pt.toasts())}`;
+    check('patient downloads the PDF (served after checksum verification)', (await db.prisma.auditLog.count({ where: { entityType: 'Prescription', entityId: issued.id, newValues: { path: ['action'], equals: 'PDF_DOWNLOADED' } } })) > downloadsBefore && !(await pt.hasText(EN.rxErrors.PRESCRIPTION_PDF_INTEGRITY)), await pdfDiag());
+    await pt.waitFor(`!document.querySelector('[data-rx-print]').disabled`, 20_000).catch(() => {}); // buttons are disabled while a PDF action runs
     await pt.click('[data-rx-print]');
     await pt.waitFor(`[...document.querySelectorAll('iframe')].some(f => f.src.startsWith('blob:'))`, 10_000).catch(() => {});
-    check('print opens the private PDF in a print frame', await pt.eval(`return [...document.querySelectorAll('iframe')].some(f => f.src.startsWith('blob:'));`));
+    check('print opens the private PDF in a print frame', await pt.eval(`return [...document.querySelectorAll('iframe')].some(f => f.src.startsWith('blob:'));`), await pdfDiag());
     await pt.snap('82-patient-prescription');
 
     await pt.goto(`${webOrigin}/patient/appointments/${done.appointment.id}?lang=en`);

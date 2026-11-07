@@ -1,4 +1,5 @@
 import { apiRequest } from '@/lib/apiClient';
+import { fetchSignedBlob, uploadViaStaging } from '@/lib/stagedFiles';
 
 /** Prescriptions, consultation summaries and medical documents. Every rule is enforced by the API. */
 
@@ -45,15 +46,18 @@ export const listConsultationDocuments = (consultationId, { includeArchived = fa
 
 export const listMyDocuments = ({ includeArchived = false } = {}) => apiRequest(`/v1/me/medical-documents${includeArchived ? '?includeArchived=true' : ''}`);
 
-/** Raw bytes; the API detects the real type from the content. */
+/**
+ * Up to 10 MB: authorised upload slot → bytes straight to private staging storage → the API validates the
+ * real content (type, structure, size, SHA-256) before the document is recorded.
+ */
 export const uploadDocument = (consultationId, file, { category, description }) =>
-  apiRequest(`/v1/consultations/${encodeURIComponent(consultationId)}/documents?${new URLSearchParams({ category, ...(description ? { description } : {}) })}`, {
-    method: 'POST',
-    rawBody: file,
-    headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) },
+  uploadViaStaging(file, {
+    initiate: (declared) => apiRequest(`/v1/consultations/${encodeURIComponent(consultationId)}/documents/upload-url`, { method: 'POST', body: { ...declared, category, ...(description ? { description } : {}) } }),
+    finalize: (uploadToken) => apiRequest(`/v1/consultations/${encodeURIComponent(consultationId)}/documents/finalize`, { method: 'POST', body: { uploadToken } }),
   });
 
-export const downloadDocument = (id) => apiRequest(`/v1/medical-documents/${encodeURIComponent(id)}/download`, { responseType: 'blob' });
+/** The document as a Blob, via a short-lived signed URL issued after the API's access check and audit. */
+export const downloadDocument = (id) => fetchSignedBlob(() => apiRequest(`/v1/medical-documents/${encodeURIComponent(id)}/download-url`));
 
 export const archiveDocument = (id) => apiRequest(`/v1/medical-documents/${encodeURIComponent(id)}/archive`, { method: 'POST', body: {} });
 

@@ -51,7 +51,7 @@ export async function reviewVerification({ verificationRequestId, reviewerUserId
  * request is opened. `allowedStatuses` (optional) restricts uploads to those verification statuses,
  * checked under the row lock.
  */
-export async function addDocumentVersion({ doctorId, documentType, fileKey, fileName, mimeType, fileSize, allowedStatuses = null, actorUserId = null, licenceDetails = null, now = new Date() }) {
+export async function addDocumentVersion({ doctorId, documentType, fileKey, fileName, mimeType, fileSize, sha256 = null, allowedStatuses = null, actorUserId = null, licenceDetails = null, now = new Date() }) {
   if (licenceDetails && documentType !== 'MEDICAL_LICENSE') throw new Error('licenceDetails only apply to a MEDICAL_LICENSE upload');
   return withTransaction(async (tx) => {
     if (!(await lockRow(tx, 'doctor_profiles', doctorId))) throw ApiError.notFound('Doctor not found');
@@ -70,6 +70,7 @@ export async function addDocumentVersion({ doctorId, documentType, fileKey, file
       fileName,
       mimeType,
       fileSize,
+      sha256,
       versionNumber: latestVersion + 1,
       replacesDocumentId: current?.id ?? null,
     });

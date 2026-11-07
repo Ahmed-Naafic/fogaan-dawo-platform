@@ -11,7 +11,7 @@ This is a monorepo built on npm workspaces:
 | `prisma/` | PostgreSQL (Neon) schema with 37 models, migrations and the development seed. See [docs/database.md](docs/database.md). |
 | `tests/` | `node:test` suites (`unit/`, `integration/`) |
 | `design-reference/` | The approved visual specs: `web-light.png`, `web-dark.png`, `mobile-approved.png` |
-| `docs/` | `architecture.md`, `database.md`, `api.md` |
+| `docs/` | `architecture.md`, `database.md`, `api.md`, `deployment-vercel.md` (API on Vercel) |
 
 ## Getting started
 

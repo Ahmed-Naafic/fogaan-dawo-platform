@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, ClipboardCheck, ClipboardList, ClipboardX, FileStack, HardDrive, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import Badge from '@/components/ui/Badge';
@@ -47,12 +47,14 @@ function Pager({ data, onPage }) {
 
 function useList(loader, params) {
   const [data, setData] = useState(undefined);
+  const latest = useRef(0); // only the newest request may update the list (filters can change quickly)
   const key = JSON.stringify(params);
   const load = useCallback(() => {
+    const id = (latest.current += 1);
     setData(undefined);
     loader(JSON.parse(key))
-      .then(setData)
-      .catch(() => setData(null));
+      .then((d) => id === latest.current && setData(d))
+      .catch(() => id === latest.current && setData(null));
   }, [loader, key]);
   useEffect(load, [load]);
   return [data, load];

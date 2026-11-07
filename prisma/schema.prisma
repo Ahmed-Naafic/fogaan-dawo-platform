@@ -505,6 +505,8 @@ model DoctorDocument {
   fileName           String           @map("file_name") @db.VarChar(255)
   mimeType           String           @map("mime_type") @db.VarChar(100)
   fileSize           Int              @map("file_size")
+  /// SHA-256 of the stored file (null for files stored before this column existed).
+  sha256             String?          @db.Char(64)
   versionNumber      Int              @map("version_number")
   replacesDocumentId String?          @map("replaces_document_id") @db.Uuid
   isCurrent          Boolean          @default(true) @map("is_current")
