@@ -123,6 +123,7 @@ export const doctorForm = (p) => ({
   bio: p?.bio ?? '',
   qualifications: p?.qualifications ?? '',
   yearsExperience: p?.yearsExperience ?? '',
+  country: p?.country ?? '',
   consultationFee: p?.consultationFee ?? '',
   languages: p?.languages ?? [],
 });
@@ -134,6 +135,8 @@ export function validateDoctorForm(form, original) {
   if (form.qualifications.trim().length > 1000) errors.qualifications = 'myDoctorProfile.errors.qualifications';
   const years = form.yearsExperience === '' ? null : Number(form.yearsExperience);
   if (years !== null && (!Number.isInteger(years) || years < 0 || years > 60)) errors.yearsExperience = 'myDoctorProfile.errors.years';
+  const country = (form.country ?? '').trim();
+  if (country && (country.length < 2 || country.length > 100)) errors.country = 'myDoctorProfile.errors.country';
   const fee = Number(form.consultationFee);
   if (!Number.isFinite(fee) || fee < 5 || fee > 200 || Math.round(fee * 100) / 100 !== fee) errors.consultationFee = 'myDoctorProfile.errors.fee';
   if (!form.languages.length) errors.languages = 'myDoctorProfile.errors.languages';
@@ -144,6 +147,7 @@ export function validateDoctorForm(form, original) {
   const q = form.qualifications.trim();
   if (q !== (before.qualifications ?? '').trim()) payload.qualifications = q || null;
   if (years !== (before.yearsExperience === '' ? null : before.yearsExperience)) payload.yearsExperience = years;
+  if (country !== (before.country ?? '').trim()) payload.country = country || null;
   if (fee.toFixed(2) !== String(before.consultationFee)) payload.consultationFee = fee;
   if ([...form.languages].sort().join() !== [...before.languages].sort().join()) payload.languages = form.languages;
   return { errors, payload };

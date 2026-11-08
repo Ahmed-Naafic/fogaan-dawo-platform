@@ -61,6 +61,7 @@ export function presentApplication(profile) {
     currency: profile.currency,
     bio: profile.bio,
     yearsExperience: profile.yearsExperience,
+    country: profile.country ?? null,
     qualifications: profile.qualifications ?? null,
     languages: profile.languages.map((l) => l.language),
     verifiedAt: profile.verifiedAt,

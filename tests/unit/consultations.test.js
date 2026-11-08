@@ -11,17 +11,20 @@ const at = (iso) => new Date(iso);
 const appt = (status = 'CONFIRMED') => ({ status, startAtUtc: at('2026-11-10T10:00:00Z'), endAtUtc: at('2026-11-10T10:30:00Z') });
 const ok = { paymentStatus: 'SUCCEEDED', refunded: false };
 
-test('join window: opens 10 min before start, closes 15 min after end (inclusive), UTC', () => {
+test('join window: opens 10 min before start, closes 30 min after start (inclusive), UTC', () => {
   const w = joinWindow(appt());
   assert.equal(w.opensAt.toISOString(), '2026-11-10T09:50:00.000Z');
-  assert.equal(w.closesAt.toISOString(), '2026-11-10T10:45:00.000Z');
+  assert.equal(w.closesAt.toISOString(), '2026-11-10T10:30:00.000Z');
   const check = (iso) => joinBlocker({ appointment: appt(), ...ok, now: at(iso) });
   assert.equal(check('2026-11-10T09:49:59Z'), 'TOO_EARLY', 'one second before opening');
   assert.equal(check('2026-11-10T09:50:00Z'), null, 'exactly at opening');
   assert.equal(check('2026-11-10T09:50:01Z'), null, 'one second after opening');
-  assert.equal(check('2026-11-10T10:44:59Z'), null, 'one second before closing');
-  assert.equal(check('2026-11-10T10:45:00Z'), null, 'exactly at closing');
-  assert.equal(check('2026-11-10T10:45:01Z'), 'TOO_LATE', 'one second after closing');
+  assert.equal(check('2026-11-10T10:29:59Z'), null, 'one second before closing');
+  assert.equal(check('2026-11-10T10:30:00Z'), null, 'exactly at closing');
+  assert.equal(check('2026-11-10T10:30:01Z'), 'TOO_LATE', 'one second after closing');
+  assert.equal(joinBlocker({ appointment: appt('IN_PROGRESS'), consultation: { status: 'IN_PROGRESS' }, ...ok, now: at('2026-11-10T10:40:00Z') }), null, 'an in-progress call can be reconnected');
+  // A 20-minute slot closes at the same point: 30 minutes after its start.
+  assert.equal(joinWindow({ startAtUtc: at('2026-11-10T10:00:00Z'), endAtUtc: at('2026-11-10T10:20:00Z') }).closesAt.toISOString(), '2026-11-10T10:30:00.000Z');
 });
 
 test('eligibility: status, payment and refunds are checked before timing', () => {
@@ -33,7 +36,7 @@ test('eligibility: status, payment and refunds are checked before timing', () =>
   for (const paymentStatus of [null, 'PENDING', 'FAILED', 'CANCELLED']) assert.equal(joinBlocker({ appointment: appt(), paymentStatus, now }), 'NOT_PAID', String(paymentStatus));
   assert.equal(joinBlocker({ appointment: appt(), paymentStatus: 'SUCCEEDED', refunded: true, now }), 'NOT_JOINABLE', 'refunded');
   assert.equal(joinBlocker({ appointment: appt('CANCELLED'), paymentStatus: null, now: at('2026-11-12T00:00:00Z') }), 'NOT_JOINABLE', 'cancelled reported before timing/payment');
-  assert.deepEqual(joinAction(appt(), { ...ok, now }), { allowed: true, blocker: null, opensAt: '2026-11-10T09:50:00.000Z', closesAt: '2026-11-10T10:45:00.000Z' });
+  assert.deepEqual(joinAction(appt(), { ...ok, now }), { allowed: true, blocker: null, opensAt: '2026-11-10T09:50:00.000Z', closesAt: '2026-11-10T10:30:00.000Z' });
 });
 
 test('duration is whole server seconds, never negative', () => {

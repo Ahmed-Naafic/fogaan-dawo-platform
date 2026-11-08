@@ -16,6 +16,7 @@ import MyEarningsPage from '@/features/doctor/pages/MyEarningsPage';
 import MessagesPage from '@/features/messaging/pages/MessagesPage';
 import AdminLayout from '@/features/admin/layouts/AdminLayout';
 import AdminDashboard from '@/features/admin/pages/AdminDashboard';
+import AdminSmsOutboxPage from '@/features/admin/pages/AdminSmsOutboxPage';
 import AdminPatientsPage from '@/features/admin/pages/AdminPatientsPage';
 import AdminPatientDetailPage from '@/features/admin/pages/AdminPatientDetailPage';
 import AdminAppointmentsPage from '@/features/admin/pages/AdminAppointmentsPage';
@@ -163,6 +164,7 @@ export default function AppRouter() {
         <Route path="appointments/:appointmentId" element={<AdminAppointmentDetailPage />} />
         <Route path="reports" element={<AdminReportsPage />} />
         <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+        <Route path="sms-outbox" element={<AdminSmsOutboxPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="*" element={<ComingSoonPage />} />
       </Route>

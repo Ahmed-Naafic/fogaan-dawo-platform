@@ -38,6 +38,22 @@ export function refundAmount(feeAmount, rate) {
 }
 
 /** Statuses a patient or doctor may cancel. */
+/** Requirement 6: if the doctor has not admitted the patient this many minutes after the start, the patient may ask for a full refund. */
+export const NO_ADMIT_REFUND_MINUTES = 15;
+
+/**
+ * Why a "doctor did not admit me" full refund cannot be requested now, or null when it can.
+ * Paid, still CONFIRMED or WAITING (never admitted: the consultation is not in progress or completed),
+ * and at least 15 minutes past the start.
+ */
+export function noShowRefundBlocker(appointment, { paid, consultation = null, refunded = false, now = new Date() }) {
+  if (!['CONFIRMED', 'WAITING'].includes(appointment.status)) return 'NOT_ELIGIBLE';
+  if (!paid || refunded) return 'NOT_PAID';
+  if (consultation && ['IN_PROGRESS', 'COMPLETED'].includes(consultation.status)) return 'ADMITTED';
+  if (now.getTime() < new Date(appointment.startAtUtc).getTime() + NO_ADMIT_REFUND_MINUTES * 60_000) return 'TOO_EARLY';
+  return null;
+}
+
 export const CANCELLABLE_STATUSES = Object.freeze(['PENDING_PAYMENT', 'CONFIRMED']);
 
 /** Why an appointment cannot be rescheduled for free right now, or null if it can. */

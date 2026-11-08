@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { z } from 'zod';
+import { FOLLOW_UP_FEES, proposeFollowUp } from '../appointments/followUp.service.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { requirePermission, requireRole } from '../../middleware/authorize.js';
 import { rateLimiter } from '../../middleware/rateLimit.js';
@@ -15,6 +17,9 @@ import { appointmentParamsSchema, consultationParamsSchema, emptyBodySchema, not
  * /api/v1/consultations — video consultations for the appointment's own patient and assigned doctor.
  * Signaling itself is the WebSocket at /api/v1/consultations/signal (see consultation.signaling.js).
  */
+/** Follow-up booking (requirement 12): one of the doctor's free slots and the fee choice. */
+const followUpSchema = z.object({ slotId: z.string().uuid(), fee: z.enum(FOLLOW_UP_FEES) }).strict();
+
 export function createConsultationRouter() {
   const router = Router();
   const limiter = rateLimiter({ windowMs: 5 * 60_000, limit: Number.parseInt(process.env.CONSULTATION_RATE_LIMIT_MAX ?? '200', 10) });
@@ -30,6 +35,7 @@ export function createConsultationRouter() {
   router.post('/:consultationId/end', requireClientHeader, body, asyncHandler(c.end));
   attachConsultationPrescriptionRoutes(router);
   attachConsultationDocumentRoutes(router);
+  router.post('/:consultationId/follow-up', requireClientHeader, requireRole('DOCTOR'), validate({ params: consultationParamsSchema, body: followUpSchema }), asyncHandler(async (req, res) => res.status(201).json({ data: await proposeFollowUp(req.auth, req.params.consultationId, req.body) })));
   router.put('/:consultationId/note', requireClientHeader, requireRole('DOCTOR'), validate({ params: consultationParamsSchema, body: noteSchema }), asyncHandler(c.saveMyNote));
   return router;
 }

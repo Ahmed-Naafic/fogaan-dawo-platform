@@ -28,7 +28,7 @@ const declaredFile = {
 };
 const finalizeSchema = z.object({ uploadToken: z.string().min(20).max(4096) }).strict();
 const initiateSchema = z
-  .object({ ...declaredFile, category: z.enum(service.DOCUMENT_CATEGORIES), description: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().max(500).optional()) })
+  .object({ ...declaredFile, context: z.enum(['CHAT']).optional(), category: z.enum(service.DOCUMENT_CATEGORIES), description: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().max(500).optional()) })
   .strict();
 
 /* ------------------------------------------------------------ controllers */

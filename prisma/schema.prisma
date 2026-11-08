@@ -280,6 +280,7 @@ model User {
   medicalEntriesArchived   MedicalHistoryEntry[]      @relation("HistoryEntryArchiver")
   verificationReviews      VerificationReview[]       @relation("VerificationReviewer")
   messagesSent             Message[]                  @relation("MessageSender")
+  smsOutbox                SmsOutbox[]                @relation("SmsOutboxUser")
   attachmentsUploaded      ConsultationAttachment[]   @relation("AttachmentUploader")
   attachmentsArchived      ConsultationAttachment[]   @relation("AttachmentArchiver")
   prescriptionsCancelled   Prescription[]             @relation("PrescriptionCanceller")
@@ -463,6 +464,8 @@ model DoctorProfile {
   currency             String                   @default("USD") @db.VarChar(3)
   bio                  String?                  @db.Text
   yearsExperience      Int?                     @map("years_experience")
+  /// Country the doctor practises from (requirement 1: "country and time zone"); the time zone is users.time_zone.
+  country              String?                  @db.VarChar(100)
   /// Public qualifications summary written by the doctor (documents stay private).
   qualifications       String?                  @db.Text
   accountStatus        DoctorAccountStatus      @default(ACTIVE) @map("account_status")
@@ -993,6 +996,8 @@ model Notification {
 
 model SmsOutbox {
   id        String      @id @default(uuid()) @db.Uuid
+  /// The user the SMS is for (in-app outbox); null for messages to a bare number.
+  userId    String?     @map("user_id") @db.Uuid
   recipient String      @db.VarChar(32)
   message   String      @db.VarChar(1000)
   provider  SmsProvider @default(SIMULATED)
@@ -1002,7 +1007,10 @@ model SmsOutbox {
   sentAt    DateTime?   @map("sent_at") @db.Timestamptz(6)
   createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  user User? @relation("SmsOutboxUser", fields: [userId], references: [id], onDelete: SetNull)
+
   @@index([status, createdAt])
+  @@index([userId, createdAt])
   @@map("sms_outbox")
 }
 

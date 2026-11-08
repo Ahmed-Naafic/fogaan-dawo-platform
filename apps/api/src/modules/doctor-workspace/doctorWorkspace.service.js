@@ -3,7 +3,7 @@ import { ApiError } from '../../utils/ApiError.js';
 import { sumMoney, toDecimal } from '../../utils/money.js';
 import * as doctorRepository from '../doctors/doctor.repository.js';
 import { allocateRefunds, earningsTotals, money } from '../finance/finance.calc.js';
-import { describeRange, resolveRange } from '../finance/finance.dates.js';
+import { describeRange, monthKey, resolveRange } from '../finance/finance.dates.js';
 import { FinanceErrorCode } from '../finance/finance.service.js';
 import * as financeRepository from '../finance/finance.repository.js';
 import { assignedDoctorPhotoPath, DOCTOR_READ_STATUSES } from '../medical-history/medicalHistory.constants.js';
@@ -142,10 +142,27 @@ export async function myEarnings(auth, query = {}) {
     };
   });
   const totals = earningsTotals(earnings.map((e) => ({ gross: e.grossAmount, commission: e.commissionAmount, net: e.netAmount, refunds: refundsByAppointment.get(e.appointmentId) ?? [] })));
+  // Requirement 13: earnings per month = fees collected minus commission; refunded consultations excluded.
+  const months = new Map();
+  for (const it of items) {
+    if (it.status === 'REFUNDED') continue;
+    const key = monthKey(new Date(it.paidAt), range.tz);
+    const m = months.get(key) ?? { month: key, consultations: 0, gross: [], commission: [], deductions: [], net: [] };
+    m.consultations += 1;
+    m.gross.push(it.gross);
+    m.commission.push(it.commission);
+    m.deductions.push(it.refundDeduction);
+    m.net.push(it.net);
+    months.set(key, m);
+  }
+  const byMonth = [...months.values()]
+    .sort((a, b) => b.month.localeCompare(a.month))
+    .map((m) => ({ month: m.month, consultations: m.consultations, gross: money(sumMoney(m.gross)), commission: money(sumMoney(m.commission)), refundDeductions: money(sumMoney(m.deductions)), net: money(sumMoney(m.net)) }));
   const page = query.page ?? 1;
   const pageSize = query.pageSize ?? 20;
   return {
     simulated: true,
+    byMonth,
     currency: 'USD',
     range: describeRange(range),
     totals,

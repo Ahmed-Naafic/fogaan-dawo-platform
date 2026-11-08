@@ -94,6 +94,28 @@ export async function refundFailed(tx, refund) {
   await notify(tx, { kind: 'admin.refund_failed', recipients: await admins(tx), params, eventKey: `admin.refund_failed:${refund.id}` });
 }
 
+/** Requirement 11: a doctor passed 3 cancellations this month — every admin is told once. */
+export async function doctorCancellationsFlagged(tx, { doctorId, doctorName, count, month }) {
+  await notify(tx, { kind: 'admin.doctor_cancellations_flagged', recipients: await admins(tx), params: { doctorId, doctor: doctorName, count: String(count) }, eventKey: `admin.doctor_cancellations_flagged:${doctorId}:${month}` });
+}
+
+/** Requirement 12: the doctor booked a follow-up; the patient must confirm (and pay unless free) before the deadline. */
+export async function followUpProposed(tx, { appointmentId, fee, free }) {
+  const p = await parties(tx, appointmentId);
+  await notify(tx, {
+    kind: free ? 'followup.proposed.free' : 'followup.proposed',
+    recipients: [{ userId: p.patient.userId, role: 'PATIENT' }],
+    params: { appointmentId: p.id, startAtUtc: p.startAtUtc, doctor: p.doctor.name, amount: fee },
+    eventKey: `followup.proposed:${p.id}`,
+  });
+}
+
+/** A free follow-up was confirmed by the patient → the doctor is told. */
+export async function followUpConfirmed(tx, { appointmentId }) {
+  const p = await parties(tx, appointmentId);
+  await notify(tx, { kind: 'followup.confirmed', recipients: [{ userId: p.doctor.userId, role: 'DOCTOR' }], params: { appointmentId: p.id, startAtUtc: p.startAtUtc, patient: p.patient.name }, eventKey: `followup.confirmed:${p.id}` });
+}
+
 export async function applicationSubmitted(tx, { requestId, doctorId, applicantName, applicantUserId }) {
   await notify(tx, { kind: 'application.submitted', recipients: await admins(tx, applicantUserId), params: { doctorId, applicant: applicantName }, eventKey: `application.submitted:${requestId}` });
 }

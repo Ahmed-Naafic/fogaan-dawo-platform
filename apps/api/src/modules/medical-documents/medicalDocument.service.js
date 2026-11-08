@@ -18,6 +18,14 @@ import * as notificationEvents from '../notifications/notification.events.js';
 export const MAX_MEDICAL_DOCUMENT_BYTES = 10 * 1024 * 1024;
 export const DOCUMENT_CATEGORIES = Object.freeze(['LAB_RESULT', 'MEDICAL_REPORT', 'REFERRAL_LETTER', 'DIAGNOSTIC_REPORT', 'SCANNED_DOCUMENT', 'OTHER']);
 const ELIGIBLE_APPOINTMENT_STATUSES = ['WAITING', 'IN_PROGRESS', 'COMPLETED'];
+/** Requirement 5: the patient may attach files (e.g. lab results) while booking, before the call. */
+const PATIENT_PRE_CALL_STATUSES = ['PENDING_PAYMENT', 'CONFIRMED'];
+/** A doctor sees a consultation's documents only once the booking is paid (same rule as patient records). */
+const DOCTOR_VISIBLE_STATUSES = ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'COMPLETED'];
+/** Requirement 8: files shared through the in-call chat are limited to 5 MB. */
+export const MAX_CHAT_FILE_BYTES = 5 * 1024 * 1024;
+
+const mayUpload = (role, status) => ELIGIBLE_APPOINTMENT_STATUSES.includes(status) || (role === 'PATIENT' && PATIENT_PRE_CALL_STATUSES.includes(status));
 
 export const DocumentErrorCode = Object.freeze({
   notFound: 'DOCUMENT_NOT_FOUND',
@@ -77,6 +85,7 @@ async function participation(client, auth, consultationId) {
   if (auth.activeRole === 'PATIENT' && c.patient.userId === auth.user.id) return { c, role: 'PATIENT' };
   if (auth.activeRole === 'DOCTOR' && c.doctor.userId === auth.user.id) {
     if (c.doctor.verificationStatus !== 'VERIFIED' || c.doctor.accountStatus !== 'ACTIVE') throw ApiError.forbidden('Your doctor account is not active', undefined, 'DOCTOR_NOT_ACTIVE');
+    if (!DOCTOR_VISIBLE_STATUSES.includes(c.appointment.status)) throw ApiError.notFound('Consultation not found');
     return { c, role: 'DOCTOR' };
   }
   throw ApiError.notFound('Consultation not found');
@@ -133,7 +142,7 @@ export function presentDocument(d, auth) {
 export async function uploadDocument(auth, consultationId, { buffer, fileName, category, description }) {
   // Authorise first: strangers never get the (potentially expensive) file validation.
   const { c, role } = await participation(prisma, auth, consultationId);
-  if (!ELIGIBLE_APPOINTMENT_STATUSES.includes(c.appointment.status)) {
+  if (!mayUpload(role, c.appointment.status)) {
     throw ApiError.conflict('Documents can be shared only for a consultation that took place', { status: c.appointment.status }, DocumentErrorCode.notEligible);
   }
   if (!DOCUMENT_CATEGORIES.includes(category)) throw ApiError.badRequest('Unknown document category');
@@ -173,9 +182,9 @@ export async function uploadDocument(auth, consultationId, { buffer, fileName, c
  * Large-file upload, step 1 (the path used by the web app; required on Vercel, whose request bodies are
  * limited to ~4.5 MB): authorise the participant and the consultation, then issue a staging upload URL.
  */
-export async function initiateUpload(auth, consultationId, { category, description, fileName, size, contentType }) {
-  const { c } = await participation(prisma, auth, consultationId);
-  if (!ELIGIBLE_APPOINTMENT_STATUSES.includes(c.appointment.status)) {
+export async function initiateUpload(auth, consultationId, { category, description, fileName, size, contentType, context }) {
+  const { c, role } = await participation(prisma, auth, consultationId);
+  if (!mayUpload(role, c.appointment.status)) {
     throw ApiError.conflict('Documents can be shared only for a consultation that took place', { status: c.appointment.status }, DocumentErrorCode.notEligible);
   }
   return createUploadIntent(auth, {
@@ -183,7 +192,7 @@ export async function initiateUpload(auth, consultationId, { category, descripti
     target: { consultationId },
     meta: { category, description: description ?? null, fileName: String(fileName ?? '').slice(0, 300) },
     declared: { size, contentType },
-    maxBytes: MAX_MEDICAL_DOCUMENT_BYTES,
+    maxBytes: context === 'CHAT' ? MAX_CHAT_FILE_BYTES : MAX_MEDICAL_DOCUMENT_BYTES,
   });
 }
 

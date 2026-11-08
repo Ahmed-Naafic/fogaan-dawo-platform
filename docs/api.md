@@ -269,6 +269,28 @@ Active role DOCTOR with `appointments:manage:doctor`: `GET /?scope=`, `GET /:id`
 
 The admin dashboard uses `GET /api/v1/admin/reports/overview` (30-day cards; Monday–Sunday custom range for the weekly chart) and the finance overview.
 
+## Requirement features (follow-ups, ratings, refunds, chat files, admin tools, SMS)
+
+| Method and path | Who | Purpose |
+|---|---|---|
+| `POST /api/v1/appointments/:id/no-show-refund` | PATIENT | Req. 6: the doctor has not admitted the patient 15 min after the start → appointment CANCELLED, slot withdrawn, **full** refund request, doctor notified, audited. `409 NO_SHOW_REFUND_NOT_ALLOWED` with `details.blocker` (`TOO_EARLY`, `ADMITTED`, `NOT_PAID`, `NOT_ELIGIBLE`) and `availableAt`. The appointment detail carries `actions.noShowRefund { allowed, blocker, availableAt }`. |
+| `POST /api/v1/appointments/:id/review` | PATIENT | Req. 13: `{ rating: 1..5, comment? (≤1000) }`. COMPLETED appointments only (`409 REVIEW_NOT_ALLOWED`), once (`409 REVIEW_ALREADY_SUBMITTED`). Detail carries `actions.rate` and `review`. |
+| `GET /api/v1/doctors/:doctorId/reviews?page=` | public | `{ average, count, distribution, items: [{ rating, comment, createdAt, author: "First L." }] }` for listed doctors. |
+| `POST /api/v1/consultations/:consultationId/follow-up` | DOCTOR | Req. 12: `{ slotId, fee: NORMAL\|DISCOUNTED\|FREE }` on a COMPLETED consultation, own open slot. Creates a PENDING_PAYMENT FOLLOW_UP appointment (deadline: follow-up hours from Admin › Settings, default 48 h, never after the slot). `FOLLOW_UP_EXISTS`, `FOLLOW_UP_SLOT_INVALID`, `FOLLOW_UP_NOT_ALLOWED`. Patient notified (in-app + SMS). |
+| `POST /api/v1/appointments/:id/confirm-free` | PATIENT | Confirms a free follow-up before its deadline (no payment). `409 FOLLOW_UP_NOT_FREE`. The detail shows `freeFollowUp` and `followUpOf { appointmentId, startAtUtc }`. |
+| `POST /api/v1/appointments/:id/consultation-record` | PATIENT | Req. 5: creates the consultation record for an active reservation or paid booking so lab results can be attached with the normal document upload. Returns `{ consultationId }`. Doctors see those files only once the booking is paid. |
+| `POST /api/v1/consultations/:id/documents/upload-url` | participant | Now also accepts `context: "CHAT"` (in-call chat, req. 8): the limit becomes **5 MB**. Patients may upload while the booking is PENDING_PAYMENT or CONFIRMED. |
+| `PATCH /api/v1/admin/doctors/:doctorId` | ADMIN | Req. 1: edit `fullName, specialtyId, country, timeZone, yearsExperience, consultationFee (5–200), bio, languages`. Fee changes affect new bookings only. Audited. The list now includes `country`, `timeZone`, `bio`, `cancellationsThisMonth` and `cancellationFlag` (req. 11: more than 3 doctor cancellations this month; admins notified once). |
+| `GET/POST/PATCH /api/v1/admin/specialties[/:id]` | ADMIN | The admin-managed specialty list: add `{ nameEn, nameSo }`, rename, `isActive` on/off (never deleted). `409 SPECIALTY_EXISTS`. Audited. |
+| `GET /api/v1/notifications/sms?page=` | any | The signed-in user's simulated SMS outbox. |
+| `GET /api/v1/admin/sms-outbox?q=&page=` | ADMIN | Every simulated SMS (number, text, status, recipient name). |
+| `GET /api/v1/payments/:id/receipt?lang=en\|so` | PATIENT / ADMIN | Receipt PDF in English or Somali (default: the reader's language). |
+
+Other rule changes: the join window is **[start − 10 min, start + 30 min]**; a FAILED payment releases the slot
+immediately (`EXPIRED`, pay again → `409 APPOINTMENT_NOT_PAYABLE`); search lists only doctors with a free slot
+in the next 30 days; ending or completing a consultation without any note text → `409
+CONSULTATION_NOTES_REQUIRED`; `GET /api/v1/doctors/me/earnings` adds `byMonth` (fully refunded excluded).
+
 ## Simulated payments and refunds (DEMO — no real provider, no real money)
 
 Providers `EVC_PLUS`, `ZAAD` and `EDAHAB` are **simulated adapters** (`apps/api/src/adapters/payment/`) behind one interface (`validateWallet`, `charge`, `checkStatus`, `refund`); a real provider later replaces one entry in the registry. The **server** decides each outcome from documented demo wallet numbers (last four digits `0001` fail, `0002` stays pending, `0003` pending then approved, `0004` refund fails, anything else succeeds); the client never sends an amount, a status or an outcome.
@@ -362,7 +384,7 @@ writes. Someone else's appointment/consultation answers **404**. Nothing is reco
 
 **Eligibility (enforced on every join, ticket and admit):** appointment `CONFIRMED`/`WAITING`/`IN_PROGRESS`;
 covered by a `SUCCEEDED` payment (following reschedule links) with no requested/processing/paid refund;
-inside the join window **[start − 10 min, end + 15 min]** (UTC, inclusive); doctor verified and active.
+inside the join window **[start − 10 min, start + 30 min]** (an in-progress call can be reconnected after that) (UTC, inclusive); doctor verified and active.
 Errors (409): `CONSULTATION_NOT_JOINABLE`, `CONSULTATION_NOT_PAID`, `CONSULTATION_TOO_EARLY`,
 `CONSULTATION_TOO_LATE` (details: `opensAt`, `closesAt`), `CONSULTATION_ENDED`; 403 `DOCTOR_NOT_ACTIVE`,
 `CONSULTATION_DOCTOR_ONLY`; 409 `PATIENT_NOT_WAITING`.

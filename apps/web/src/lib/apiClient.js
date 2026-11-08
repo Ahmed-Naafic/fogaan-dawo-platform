@@ -168,8 +168,15 @@ export async function openAuthenticatedStream(path, { signal } = {}) {
  * a relative base ("/api") uses this page's host; an absolute base switches http(s) → ws(s).
  * Nothing secret goes into the URL — the signaling ticket is sent as the first message.
  */
+/**
+ * Optional separate base for the call-signalling WebSocket, e.g. "wss://api.example.com/api". Needed when the
+ * web app's /api is a hosting rewrite that cannot carry WebSockets (Vercel → Railway); unset = same as the API.
+ */
+const SIGNAL_BASE = String(import.meta.env?.VITE_SIGNAL_URL || '').replace(/\/+$/, '');
+
 export function apiSocketUrl(path) {
   const relative = path.replace(/^\/api/, '');
+  if (SIGNAL_BASE) return `${SIGNAL_BASE}${relative}`;
   if (/^https?:\/\//i.test(API_BASE)) return `${API_BASE.replace(/^http/i, 'ws')}${relative}`;
   const { protocol, host } = window.location;
   return `${protocol === 'https:' ? 'wss:' : 'ws:'}//${host}${API_BASE}${relative}`;

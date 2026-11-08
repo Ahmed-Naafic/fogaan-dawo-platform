@@ -24,7 +24,7 @@ import { createPrescriptionRouter, createPublicPrescriptionRouter } from './modu
 import { createMedicalDocumentRouter } from './modules/medical-documents/medicalDocument.routes.js';
 import { createAdminRecordsRouter } from './modules/admin-records/adminRecords.routes.js';
 import { createMessagingRouter } from './modules/messaging/messaging.routes.js';
-import { createAdminAppointmentRouter, createAdminAuditRouter, createAdminPatientRouter, createAdminReportRouter, createAdminSettingsRouter } from './modules/admin-console/adminConsole.routes.js';
+import { createAdminAppointmentRouter, createAdminAuditRouter, createAdminPatientRouter, createAdminReportRouter, createAdminSettingsRouter, createAdminSmsRouter, createAdminSpecialtyRouter } from './modules/admin-console/adminConsole.routes.js';
 import { createLocalStorageRouter } from './modules/storage/storage.routes.js';
 import { createJobsRouter } from './modules/jobs/jobs.routes.js';
 import { SIGNAL_PATH } from './modules/consultations/consultation.signaling.js';
@@ -81,6 +81,8 @@ export function createApp({ corsOrigins, authRateLimit, signalingAvailable = tru
   app.use('/api/v1/admin/reports', createAdminReportRouter());
   app.use('/api/v1/admin/audit-logs', createAdminAuditRouter());
   app.use('/api/v1/admin/settings', createAdminSettingsRouter());
+  app.use('/api/v1/admin/sms-outbox', createAdminSmsRouter());
+  app.use('/api/v1/admin/specialties', createAdminSpecialtyRouter());
   app.use('/api/v1/messages', createMessagingRouter());
   app.use('/api/v1/storage/local', createLocalStorageRouter());
 

@@ -24,6 +24,18 @@ export async function expireAppointment(tx, appointment, reason) {
   await appointmentRepository.setSlotStatus(tx, appointment.slotId, 'AVAILABLE');
 }
 
+/**
+ * A failed payment releases the slot immediately (requirement: "Failed payment releases the slot
+ * immediately"). The appointment becomes EXPIRED with the reason recorded; the FAILED payment is kept as
+ * the record of the attempt. Caller must hold the appointment lock. The patient books again to retry.
+ */
+export async function releaseAfterFailedPayment(tx, appointment, reason = 'Payment failed — slot released') {
+  await appointmentRepository.updateAppointment(tx, appointment.id, { status: 'EXPIRED', holdExpiresAt: null });
+  await appointmentRepository.recordStatusChange(tx, { appointmentId: appointment.id, fromStatus: 'PENDING_PAYMENT', toStatus: 'EXPIRED', reason });
+  await lockRow(tx, 'availability_slots', appointment.slotId);
+  await appointmentRepository.setSlotStatus(tx, appointment.slotId, 'AVAILABLE');
+}
+
 async function followUpDeadline(tx, { patientId, slot, followUpOfConsultationId, now, hours }) {
   const consultation = followUpOfConsultationId ? await consultationRepository.findConsultationById(tx, followUpOfConsultationId) : null;
   if (!consultation || consultation.status !== 'COMPLETED' || consultation.patientId !== patientId || consultation.doctorId !== slot.doctorId) {
@@ -38,7 +50,7 @@ async function followUpDeadline(tx, { patientId, slot, followUpOfConsultationId,
  * PENDING_PAYMENT appointment with a payment deadline (Admin › Settings booking policy; defaults 10 min standard, 48 h follow-up) and marks the
  * slot HELD. A stale hold on the slot is expired first. One transaction, slot row locked throughout.
  */
-export async function reserveSlot({ patientId, slotId, reason = null, bookingType = 'STANDARD', followUpOfConsultationId = null, now = new Date() }) {
+export async function reserveSlot({ patientId, slotId, reason = null, bookingType = 'STANDARD', followUpOfConsultationId = null, feeAmount = null, now = new Date() }) {
   try {
     return await withTransaction(async (tx) => {
       if (!(await lockRow(tx, 'availability_slots', slotId))) throw ApiError.notFound('Slot not found');
@@ -74,7 +86,8 @@ export async function reserveSlot({ patientId, slotId, reason = null, bookingTyp
         slotId,
         bookingType,
         reason,
-        feeAmount: doctor.consultationFee,
+        // A follow-up may carry the doctor's chosen fee (normal, discounted or free); otherwise the current fee.
+        feeAmount: bookingType === 'FOLLOW_UP' && feeAmount != null ? feeAmount : doctor.consultationFee,
         currency: doctor.currency,
         commissionRateSnapshot: await getCommissionRate(tx),
         startAtUtc: slot.startAtUtc,

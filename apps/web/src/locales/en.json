@@ -77,7 +77,8 @@
     "financeReports": "Financial reports",
     "financeSettings": "Finance settings",
     "documents": "Documents",
-    "medicalRecordsAdmin": "Medical records"
+    "medicalRecordsAdmin": "Medical records",
+    "smsOutbox": "SMS outbox"
   },
   "specialty": {
     "general": "General",
@@ -264,8 +265,8 @@
     "addFavorite": "Save to favourites",
     "removeFavorite": "Remove from favourites",
     "resultCount": "{count} doctors available",
-    "emptyTitle": "No doctors match your search",
-    "emptyBody": "Try another name, specialty or condition.",
+    "emptyTitle": "No doctors match; try removing a filter",
+    "emptyBody": "Only verified doctors with a free time in the next 30 days are shown.",
     "clearFilters": "Clear filters",
     "searchPlaceholder": "Search doctors by name or specialty…",
     "language": "Language",
@@ -433,14 +434,15 @@
       "patientNotWaiting": "The patient is no longer waiting.",
       "notFound": "Consultation not found.",
       "network": "Can't reach the server. Check your internet connection and try again.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "notesRequired": "Write the consultation notes (at least one section) before ending the consultation."
     },
     "media": {
       "denied": "Camera and microphone access is blocked. Allow it in your browser's site settings, then try again.",
       "insecure": "Video calls need a secure (HTTPS) connection.",
       "unsupported": "This browser can't make video calls. Please use a recent Chrome, Edge, Firefox or Safari.",
       "noCamera": "No camera was found, so you've joined with audio only.",
-      "cameraUnavailable": "Your camera couldn't be started (another app may be using it), so you've joined with audio only.",
+      "cameraUnavailable": "Video unavailable — your camera couldn't be started (another app may be using it), so the call continues with audio only.",
       "noDevices": "No camera or microphone was found. You can still see and hear the other person.",
       "continueWithout": "Join without camera and microphone"
     },
@@ -482,7 +484,7 @@
     },
     "peerAway": "{name} has left or lost connection",
     "peerAwayBody": "Waiting for them to come back…",
-    "remoteCameraOff": "{name}'s camera is off",
+    "remoteCameraOff": "Video unavailable — {name}'s camera is off. The call continues with audio.",
     "waitingForVideo": "Connecting to {name}…",
     "remoteMuted": "{name} is muted",
     "signalLost": "Connection to the server was lost. Reconnecting…",
@@ -497,7 +499,15 @@
     "leave": "Leave",
     "leaveLabel": "Leave the consultation",
     "endCallLabel": "End the consultation for both of you",
-    "confirmEnd": "Tap again to end"
+    "confirmEnd": "Tap again to end",
+    "bookFollowUp": "Book a follow-up",
+    "chat": {
+      "empty": "No messages yet. Messages and files you share here are saved to the consultation record.",
+      "attach": "Share an image or PDF (up to 5 MB)",
+      "fileType": "Only images (JPG, PNG) or PDF files can be shared.",
+      "fileTooLarge": "Files shared in the chat can be up to 5 MB.",
+      "note": "Saved to the consultation record. Messages sent while someone is reconnecting reach them when they are back."
+    }
   },
   "comingSoon": {
     "title": "Coming soon",
@@ -834,7 +844,8 @@
     "notFoundTitle": "Doctor not found",
     "notFoundBody": "This doctor is not available on Fogaan Dawo right now.",
     "backToDoctors": "Back to doctors",
-    "qualifications": "Qualifications"
+    "qualifications": "Qualifications",
+    "basedIn": "Country and time zone"
   },
   "adminDoctors": {
     "title": "Doctors",
@@ -887,6 +898,29 @@
       "RATE_LIMITED": "Too many requests. Please wait a moment and try again.",
       "NETWORK_ERROR": "You appear to be offline. Check your connection and try again.",
       "GENERIC": "Something went wrong. Please try again."
+    },
+    "cancellationFlag": "Flagged: {count} cancellations this month",
+    "edit": {
+      "button": "Edit",
+      "title": "Edit {name}",
+      "name": "Full name",
+      "specialty": "Specialty",
+      "country": "Country",
+      "timeZone": "Time zone",
+      "years": "Years of experience",
+      "fee": "Consultation fee (USD)",
+      "bio": "Short bio",
+      "languages": "Languages",
+      "feeNote": "A fee change applies to new bookings only. Licence details change only through re-verification.",
+      "save": "Save changes",
+      "saved": "{name} was updated.",
+      "errors": {
+        "fee": "The fee must be between $5 and $200.",
+        "bio": "The bio must be at least 50 characters.",
+        "languages": "Choose at least one language.",
+        "name": "Enter the full name.",
+        "invalid": "Some values are not valid. Check the time zone and the other fields."
+      }
     }
   },
   "apptStatus": {
@@ -988,7 +1022,15 @@
     "rescheduleBody": "You can move this appointment once, free of charge, to another open time with the same doctor.",
     "rescheduleTo": "Move to {time}",
     "joinConsultation": "Join consultation",
-    "joinOpensAt": "You can join the video consultation from {time}."
+    "joinOpensAt": "You can join the video consultation from {time}.",
+    "noShowRefund": {
+      "explain": "Your doctor has not admitted you 15 minutes after the start time. You can cancel and request a full refund.",
+      "button": "Request a full refund",
+      "confirm": "Confirm: cancel and refund",
+      "done": "Cancelled. A full refund of {amount} was requested.",
+      "notAllowed": "A refund for this reason is not available for this appointment.",
+      "failed": "The refund could not be requested. Please try again."
+    }
   },
   "bookingErrors": {
     "SLOT_UNAVAILABLE": "That time was just taken. Please choose another time.",
@@ -1034,7 +1076,7 @@
       },
       "failed": {
         "title": "Payment failed",
-        "body": "Nothing was charged. You can try again while your reservation is still valid."
+        "body": "Nothing was charged. The time was released straight away, so please choose a time and book again."
       },
       "pending": {
         "title": "Waiting for approval",
@@ -1641,7 +1683,9 @@
     "fields": {
       "qualifications": "Qualifications",
       "qualificationsHint": "Degrees and certifications, e.g. MBBS (Amoud University), MSc Public Health. Optional.",
-      "feeHint": "A new fee applies to new bookings only; existing appointments keep their price."
+      "feeHint": "A new fee applies to new bookings only; existing appointments keep their price.",
+      "country": "Country",
+      "countryHint": "Where you practise from. Your time zone is set with your availability."
     },
     "savedFee": "Profile saved. The new fee applies to new bookings only.",
     "verification": {
@@ -1708,7 +1752,8 @@
       "file": "Choose the new licence file",
       "licenceNumber": "Licence number: 3–60 letters, digits, spaces, \"-\", \"/\" or \".\"",
       "licenceCountry": "Enter the licence country (letters only)",
-      "ack": "Please confirm that you understand"
+      "ack": "Please confirm that you understand",
+      "country": "Enter a country name (2–100 characters)."
     }
   },
   "security": {
@@ -2103,8 +2148,12 @@
     "note": "Earnings are based on the fee and commission saved when each consultation was paid, minus your share of any refunds.",
     "col": {
       "consultation": "Consultation",
-      "status": "Status"
-    }
+      "status": "Status",
+      "month": "Month",
+      "consultations": "Consultations"
+    },
+    "byMonth": "Earnings per month",
+    "byMonthNote": "Fees collected minus platform commission and refund deductions. Fully refunded consultations are excluded."
   },
   "earningStatus": {
     "PENDING": "Pending",
@@ -2358,5 +2407,84 @@
   "dashboard": {
     "loadError": "Could not load your dashboard.",
     "retry": "Try again"
+  },
+  "reviews": {
+    "title": "Patient reviews",
+    "none": "No reviews yet.",
+    "average": "{avg} out of 5 · {count} reviews",
+    "starsLabel": "{n} out of 5 stars",
+    "yourRating": "Your rating",
+    "rateTitle": "Rate your consultation",
+    "rateSubtitle": "Only completed consultations can be rated, once each.",
+    "commentPlaceholder": "Add a comment (optional)",
+    "submit": "Submit rating",
+    "pickStars": "Choose 1 to 5 stars first.",
+    "thanks": "Thank you for your rating.",
+    "already": "You have already rated this consultation.",
+    "failed": "The rating could not be saved. Please try again."
+  },
+  "followUp": {
+    "title": "Book a follow-up",
+    "subtitle": "Choose one of your free times and the fee. The patient must confirm (and pay, unless free) within 48 hours, or the time is released.",
+    "pickSlot": "Choose a time first.",
+    "feeLabel": "Fee",
+    "fee": {
+      "NORMAL": "Normal",
+      "DISCOUNTED": "Discounted (50%)",
+      "FREE": "Free"
+    },
+    "submit": "Book follow-up",
+    "booked": "Follow-up booked. The patient has been asked to confirm it.",
+    "ofConsultation": "Follow-up of",
+    "free": "Free follow-up — no payment needed",
+    "confirmFree": "Confirm free follow-up",
+    "confirmed": "Follow-up confirmed.",
+    "errors": {
+      "exists": "This consultation already has an active follow-up.",
+      "slot": "That time is no longer free. Choose another.",
+      "notAllowed": "A follow-up can be booked once the consultation has ended.",
+      "generic": "The follow-up could not be booked. Please try again."
+    }
+  },
+  "bookingFiles": {
+    "title": "Attach files (optional)",
+    "subtitle": "Lab results or reports for your doctor. PDF, JPG or PNG.",
+    "body": "Add lab results or other reports your doctor should see before the consultation.",
+    "button": "Attach lab results",
+    "failed": "Files cannot be attached to this booking."
+  },
+  "sms": {
+    "title": "SMS outbox (simulated)",
+    "subtitle": "Text messages the platform would send to your phone. SMS is simulated: nothing leaves the system.",
+    "adminTitle": "SMS outbox",
+    "adminSubtitle": "Every simulated SMS written by the platform. No real messages are sent.",
+    "search": "Search by number or text",
+    "empty": "No SMS messages yet.",
+    "noPhone": "No phone number — in-app only",
+    "status": {
+      "QUEUED": "Queued",
+      "SENT": "Sent (simulated)",
+      "FAILED": "Failed"
+    }
+  },
+  "specialties": {
+    "title": "Specialties",
+    "subtitle": "The list doctors choose from when they apply. Deactivating hides a specialty from new applications and search; doctors who have it keep it.",
+    "nameEn": "Name in English",
+    "nameSo": "Name in Somali",
+    "add": "Add specialty",
+    "save": "Save",
+    "rename": "Rename",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "inactive": "Inactive",
+    "doctors": "{count} doctors",
+    "added": "Specialty added.",
+    "saved": "Specialty renamed.",
+    "activated": "Specialty activated.",
+    "deactivated": "Specialty deactivated.",
+    "exists": "A specialty with this English name already exists.",
+    "failed": "The change could not be saved.",
+    "namesRequired": "Enter both the English and the Somali name."
   }
 }

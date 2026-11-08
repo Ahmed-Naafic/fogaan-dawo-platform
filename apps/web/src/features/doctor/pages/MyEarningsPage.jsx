@@ -70,6 +70,34 @@ export default function MyEarningsPage() {
                 </Badge>
               ))}
             </div>
+            {data.byMonth?.length > 0 && (
+              <Card className="mb-4 overflow-x-auto" data-earnings-by-month>
+                <h2 className="px-4 pt-4 text-sm font-bold">{t('myEarnings.byMonth')}</h2>
+                <table className="mt-2 w-full min-w-[560px] text-sm">
+                  <thead className="border-b border-line bg-subtle/60 text-left text-2xs font-bold uppercase tracking-wide text-muted">
+                    <tr>
+                      <th className="px-4 py-2.5">{t('myEarnings.col.month')}</th>
+                      <th className="px-3 py-2.5 text-right">{t('myEarnings.col.consultations')}</th>
+                      <th className="px-3 py-2.5 text-right">{t('myEarnings.gross')}</th>
+                      <th className="px-3 py-2.5 text-right">{t('myEarnings.commission')}</th>
+                      <th className="px-4 py-2.5 text-right">{t('myEarnings.net')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {data.byMonth.map((m) => (
+                      <tr key={m.month}>
+                        <td className="px-4 py-2.5 font-semibold">{new Date(`${m.month}-15T12:00:00Z`).toLocaleDateString(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' })}</td>
+                        <td className="px-3 py-2.5 text-right">{m.consultations}</td>
+                        <td className="px-3 py-2.5 text-right">{formatMoney(m.gross)}</td>
+                        <td className="px-3 py-2.5 text-right text-muted">{formatMoney(m.commission)}</td>
+                        <td className="px-4 py-2.5 text-right font-bold">{formatMoney(m.net)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="px-4 pb-3 pt-2 text-2xs text-muted">{t('myEarnings.byMonthNote')}</p>
+              </Card>
+            )}
             {data.items.length === 0 ? (
               <div className="card p-8 text-center text-sm text-muted">{t('myEarnings.empty')}</div>
             ) : (

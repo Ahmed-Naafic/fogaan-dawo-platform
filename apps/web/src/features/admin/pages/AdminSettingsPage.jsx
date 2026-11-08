@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SpecialtiesManager from '../components/SpecialtiesManager';
 import { CalendarClock, CreditCard, History, Percent, RotateCcw, Undo2 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import Button from '@/components/ui/Button';
@@ -200,6 +201,9 @@ export default function AdminSettingsPage() {
           </div>
         )}
       </LoadState>
+      <div className="mt-6">
+        <SpecialtiesManager />
+      </div>
     </>
   );
 }

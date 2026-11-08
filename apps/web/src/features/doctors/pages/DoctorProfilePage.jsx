@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import DoctorReviews from '../components/DoctorReviews';
 import { useParams } from 'react-router';
-import { ArrowLeft, BadgeCheck, Briefcase, CalendarCheck, GraduationCap, Languages, ShieldCheck, Video } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Briefcase, Globe, CalendarCheck, GraduationCap, Languages, ShieldCheck, Video } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -104,6 +105,9 @@ export default function DoctorProfilePage() {
             <Fact icon={Languages} label={t('doctorProfile.languages')}>
               {doctor.languages.map((l) => t(`languageNames.${l}`)).join(', ')}
             </Fact>
+            <Fact icon={Globe} label={t('doctorProfile.basedIn')}>
+              {[doctor.country, doctor.timeZone].filter(Boolean).join(' · ') || '—'}
+            </Fact>
             <Fact icon={Briefcase} label={t('doctorProfile.experience')}>
               {doctor.yearsExperience != null ? t('doctorProfile.years', { count: doctor.yearsExperience }) : '—'}
             </Fact>
@@ -127,6 +131,7 @@ export default function DoctorProfilePage() {
               </p>
             </>
           )}
+          <DoctorReviews doctorId={doctor.id} />
           <p className="mt-6 flex items-start gap-2 rounded-xl border border-dashed border-primary/40 bg-primary-soft/40 p-3.5 text-xs text-primary">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /> {t('doctorProfile.verifiedNote')}
           </p>

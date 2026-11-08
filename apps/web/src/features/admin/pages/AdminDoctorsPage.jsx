@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import DoctorEditDialog from '../components/DoctorEditDialog';
 import { Link, useSearchParams } from 'react-router';
-import { Ban, Eye, Search, Stethoscope } from 'lucide-react';
+import { Ban, Eye, Search, Stethoscope, Pencil } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import Avatar from '@/components/ui/Avatar';
 import Badge from '@/components/ui/Badge';
@@ -38,6 +39,7 @@ export default function AdminDoctorsPage() {
   const [data, setData] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [suspending, setSuspending] = useState(null);
+  const [editing, setEditing] = useState(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -67,6 +69,20 @@ export default function AdminDoctorsPage() {
 
   const fmt = (d) => (d ? new Date(d).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
   const count = (name) => data?.counts?.[name] ?? '…';
+
+  const saveEdit = async (payload) => {
+    setBusy(true);
+    try {
+      await api.updateDoctor(editing.doctorId, payload);
+      notify(t('adminDoctors.edit.saved', { name: editing.name }));
+      setEditing(null);
+      setReloadKey((k) => k + 1);
+    } catch (error) {
+      notify(t(error?.code === 'VALIDATION_ERROR' ? 'adminDoctors.edit.errors.invalid' : adminDoctorErrorKey(error)), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const confirmSuspend = async (reason) => {
     setBusy(true);
@@ -128,6 +144,11 @@ export default function AdminDoctorsPage() {
                       <p className="flex flex-wrap items-center gap-2 text-[15px] font-bold">
                         <span className="truncate">{d.name}</span>
                         <Badge tone={TONE[status] ?? 'neutral'}>{t(`appStatus.${status}`)}</Badge>
+                        {d.cancellationFlag && (
+                          <Badge tone="red" data-cancellation-flag>
+                            {t('adminDoctors.cancellationFlag', { count: d.cancellationsThisMonth })}
+                          </Badge>
+                        )}
                       </p>
                       <p className="text-sm text-muted">{specialtyName(d.specialty, lang)}</p>
                       <p className="truncate text-xs text-muted">{d.email ?? d.phone ?? '—'}</p>
@@ -146,6 +167,9 @@ export default function AdminDoctorsPage() {
                     </p>
                   )}
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => setEditing(d)} data-edit-doctor>
+                      <Pencil className="h-3.5 w-3.5" /> {t('adminDoctors.edit.button')}
+                    </Button>
                     <Button to={`/admin/verification/${d.doctorId}`} variant="secondary" size="sm">
                       <Eye className="h-3.5 w-3.5" /> {t('adminDoctors.view')}
                     </Button>
@@ -162,6 +186,7 @@ export default function AdminDoctorsPage() {
         )}
       </div>
 
+      {editing && <DoctorEditDialog doctor={editing} busy={busy} onCancel={() => setEditing(null)} onSave={saveEdit} />}
       {suspending && <SuspendDoctorDialog doctor={suspending} busy={busy} onCancel={() => setSuspending(null)} onConfirm={confirmSuspend} />}
     </>
   );

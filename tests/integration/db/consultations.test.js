@@ -321,7 +321,7 @@ describe('video consultations (Neon, isolated schema)', { skip: skip ?? false },
     const b = await booking({ startInMin: 60 });
     const auth = { user: { id: b.p.user.id }, activeRole: 'PATIENT' };
     const opens = new Date(b.a.startAtUtc.getTime() - 10 * MIN);
-    const closes = new Date(b.a.endAtUtc.getTime() + 15 * MIN);
+    const closes = new Date(b.a.startAtUtc.getTime() + 30 * MIN);
     await assert.rejects(calls.join(auth, b.a.id, new Date(opens.getTime() - 1000)), (e) => e.code === 'CONSULTATION_TOO_EARLY');
     assert.equal((await calls.join(auth, b.a.id, opens)).consultation.admission, 'WAITING');
     assert.equal((await calls.join(auth, b.a.id, closes)).consultation.admission, 'WAITING');

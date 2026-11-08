@@ -1,4 +1,5 @@
 import { getPushConfig, isAllowedPushEndpoint } from '../../config/push.js';
+import { isSmsKind, queueSms } from './sms.service.js';
 import { prisma } from '../../config/database.js';
 import { sendWebPush } from '../../adapters/push/webPushSender.js';
 import { ApiError } from '../../utils/ApiError.js';
@@ -40,6 +41,7 @@ export async function notify(tx, { kind, recipients, params = {}, eventKey }) {
   const users = new Map((await repo.findRecipients(tx, [...new Set(list.map((r) => r.userId))])).map((u) => [u.id, u]));
   const now = new Date();
   const rows = [];
+  const sms = [];
   for (const { userId, role = null } of list) {
     const user = users.get(userId);
     if (!user) continue;
@@ -57,8 +59,12 @@ export async function notify(tx, { kind, recipients, params = {}, eventKey }) {
       readAt: quietInApp ? now : null,
       dispatchPending: true,
     });
+    if (isSmsKind(kind)) sms.push({ userId, phone: user.phone ?? null, text: fallback.body });
   }
-  return repo.insertNotifications(tx, rows);
+  const inserted = await repo.insertNotifications(tx, rows);
+  // Same event key twice (e.g. a re-run job) inserts nothing — and sends no second SMS.
+  if (sms.length && inserted.count > 0) await queueSms(tx, sms);
+  return inserted;
 }
 
 /* --------------------------------------------------------------- presentation */

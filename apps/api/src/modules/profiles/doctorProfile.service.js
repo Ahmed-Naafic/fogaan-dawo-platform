@@ -79,6 +79,7 @@ export async function updateMyProfessionalProfile(auth, input) {
     if ('bio' in input) data.bio = input.bio;
     if ('qualifications' in input) data.qualifications = input.qualifications;
     if ('yearsExperience' in input) data.yearsExperience = input.yearsExperience;
+    if ('country' in input) data.country = input.country;
     if ('consultationFee' in input) data.consultationFee = input.consultationFee.toFixed(2);
     if (Object.keys(data).length) await doctorRepository.updateDoctor(tx, own.id, data);
     if ('languages' in input) await doctorRepository.replaceDoctorLanguages(tx, own.id, input.languages);

@@ -139,6 +139,9 @@ function ProfessionalTab({ profile, onSaved }) {
           <Field label={t('doctorApp.fields.yearsExperience')} error={invalid.yearsExperience} htmlFor="dp-years">
             <Input id="dp-years" type="number" min={0} max={60} value={form.yearsExperience} onChange={(e) => set('yearsExperience', e.target.value)} inputClassName={invalid.yearsExperience ? INVALID : undefined} />
           </Field>
+          <Field label={t('myDoctorProfile.fields.country')} error={invalid.country} htmlFor="dp-country" hint={t('myDoctorProfile.fields.countryHint')}>
+            <Input id="dp-country" maxLength={100} value={form.country} onChange={(e) => set('country', e.target.value)} placeholder="United Kingdom" />
+          </Field>
           <Field label={t('doctorApp.fields.consultationFee')} error={invalid.consultationFee} htmlFor="dp-fee" hint={t('myDoctorProfile.fields.feeHint')}>
             <Input id="dp-fee" type="number" min={5} max={200} step="0.01" icon={DollarSign} value={form.consultationFee} onChange={(e) => set('consultationFee', e.target.value)} inputClassName={invalid.consultationFee ? INVALID : undefined} />
           </Field>

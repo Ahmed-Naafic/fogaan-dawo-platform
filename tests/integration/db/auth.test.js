@@ -194,7 +194,7 @@ describe('auth API (Neon, isolated schema)', { skip: skip ?? false }, () => {
     const me = await api('GET', '/api/v1/auth/me', { token: reg.body.data.accessToken });
     assert.equal(me.status, 200);
     assert.ok(!JSON.stringify(me.body).includes('passwordHash'));
-    assert.deepEqual(me.body.data.permissions.sort(), ['appointments:manage:own', 'consultations:join:own', 'doctor-application:manage:own', 'medical-documents:manage:participant', 'medical-history:manage:own', 'prescriptions:read:own', 'profile:read:own', 'sessions:manage:own']);
+    assert.deepEqual(me.body.data.permissions.sort(), ['appointments:manage:own', 'consultations:join:own', 'doctor-application:manage:own', 'medical-documents:manage:participant', 'medical-history:manage:own', 'messages:own', 'prescriptions:read:own', 'profile:read:own', 'sessions:manage:own']);
   });
 
   test('invalid refresh tokens and missing client header are rejected', async () => {

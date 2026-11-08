@@ -30,6 +30,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import ThemeToggle from '@/components/shared/ThemeToggle';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/features/auth/AuthProvider';
+import NoShowRefundButton from '@/features/appointments/components/NoShowRefundButton';
 import * as appointmentApi from '@/features/appointments/services/appointmentApi';
 import ConsultationPanel from '@/features/consultations/components/ConsultationPanel';
 import useConsultationCall from '@/features/consultations/useConsultationCall';
@@ -99,6 +100,7 @@ const ERROR_KEYS = {
   CONSULTATION_NOT_PAID: 'consult.errors.notPaid',
   CONSULTATION_NOT_JOINABLE: 'consult.errors.notJoinable',
   CONSULTATION_ENDED: 'consult.errors.ended',
+  CONSULTATION_NOTES_REQUIRED: 'consult.errors.notesRequired',
   DOCTOR_NOT_ACTIVE: 'consult.errors.doctorNotActive',
   ROLE_UNAVAILABLE: 'consult.errors.doctorNotActive',
   PATIENT_NOT_WAITING: 'consult.errors.patientNotWaiting',
@@ -164,6 +166,8 @@ export default function VideoConsultationPage() {
   useEffect(() => {
     if (call.error?.transient) {
       notify(t(ERROR_KEYS[call.error.code] ?? 'consult.errors.generic'), 'error');
+      // Ending needs notes first: open the notes panel so the doctor can write them.
+      if (call.error.code === 'CONSULTATION_NOTES_REQUIRED') openPanel('consultation');
       call.clearError();
     }
   }, [call, notify, t]);
@@ -268,6 +272,11 @@ export default function VideoConsultationPage() {
         <button className={primaryBtn} onClick={() => navigate(appointmentPath)}>
           {t('consult.backToAppointment')}
         </button>
+        {role === 'DOCTOR' && (
+          <button className={ghostBtn} onClick={() => navigate(`${appointmentPath}#follow-up`)} data-book-follow-up>
+            {t('consult.bookFollowUp')}
+          </button>
+        )}
       </StageCard>
     );
   } else if (call.phase === 'left') {
@@ -305,6 +314,17 @@ export default function VideoConsultationPage() {
       ) : (
         <StageCard icon={Hourglass} title={t('consult.waiting.title', { name: otherName })} testId="waiting">
           <p>{t('consult.waiting.body', { name: otherName })}</p>
+          {role === 'PATIENT' && appointment?.actions?.noShowRefund && (
+            <NoShowRefundButton
+              className="text-white [&_p]:text-white/70"
+              appointmentId={appointment.id}
+              action={appointment.actions.noShowRefund}
+              onDone={() => {
+                call.leave().catch(() => {});
+                navigate(appointmentPath);
+              }}
+            />
+          )}
         </StageCard>
       );
   } else if (!inCall && role === 'DOCTOR') {

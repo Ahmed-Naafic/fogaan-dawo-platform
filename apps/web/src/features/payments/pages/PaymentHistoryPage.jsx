@@ -15,7 +15,7 @@ import { DemoBanner } from './CheckoutPage';
 
 /** /patient/payments — the patient's simulated payments, refunds and demo receipts. */
 export default function PaymentHistoryPage() {
-  const { t, locale } = useI18n();
+  const { t, locale, lang } = useI18n();
   const notify = useToast();
   const [items, setItems] = useState(null);
 
@@ -29,7 +29,7 @@ export default function PaymentHistoryPage() {
 
   const receipt = async (p) => {
     try {
-      saveBlob(await api.downloadMyReceipt(p.id), `fogaan-dawo-demo-receipt-${p.reference}.pdf`);
+      saveBlob(await api.downloadMyReceipt(p.id, lang), `fogaan-dawo-demo-receipt-${p.reference}.pdf`);
     } catch (error) {
       notify(t(paymentErrorKey(error)), 'error');
     }

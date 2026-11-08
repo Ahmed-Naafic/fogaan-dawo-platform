@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { apiRequest } from '@/lib/apiClient';
+import { LoadState } from '@/features/finance/components/FinanceFrame';
+import { useLoad } from '@/features/finance/financeUi';
+import SmsOutboxList from '../components/SmsOutboxList';
 import { useNavigate } from 'react-router';
 import { BellRing, CheckCheck, Mail, MailOpen, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
@@ -253,6 +257,20 @@ export default function NotificationsPage() {
 
         <NotificationSettings />
       </div>
+      <MySmsOutbox />
     </>
+  );
+}
+
+/** The signed-in user's simulated SMS messages (in-app outbox). */
+function MySmsOutbox() {
+  const { t } = useI18n();
+  const state = useLoad(() => apiRequest('/v1/notifications/sms'), []);
+  return (
+    <section className="mt-6" data-my-sms>
+      <h2 className="text-base font-bold">{t('sms.title')}</h2>
+      <p className="mb-3 text-xs text-muted">{t('sms.subtitle')}</p>
+      <LoadState state={state}>{state.data && <SmsOutboxList items={state.data.items} />}</LoadState>
+    </section>
   );
 }

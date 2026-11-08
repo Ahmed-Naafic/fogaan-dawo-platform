@@ -14,4 +14,5 @@ export const searchDoctors = (params) => apiRequest(`/v1/doctors${query(params)}
 export const getDoctor = (doctorId) => apiRequest(`/v1/doctors/${encodeURIComponent(doctorId)}`, { auth: false });
 
 /** Open slots grouped by date in `tz` (the zone the viewer is looking in). */
+export const getDoctorReviews = (doctorId, page = 1) => apiRequest(`/v1/doctors/${encodeURIComponent(doctorId)}/reviews?page=${page}`, { auth: false });
 export const getDoctorSlots = (doctorId, { from, days = 7, tz } = {}) => apiRequest(`/v1/doctors/${encodeURIComponent(doctorId)}/slots${query({ from, days, tz })}`, { auth: false });

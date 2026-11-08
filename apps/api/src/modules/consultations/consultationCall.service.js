@@ -8,6 +8,7 @@ import * as notificationEvents from '../notifications/notification.events.js';
 import { findPaymentForAppointment } from '../refunds/refund.service.js';
 import { ConsultationErrorCode as Code } from './consultation.constants.js';
 import { admissionState, joinBlocker, joinWindow } from './consultation.policy.js';
+import { isFreeAppointment } from '../appointments/followUp.service.js';
 import * as repo from './consultation.repository.js';
 import { completeLockedConsultation } from './consultation.service.js';
 import * as hub from './consultation.signaling.js';
@@ -18,7 +19,7 @@ import { assignedDoctorPhotoPath } from '../medical-history/medicalHistory.const
  * Video consultation lifecycle (Phase 7). Every rule is enforced here, on the server:
  *  - only the appointment's own patient, or its assigned doctor (verified and active), may take part;
  *  - the appointment must be CONFIRMED/WAITING/IN_PROGRESS, covered by a SUCCEEDED payment with no
- *    refund, and inside the join window [start − 10 min, end + 15 min];
+ *    refund, and inside the join window [start − 10 min, start + 30 min];
  *  - the patient waits until the assigned doctor admits (or rejects) them; only the doctor ends the call.
  * Server timestamps are the only source of truth for start, end and duration.
  * The participant role is the session's active role (PATIENT or DOCTOR), checked by the router.
@@ -41,7 +42,11 @@ function blockerError(blocker, appointment) {
 /** Payment status covering the appointment, and whether any refund of it is pending or paid. */
 export async function paymentEligibility(tx, appointmentId) {
   const paid = await findPaymentForAppointment(tx, appointmentId);
-  if (!paid) return { paymentStatus: null, refunded: false };
+  if (!paid) {
+    // A free follow-up (fee 0) is covered without a payment once the patient has confirmed it.
+    const a = await tx.appointment.findUnique({ where: { id: appointmentId }, select: { bookingType: true, feeAmount: true, status: true } });
+    return { paymentStatus: isFreeAppointment(a) && a.status !== 'PENDING_PAYMENT' ? 'SUCCEEDED' : null, refunded: false };
+  }
   const refunds = await tx.refund.count({ where: { paymentId: paid.payment.id, status: { not: 'FAILED' } } });
   return { paymentStatus: paid.payment.status, refunded: refunds > 0 };
 }

@@ -16,7 +16,7 @@ export const insertNotifications = (client, rows) =>
   rows.length ? client.notification.createMany({ data: rows, skipDuplicates: true }) : Promise.resolve({ count: 0 });
 
 export const findRecipients = (client, userIds) =>
-  client.user.findMany({ where: { id: { in: userIds } }, select: { id: true, preferredLanguage: true, timeZone: true, notificationPreference: true } });
+  client.user.findMany({ where: { id: { in: userIds } }, select: { id: true, phone: true, preferredLanguage: true, timeZone: true, notificationPreference: true } });
 
 const LIST_SELECT = Object.freeze({ id: true, type: true, title: true, body: true, data: true, readAt: true, createdAt: true });
 

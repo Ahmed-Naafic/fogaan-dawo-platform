@@ -6,6 +6,10 @@ export async function list(req, res) {
   res.json({ data: await doctorAdminService.listDoctors(req.validatedQuery) });
 }
 
+export async function update(req, res) {
+  res.json({ data: await doctorAdminService.updateDoctor({ doctorId: req.params.doctorId, adminUserId: req.auth.user.id, input: req.body }) });
+}
+
 export async function suspend(req, res) {
   res.json({ data: await doctorAdminService.suspend({ doctorId: req.params.doctorId, adminUserId: req.auth.user.id, reason: req.body.reason }) });
 }

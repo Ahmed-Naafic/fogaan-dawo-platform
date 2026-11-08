@@ -5,7 +5,7 @@ import { ApiError } from '../../utils/ApiError.js';
 import { roundMoney } from '../../utils/money.js';
 import { lockRow, rethrowConflict, withTransaction } from '../../utils/transaction.js';
 import * as appointmentRepository from '../appointments/appointment.repository.js';
-import { expireAppointment } from '../appointments/appointment.service.js';
+import { expireAppointment, releaseAfterFailedPayment } from '../appointments/appointment.service.js';
 import * as auditRepository from '../audit/audit.repository.js';
 import * as paymentRepository from './payment.repository.js';
 import { postSuccessfulPayment } from './payment.service.js';
@@ -13,7 +13,7 @@ import { postSuccessfulPayment } from './payment.service.js';
 /**
  * SIMULATED payments (no real provider, no real money). The server asks the provider adapter for the
  * outcome; the browser only chooses the method and wallet and can never claim a result. Only a
- * SUCCESS confirms the appointment. Everything runs in one transaction with the appointment row locked,
+ * SUCCESS confirms the appointment; a FAILED outcome releases the slot at once (the patient books again). Everything runs in one transaction with the appointment row locked,
  * so double clicks, two tabs or concurrent requests cannot pay twice.
  */
 
@@ -161,6 +161,7 @@ export async function payForAppointment(auth, appointmentId, { provider: provide
       const paymentStatus = charge.outcome === 'SUCCESS' ? 'SUCCEEDED' : charge.outcome === 'FAILED' ? 'FAILED' : 'PENDING';
       payment = await paymentRepository.updatePayment(tx, payment.id, { status: paymentStatus, provider: provider.code, ...(charge.outcome === 'SUCCESS' ? { paidAt: now } : {}) });
       if (charge.outcome === 'SUCCESS') await postSuccessfulPayment(tx, { appointment, payment });
+      if (charge.outcome === 'FAILED') await releaseAfterFailedPayment(tx, appointment);
       await auditRepository.createAuditLog(tx, {
         actorUserId: auth.user.id,
         action: 'CREATE',
@@ -199,6 +200,7 @@ export async function refreshPayment(auth, appointmentId, now = new Date()) {
     await paymentRepository.updatePaymentAttempt(tx, pending.id, { status: status.outcome === 'SUCCESS' ? 'SUCCEEDED' : 'FAILED', responseData: { ...pending.responseData, outcome: status.outcome, message: status.message } });
     const updated = await paymentRepository.updatePayment(tx, payment.id, { status: status.outcome === 'SUCCESS' ? 'SUCCEEDED' : 'FAILED', ...(status.outcome === 'SUCCESS' ? { paidAt: now } : {}) });
     if (status.outcome === 'SUCCESS') await postSuccessfulPayment(tx, { appointment, payment: updated });
+    else await releaseAfterFailedPayment(tx, appointment);
     await auditRepository.createAuditLog(tx, { actorUserId: auth.user.id, action: 'UPDATE', entityType: 'PaymentAttempt', entityId: pending.id, oldValues: { outcome: 'PENDING' }, newValues: { simulated: true, outcome: status.outcome } });
     return { outcome: status.outcome };
   });

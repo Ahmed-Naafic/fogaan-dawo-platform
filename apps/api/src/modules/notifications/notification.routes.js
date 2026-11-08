@@ -4,7 +4,9 @@ import { rateLimiter } from '../../middleware/rateLimit.js';
 import { requireClientHeader } from '../../middleware/requireClientHeader.js';
 import { validate } from '../../middleware/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
+import { z } from 'zod';
 import * as controller from './notification.controller.js';
+import { listMySms } from './sms.service.js';
 import { idParamsSchema, listQuerySchema, preferencesSchema, readStateSchema, streamQuerySchema, subscriptionSchema, unsubscribeSchema } from './notification.validation.js';
 
 /** /api/v1/notifications — any signed-in user (patient, doctor or admin), own notifications only. */
@@ -15,6 +17,8 @@ export function createNotificationRouter() {
 
   router.get('/', validate({ query: listQuerySchema }), asyncHandler(controller.list));
   router.get('/unread-count', asyncHandler(controller.unread));
+  // In-app SMS outbox: the simulated SMS messages sent to the signed-in user.
+  router.get('/sms', validate({ query: z.object({ page: z.coerce.number().int().min(1).max(500).default(1) }).strict() }), asyncHandler(async (req, res) => res.json({ data: await listMySms(req.auth, req.validatedQuery) })));
   router.get('/stream', validate({ query: streamQuerySchema }), asyncHandler(controller.stream));
   router.post('/read-all', requireClientHeader, asyncHandler(controller.readAll));
   router.get('/preferences', asyncHandler(controller.getPreferences));

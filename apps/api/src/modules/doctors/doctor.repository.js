@@ -129,6 +129,7 @@ const PUBLIC_DOCTOR_SELECT = Object.freeze({
   bio: true,
   qualifications: true,
   yearsExperience: true,
+  country: true,
   verifiedAt: true,
   createdAt: true,
   specialty: { select: { id: true, nameEn: true, nameSo: true } },
@@ -174,11 +175,13 @@ const ADMIN_DOCTOR_SELECT = Object.freeze({
   licenceNumber: true,
   licenceCountry: true,
   yearsExperience: true,
+  country: true,
+  bio: true,
   verifiedAt: true,
   createdAt: true,
   specialty: { select: { id: true, nameEn: true, nameSo: true } },
   languages: { select: { language: true } },
-  user: { select: { fullName: true, email: true, phone: true, status: true } },
+  user: { select: { fullName: true, email: true, phone: true, status: true, timeZone: true } },
 });
 
 const adminSearch = (q) =>

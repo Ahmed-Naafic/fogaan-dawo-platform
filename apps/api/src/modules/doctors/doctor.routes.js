@@ -1,4 +1,5 @@
 import express, { Router } from 'express';
+import { listDoctorReviews } from '../reviews/review.service.js';
 import { z } from 'zod';
 import { requireClientHeader } from '../../middleware/requireClientHeader.js';
 import { authenticate } from '../../middleware/authenticate.js';
@@ -13,7 +14,7 @@ import * as availabilityController from '../availability/availability.controller
 import { blockIdParamsSchema, blockSchema, ruleIdParamsSchema, scheduleSchema, slotRangeQuerySchema } from '../availability/availability.validation.js';
 import * as applicationController from './doctorApplication.controller.js';
 import * as doctorAdminController from './doctorAdmin.controller.js';
-import { adminDoctorListQuerySchema, adminDoctorParamsSchema, suspendDoctorSchema } from './doctorAdmin.validation.js';
+import { adminDoctorListQuerySchema, adminDoctorParamsSchema, suspendDoctorSchema, adminDoctorUpdateSchema } from './doctorAdmin.validation.js';
 import * as directoryController from './doctorDirectory.controller.js';
 import { directoryQuerySchema, publicDoctorParamsSchema, publicSlotsQuerySchema } from './doctorDirectory.validation.js';
 import {
@@ -93,6 +94,7 @@ export function createDoctorRouter() {
   attachDoctorWorkspaceRoutes(router);
   router.get('/', publicReads, validate({ query: directoryQuerySchema }), asyncHandler(directoryController.search));
   router.get('/:doctorId', publicReads, validate({ params: publicDoctorParamsSchema }), asyncHandler(directoryController.get));
+  router.get('/:doctorId/reviews', publicReads, validate({ params: publicDoctorParamsSchema, query: z.object({ page: z.coerce.number().int().min(1).max(500).default(1) }).strict() }), asyncHandler(async (req, res) => res.json({ data: await listDoctorReviews(req.params.doctorId, req.validatedQuery) })));
   router.get('/:doctorId/slots', publicReads, validate({ params: publicDoctorParamsSchema, query: publicSlotsQuerySchema }), asyncHandler(directoryController.slots));
   return router;
 }
@@ -117,5 +119,6 @@ export function createAdminDoctorRouter() {
   router.use(authenticate, requireRole('ADMIN'), requirePermission(Permission.doctorsManage));
   router.get('/', validate({ query: adminDoctorListQuerySchema }), asyncHandler(doctorAdminController.list));
   router.post('/:doctorId/suspend', validate({ params: adminDoctorParamsSchema, body: suspendDoctorSchema }), asyncHandler(doctorAdminController.suspend));
+  router.patch('/:doctorId', requireClientHeader, validate({ params: adminDoctorParamsSchema, body: adminDoctorUpdateSchema }), asyncHandler(doctorAdminController.update));
   return router;
 }

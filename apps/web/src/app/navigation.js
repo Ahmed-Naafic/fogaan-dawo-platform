@@ -91,6 +91,7 @@ export const navigation = {
       { to: '/admin/medical-records', label: 'nav.medicalRecordsAdmin', icon: FileStack },
       { to: '/admin/reports', label: 'nav.reports', icon: BarChart3 },
       { to: '/admin/audit-logs', label: 'nav.auditLogs', icon: FileClock },
+      { to: '/admin/sms-outbox', label: 'nav.smsOutbox', icon: MessageSquareText },
       { to: '/admin/settings', label: 'nav.settings', icon: Settings },
     ],
     tabs: [

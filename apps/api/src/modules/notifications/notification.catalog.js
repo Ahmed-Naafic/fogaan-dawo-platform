@@ -28,6 +28,10 @@ export const NOTIFICATION_KINDS = Object.freeze({
   'account.doctor_access_paused': { type: 'SYSTEM', essential: true },
   'admin.refund_requested': { type: 'REFUND', essential: true },
   'admin.refund_failed': { type: 'REFUND', essential: true },
+  'admin.doctor_cancellations_flagged': { type: 'SYSTEM', essential: true },
+  'followup.proposed': { type: 'FOLLOW_UP', essential: true },
+  'followup.proposed.free': { type: 'FOLLOW_UP', essential: true },
+  'followup.confirmed': { type: 'FOLLOW_UP', essential: true },
   'consultation.patient_waiting': { type: 'CONSULTATION', essential: true },
   'consultation.admitted': { type: 'CONSULTATION', essential: true },
   'consultation.rejected': { type: 'CONSULTATION', essential: true },
@@ -63,6 +67,10 @@ const MESSAGES = {
     'account.doctor_access_paused': ['Doctor access paused', 'Your doctor access is paused until your updated licence is verified.'],
     'admin.refund_requested': ['Refund to process', 'A refund of {amount} is waiting to be processed.'],
     'admin.refund_failed': ['Refund failed', 'A refund of {amount} failed and needs attention.'],
+    'followup.proposed': ['Follow-up booked for you', '{doctor} booked a follow-up on {when} for {amount}. Pay before the deadline to confirm it, or the time is released.'],
+    'followup.proposed.free': ['Free follow-up booked for you', '{doctor} booked a free follow-up on {when}. Confirm it before the deadline, or the time is released.'],
+    'followup.confirmed': ['Follow-up confirmed', '{patient} confirmed the follow-up on {when}.'],
+    'admin.doctor_cancellations_flagged': ['Doctor flagged for cancellations', '{doctor} has cancelled {count} appointments this month (more than 3). Review in Admin › Doctors.'],
     'consultation.patient_waiting': ['Patient waiting', '{patient} is in the waiting room for the consultation on {when}. Open it to admit them.'],
     'consultation.admitted': ['Consultation started', '{doctor} admitted you. Your video consultation has started.'],
     'consultation.rejected': ['Not admitted yet', "{doctor} couldn't admit you right now. You can try joining again while the consultation is open."],
@@ -96,6 +104,10 @@ const MESSAGES = {
     'account.doctor_access_paused': ['Gelitaanka dhakhtarka waa la hakiyay', 'Gelitaankaaga dhakhtarka waa la hakiyay ilaa shatigaaga cusub la xaqiijiyo.'],
     'admin.refund_requested': ['Lacag-celin la fulinayo', 'Lacag-celin dhan {amount} ayaa sugaysa in la fuliyo.'],
     'admin.refund_failed': ['Lacag-celin ayaa fashilantay', 'Lacag-celin dhan {amount} ayaa fashilantay, waxayna u baahan tahay fiiro.'],
+    'followup.proposed': ['Ballan dabagal ah ayaa laguu qabtay', '{doctor} wuxuu kuu qabtay ballan dabagal ah {when} oo ah {amount}. Bixi ka hor wakhtiga kama dambaysta ah si loo xaqiijiyo, haddii kale wakhtiga waa la sii deynayaa.'],
+    'followup.proposed.free': ['Ballan dabagal ah oo bilaash ah', '{doctor} wuxuu kuu qabtay ballan dabagal ah oo bilaash ah {when}. Xaqiiji ka hor wakhtiga kama dambaysta ah, haddii kale wakhtiga waa la sii deynayaa.'],
+    'followup.confirmed': ['Dabagalka waa la xaqiijiyay', '{patient} wuxuu xaqiijiyay ballanta dabagalka ee {when}.'],
+    'admin.doctor_cancellations_flagged': ['Dhakhtar loo calaameeyay joojinno', '{doctor} wuxuu bishan joojiyay {count} ballan (in ka badan 3). Ka eeg Maamulka › Dhakhaatiirta.'],
     'consultation.patient_waiting': ['Bukaan ayaa sugaya', '{patient} wuxuu ku jiraa qolka sugitaanka ee la-tashiga {when}. Fur si aad u soo gasho.'],
     'consultation.admitted': ['La-tashigu wuu bilaabmay', '{doctor} ayaa ku soo galiyay. La-tashigaaga muuqaalka ahi wuu bilaabmay.'],
     'consultation.rejected': ['Weli lama ku soo galin', '{doctor} hadda kuma soo galin karin. Waad isku dayi kartaa inaad mar kale ku biirto inta la-tashigu furan yahay.'],
@@ -154,6 +166,8 @@ export function notificationUrl({ kind, params = {}, role }) {
   }
   if (kind === 'consultation.ended') return appt ? `/patient/appointments/${appt}` : '/patient/appointments';
   if (kind.startsWith('consultation.')) return appt ? `/consultation/${appt}` : '/account/notifications';
+  if (kind.startsWith('followup.')) return appt ? (role === 'DOCTOR' ? `/doctor/appointments/${appt}` : `/patient/appointments/${appt}`) : '/account/notifications';
+  if (kind === 'admin.doctor_cancellations_flagged') return '/admin/doctors';
   if (kind === 'appointment.new') return appt ? `/doctor/appointments/${appt}` : '/doctor/appointments';
   if (kind.startsWith('refund.')) return '/patient/payments';
   if (kind === 'application.submitted') return params.doctorId ? `/admin/verification/${params.doctorId}` : '/admin/verification';
