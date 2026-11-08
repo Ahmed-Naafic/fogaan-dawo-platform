@@ -123,3 +123,23 @@ test('STUN configuration: validated URLs only, default Google STUN, no TURN, no 
     else process.env.WEBRTC_STUN_URLS = saved;
   }
 });
+
+test('TURN (Cloudflare): short-lived credentials when configured, STUN-only fallback on any failure', async () => {
+  const { turnServers, normaliseTurnResponse, turnConfigured } = await import('../../apps/api/src/config/webrtc.js');
+  assert.equal(turnConfigured({}), false);
+  assert.deepEqual(await turnServers({ env: {} }), [], 'not configured → no TURN');
+  const env = { CLOUDFLARE_TURN_KEY_ID: 'key-1', CLOUDFLARE_TURN_API_TOKEN: 'tok' };
+  let seen;
+  const ok = async (url, init) => {
+    seen = { url, init };
+    return { ok: true, json: async () => ({ iceServers: [{ urls: ['stun:stun.cloudflare.com:3478', 'turn:turn.cloudflare.com:3478?transport=udp', 'turn:turn.cloudflare.com:53?transport=udp', 'turns:turn.cloudflare.com:443?transport=tcp'], username: 'u', credential: 'c' }] }) };
+  };
+  const servers = await turnServers({ env, fetchImpl: ok });
+  assert.match(seen.url, /\/v1\/turn\/keys\/key-1\/credentials\/generate-ice-servers$/);
+  assert.equal(seen.init.headers.authorization, 'Bearer tok');
+  assert.equal(servers.length, 1);
+  assert.ok(!servers[0].urls.some((u) => u.includes(':53')), 'port 53 dropped');
+  assert.ok(servers[0].urls.includes('turns:turn.cloudflare.com:443?transport=tcp'));
+  assert.deepEqual(await turnServers({ env, fetchImpl: async () => ({ ok: false, status: 401 }) }), [], 'error → STUN only');
+  assert.deepEqual(normaliseTurnResponse({ iceServers: { urls: 'turn:x:3478', username: 'a', credential: 'b' } }), [{ urls: ['turn:x:3478'], username: 'a', credential: 'b' }]);
+});

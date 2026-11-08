@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://fogaan-dawo-platform.vercel.app/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://fogaandawo-api.colabgroup.study/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [

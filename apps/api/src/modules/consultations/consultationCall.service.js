@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database.js';
-import { iceServersFor } from '../../config/webrtc.js';
+import { iceServersForCall } from '../../config/webrtc.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { lockRow, withTransaction } from '../../utils/transaction.js';
 import * as appointmentRepository from '../appointments/appointment.repository.js';
@@ -174,7 +174,7 @@ export async function join(auth, appointmentId, now = new Date()) {
   return {
     consultation: await presentState(prisma, { c, a }, role, now),
     signaling: { ticket, expiresAt: expiresAt.toISOString(), path: hub.SIGNAL_PATH },
-    iceServers: iceServersFor({ userId: auth.user.id, consultationId: c.id }),
+    iceServers: await iceServersForCall({ userId: auth.user.id, consultationId: c.id }),
   };
 }
 
@@ -183,7 +183,7 @@ export async function reconnectTicket(auth, consultationId, now = new Date()) {
   const { c, a } = await loadOwnedConsultation(prisma, auth, consultationId);
   await assertJoinable(prisma, a, c, now);
   const { ticket, expiresAt } = issueTicket({ userId: auth.user.id, role: auth.activeRole, consultationId: c.id });
-  return { signaling: { ticket, expiresAt: expiresAt.toISOString(), path: hub.SIGNAL_PATH }, iceServers: iceServersFor({ userId: auth.user.id, consultationId: c.id }) };
+  return { signaling: { ticket, expiresAt: expiresAt.toISOString(), path: hub.SIGNAL_PATH }, iceServers: await iceServersForCall({ userId: auth.user.id, consultationId: c.id }) };
 }
 
 export async function getState(auth, consultationId, now = new Date()) {

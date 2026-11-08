@@ -63,7 +63,10 @@ export default function CallChat({ appointmentId, consultationId }) {
   }, [load]);
 
   const timeline = [...messages.map((m) => ({ kind: 'message', at: m.createdAt, m })), ...files.map((d) => ({ kind: 'file', at: d.createdAt, d }))].sort((a, b) => a.at.localeCompare(b.at));
-  useEffect(() => bottom.current?.scrollIntoView({ block: 'end' }), [timeline.length]);
+  // Braces matter: scrollIntoView returns a Promise in recent browsers, and an effect must not return one.
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: 'end' });
+  }, [timeline.length]);
 
   const send = async (e) => {
     e.preventDefault();

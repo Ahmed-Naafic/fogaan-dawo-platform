@@ -105,7 +105,7 @@ Tables and relations: [docs/database.md](docs/database.md).
 | API | Express 4.22, Zod 4.6, ws 8.18 (signalling), bcrypt 6.0, web-push 3.6, qrcode 1.5 |
 | Database | PostgreSQL on Neon, Prisma 6.19 |
 | Files | Private local disk (development) or Supabase Storage 2.118 (hosted) |
-| Video | WebRTC in the browser, own WebSocket signalling server, public STUN |
+| Video | WebRTC in the browser, own WebSocket signalling server, STUN + Cloudflare TURN relay (optional) |
 | Tests | `node:test` (unit + integration on isolated database schemas), GitHub Actions |
 
 ## Setup from a fresh computer
@@ -207,8 +207,9 @@ Decisions made where the brief left room (recorded here as the brief asks):
 
 ## Known limitations
 
-- **Video across networks.** Calls use public STUN only. Two devices on the same network connect reliably;
-  some mobile networks and strict firewalls need a TURN server, which is not configured.
+- **Video across networks.** Calls use STUN and, when `CLOUDFLARE_TURN_KEY_ID` / `CLOUDFLARE_TURN_API_TOKEN` are set,
+  Cloudflare's TURN relay with short-lived per-call credentials, so devices on different networks (mobile data,
+  strict routers) can connect. Without those settings only devices that can reach each other directly connect.
 - **Hosting video.** The signalling server keeps call state in memory, so video consultations need one
   long-running API instance (local or a VM). On Vercel the rest of the API works but video is disabled.
 - **Background jobs on serverless hosting.** Reminders, hold expiry and push delivery run every minute in the

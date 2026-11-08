@@ -5,7 +5,7 @@ import { disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { googleConfigProblem } from './config/google.js';
 import { pushConfigProblem } from './config/push.js';
-import { webrtcConfigProblem } from './config/webrtc.js';
+import { turnConfigured, webrtcConfigProblem } from './config/webrtc.js';
 import { attachSignaling, closeSignaling } from './modules/consultations/consultation.signaling.js';
 
 // Fail fast on missing/weak auth configuration instead of on the first login.
@@ -29,7 +29,7 @@ const server = createApp().listen(env.port, () => {
   const pushProblem = pushConfigProblem();
   console.log(`[api] Web Push ${pushProblem ? `disabled: ${pushProblem}` : 'enabled'}`);
   const rtcProblem = webrtcConfigProblem();
-  console.log(`[api] Video consultations: STUN only (no TURN)${rtcProblem ? ` — ${rtcProblem}` : ''}`);
+  console.log(`[api] Video consultations: ${turnConfigured() ? 'STUN + Cloudflare TURN' : 'STUN only (no TURN)'}${rtcProblem ? ` — ${rtcProblem}` : ''}`);
   console.log(`[api] File storage: ${storageDescription()}`);
 });
 // WebRTC signaling (WebSocket) on the same HTTP server: /api/v1/consultations/signal
