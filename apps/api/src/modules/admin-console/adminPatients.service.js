@@ -2,14 +2,9 @@ import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { sumMoney } from '../../utils/money.js';
 import { lockRow, withTransaction } from '../../utils/transaction.js';
-import * as appointmentRepository from '../appointments/appointment.repository.js';
 import * as auditRepository from '../audit/audit.repository.js';
 import * as authRepository from '../auth/auth.repository.js';
-import { SUSPENSION_CANCELLABLE_STATUSES } from '../doctors/doctor.constants.js';
 import { money } from '../finance/finance.calc.js';
-import * as notificationEvents from '../notifications/notification.events.js';
-import { cancelRemindersForAppointment } from '../notifications/reminder.service.js';
-import { createRefundRequest } from '../refunds/refund.service.js';
 import { PATIENT_TABS } from './adminConsole.validation.js';
 
 /**
@@ -24,6 +19,9 @@ export const AdminPatientErrorCode = Object.freeze({
   PROTECTED_ACCOUNT: 'PATIENT_ACCOUNT_PROTECTED',
   ACTIVE_DOCTOR: 'PATIENT_IS_ACTIVE_DOCTOR',
 });
+
+/** Appointments that are still ahead of the patient; suspension leaves them untouched and only counts them. */
+const UPCOMING_STATUSES = Object.freeze(['PENDING_PAYMENT', 'CONFIRMED', 'WAITING']);
 
 const TAB_WHERE = Object.freeze({ all: {}, active: { user: { status: 'ACTIVE' } }, suspended: { user: { status: { not: 'ACTIVE' } } } });
 
@@ -169,61 +167,39 @@ function suspendBlocker(p) {
 
 /**
  * POST /api/v1/admin/patients/:patientId/suspend. In one transaction: the account becomes SUSPENDED
- * (every request re-checks this, so access stops at once) and all sessions are revoked; every future
- * appointment still pending, confirmed or waiting is CANCELLED (slot released for others, status history,
- * reminders cancelled, the doctor notified); paid ones get a full refund request; audited.
+ * (sign-in is refused and every authenticated request re-checks the status, so the patient can neither
+ * use the app nor book) and all active sessions are revoked; audited. Existing appointments are left
+ * exactly as they are — not cancelled, slots not released, no refund requested. Any follow-up on them is
+ * a separate, deliberate admin decision.
  */
 export async function suspendPatient({ patientId, adminUserId, reason, now = new Date() }) {
-  return withTransaction(
-    async (tx) => {
-      const p = await findPatient(tx, patientId);
-      if (!p) throw ApiError.notFound('Patient not found');
-      if (!(await lockRow(tx, 'users', p.user.id))) throw ApiError.notFound('Patient not found');
-      if (p.user.id === adminUserId) throw ApiError.forbidden('You cannot suspend your own account', undefined, 'SELF_ACTION_FORBIDDEN');
-      const blocker = suspendBlocker(p);
-      if (blocker === AdminPatientErrorCode.PROTECTED_ACCOUNT) throw ApiError.forbidden('Administrator accounts cannot be suspended here', undefined, blocker);
-      if (blocker === AdminPatientErrorCode.ACTIVE_DOCTOR) throw ApiError.conflict('This person is an active doctor. Suspend them from Admin › Doctors first.', undefined, blocker);
-      if (p.user.status !== 'ACTIVE') throw ApiError.conflict('This account is already suspended', undefined, AdminPatientErrorCode.ALREADY_SUSPENDED);
+  return withTransaction(async (tx) => {
+    const p = await findPatient(tx, patientId);
+    if (!p) throw ApiError.notFound('Patient not found');
+    if (!(await lockRow(tx, 'users', p.user.id))) throw ApiError.notFound('Patient not found');
+    if (p.user.id === adminUserId) throw ApiError.forbidden('You cannot suspend your own account', undefined, 'SELF_ACTION_FORBIDDEN');
+    const blocker = suspendBlocker(p);
+    if (blocker === AdminPatientErrorCode.PROTECTED_ACCOUNT) throw ApiError.forbidden('Administrator accounts cannot be suspended here', undefined, blocker);
+    if (blocker === AdminPatientErrorCode.ACTIVE_DOCTOR) throw ApiError.conflict('This person is an active doctor. Suspend them from Admin › Doctors first.', undefined, blocker);
+    if (p.user.status !== 'ACTIVE') throw ApiError.conflict('This account is already suspended', undefined, AdminPatientErrorCode.ALREADY_SUSPENDED);
 
-      await tx.user.update({ where: { id: p.user.id }, data: { status: 'SUSPENDED' } });
-      const sessions = await authRepository.revokeActiveSessionsForUser(tx, p.user.id, now);
+    await tx.user.update({ where: { id: p.user.id }, data: { status: 'SUSPENDED' } });
+    const sessions = await authRepository.revokeActiveSessionsForUser(tx, p.user.id, now);
+    const upcomingAppointments = await tx.appointment.count({ where: { patientId, startAtUtc: { gt: now }, status: { in: UPCOMING_STATUSES } } });
 
-      const appointments = await tx.appointment.findMany({
-        where: { patientId, startAtUtc: { gt: now }, status: { in: SUSPENSION_CANCELLABLE_STATUSES } },
-        include: { payment: true },
-        orderBy: { startAtUtc: 'asc' },
-      });
-      const refunds = [];
-      for (const appointment of appointments) {
-        await lockRow(tx, 'appointments', appointment.id);
-        await appointmentRepository.updateAppointment(tx, appointment.id, { status: 'CANCELLED', cancelledAt: now, cancellationReason: `Patient account suspended: ${reason}`, holdExpiresAt: null });
-        await appointmentRepository.recordStatusChange(tx, { appointmentId: appointment.id, fromStatus: appointment.status, toStatus: 'CANCELLED', reason: 'Patient account suspended', changedBy: adminUserId });
-        // The slot goes back on sale: the doctor did nothing wrong.
-        await lockRow(tx, 'availability_slots', appointment.slotId);
-        await appointmentRepository.setSlotStatus(tx, appointment.slotId, appointment.startAtUtc > now ? 'AVAILABLE' : 'CANCELLED');
-        await cancelRemindersForAppointment(tx, appointment.id);
-        let refund = null;
-        if (appointment.payment?.status === 'SUCCEEDED') refunds.push((refund = await createRefundRequest(tx, { appointmentId: appointment.id, reason: 'Patient account suspended — full refund' })));
-        if (refund) await notificationEvents.refundRequested(tx, refund);
-        // by PATIENT: the doctor is told (if it was confirmed); the suspended patient is not notified in-app.
-        await notificationEvents.appointmentCancelled(tx, { appointmentId: appointment.id, by: 'PATIENT', wasConfirmed: appointment.status === 'CONFIRMED', refund: Boolean(refund) });
-      }
-
-      await auditRepository.createAuditLog(tx, {
-        actorUserId: adminUserId,
-        action: 'SUSPEND',
-        entityType: 'PatientAccount',
-        entityId: p.user.id,
-        oldValues: { status: p.user.status },
-        newValues: { status: 'SUSPENDED', reason, patientId, cancelledAppointments: appointments.length, refundRequests: refunds.length, sessionsRevoked: sessions.count },
-      });
-      return { cancelledAppointments: appointments.length, refundRequests: refunds.length };
-    },
-    { timeout: 60_000 },
-  );
+    await auditRepository.createAuditLog(tx, {
+      actorUserId: adminUserId,
+      action: 'SUSPEND',
+      entityType: 'PatientAccount',
+      entityId: p.user.id,
+      oldValues: { status: p.user.status },
+      newValues: { status: 'SUSPENDED', reason, patientId, sessionsRevoked: sessions.count, upcomingAppointments },
+    });
+    return { sessionsRevoked: sessions.count, upcomingAppointments };
+  });
 }
 
-/** POST /api/v1/admin/patients/:patientId/reactivate — ACTIVE again (cancelled appointments stay cancelled). */
+/** POST /api/v1/admin/patients/:patientId/reactivate — ACTIVE again; audited (UPDATE / PatientAccount). */
 export async function reactivatePatient({ patientId, adminUserId, reason = null }) {
   return withTransaction(async (tx) => {
     const p = await findPatient(tx, patientId);
@@ -237,7 +213,7 @@ export async function reactivatePatient({ patientId, adminUserId, reason = null 
       entityType: 'PatientAccount',
       entityId: p.user.id,
       oldValues: { status: 'SUSPENDED' },
-      newValues: { status: 'ACTIVE', reason, patientId },
+      newValues: { status: 'ACTIVE', reason, patientId, reactivated: true },
     });
     return { reactivated: true };
   });

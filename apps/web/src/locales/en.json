@@ -150,8 +150,10 @@
     },
     "stats": {
       "doctors": "Verified Doctors",
-      "consultations": "Consultations",
-      "satisfaction": "Patient Satisfaction"
+      "consultations": "Consultations completed",
+      "satisfaction": "Patient Satisfaction",
+      "rating": "Average rating",
+      "noRating": "No ratings yet"
     },
     "specialties": {
       "eyebrow": "Specialties",
@@ -236,7 +238,11 @@
     "searchPlaceholder": "Search doctors, e.g. Cardiologist…",
     "bookConsultation": "Book a Consultation",
     "bookConsultationSub": "Find and book verified doctors",
-    "myVisits": "My Visits"
+    "myVisits": "My Visits",
+    "noUpcoming": "No upcoming appointments",
+    "noUpcomingSub": "Book a consultation with a verified doctor.",
+    "viewDetails": "View details",
+    "view": "View"
   },
   "doctors": {
     "title": "Find a Doctor",
@@ -310,7 +316,9 @@
       "waiting": "Waiting Patients",
       "waitingShort": "Waiting",
       "completed": "Completed",
-      "earnings": "Earnings"
+      "earnings": "Earnings",
+      "completed30": "Completed (30 days)",
+      "earnings30": "Earnings (30 days)"
     },
     "todaysAppointments": "Today’s Appointments",
     "yourSchedule": "Your Schedule",
@@ -319,7 +327,10 @@
     "viewSchedule": "View Schedule",
     "nextPatient": "Next Patient",
     "inMinutes": "in {n} min",
-    "startCall": "Start video call with {name}"
+    "startCall": "Start video call with {name}",
+    "noAppointmentsToday": "No appointments today.",
+    "followUp": "Follow-up",
+    "openAppointment": "Open the appointment with {name}"
   },
   "admin": {
     "title": "Admin Dashboard",
@@ -329,7 +340,11 @@
       "usersShort": "Users",
       "doctors": "Doctors",
       "appointments": "Appointments",
-      "revenue": "Revenue"
+      "revenue": "Revenue",
+      "patients": "Patients",
+      "patientsShort": "Patients",
+      "activeDoctors": "Active doctors",
+      "appointments30": "Appointments (30 days)"
     },
     "fromLastMonth": "from last month",
     "appointmentsOverview": "Appointments Overview",
@@ -339,7 +354,9 @@
     "lastWeek": "Last Week",
     "doctorVerification": "Doctor Verification",
     "review": "Review",
-    "submitted": "Submitted: {date}"
+    "submitted": "Submitted: {date}",
+    "last30Days": "in the last 30 days",
+    "weekTotal": "{count} appointments this week"
   },
   "consult": {
     "with": "Consultation with {name}",
@@ -2168,16 +2185,16 @@
     "paymentsTitle": "Payments",
     "noPayments": "No payments yet.",
     "refunded": "{amount} refunded",
-    "suspended": "{name} was suspended. {count} upcoming appointments were cancelled.",
+    "suspended": "{name} was suspended and signed out. Their existing appointments were not changed.",
     "reactivated": "{name} can sign in again.",
     "suspendTitle": "Suspend {name}?",
     "reactivateTitle": "Reactivate {name}?",
     "consequence": {
-      "access": "They are signed out everywhere and cannot sign in.",
-      "appointments": "Their upcoming appointments are cancelled and the time slots are released.",
-      "refunds": "Paid appointments get a full refund request for Finance to process."
+      "access": "They are signed out everywhere and cannot sign in or book.",
+      "appointments": "Existing appointments are not cancelled, their time slots are not released and no refund is requested.",
+      "refunds": "Every suspension and reactivation is recorded in the audit log."
     },
-    "reactivateBody": "They will be able to sign in and book again. Appointments cancelled by the suspension stay cancelled.",
+    "reactivateBody": "They will be able to sign in and book again. Their appointments were not changed by the suspension.",
     "reasonLabel": "Reason (kept in the audit log)",
     "noteLabel": "Note (optional)",
     "confirmSuspend": "Suspend account",
@@ -2337,5 +2354,9 @@
       "NETWORK_ERROR": "Could not reach the server. Check your connection.",
       "GENERIC": "Something went wrong. Please try again."
     }
+  },
+  "dashboard": {
+    "loadError": "Could not load your dashboard.",
+    "retry": "Try again"
   }
 }

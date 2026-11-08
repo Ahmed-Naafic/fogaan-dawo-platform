@@ -150,8 +150,10 @@
     },
     "stats": {
       "doctors": "Dhakhaatiir La Xaqiijiyay",
-      "consultations": "La-tashiyo",
-      "satisfaction": "Qanacsanaanta Bukaanka"
+      "consultations": "La-tashiyo la dhammeeyay",
+      "satisfaction": "Qanacsanaanta Bukaanka",
+      "rating": "Qiimeynta celceliska",
+      "noRating": "Weli qiimeyn ma jirto"
     },
     "specialties": {
       "eyebrow": "Takhasusyada",
@@ -236,7 +238,11 @@
     "searchPlaceholder": "Raadi dhakhaatiir, tusaale: Wadnaha…",
     "bookConsultation": "Qabso La-tashi",
     "bookConsultationSub": "Hel oo ballan ka qabso dhakhaatiir la xaqiijiyay",
-    "myVisits": "Booqashooyinkayga"
+    "myVisits": "Booqashooyinkayga",
+    "noUpcoming": "Ballan soo socota ma jirto",
+    "noUpcomingSub": "Ballan la qabso dhakhtar la xaqiijiyay.",
+    "viewDetails": "Eeg faahfaahinta",
+    "view": "Eeg"
   },
   "doctors": {
     "title": "Raadi Dhakhtar",
@@ -310,7 +316,9 @@
       "waiting": "Bukaannada Sugaya",
       "waitingShort": "Sugaya",
       "completed": "La Dhammeeyay",
-      "earnings": "Dakhliga"
+      "earnings": "Dakhliga",
+      "completed30": "La dhammeeyay (30 maalmood)",
+      "earnings30": "Dakhliga (30 maalmood)"
     },
     "todaysAppointments": "Ballamaha Maanta",
     "yourSchedule": "Jadwalkaaga",
@@ -319,7 +327,10 @@
     "viewSchedule": "Eeg Jadwalka",
     "nextPatient": "Bukaanka Xiga",
     "inMinutes": "{n} daqiiqo kadib",
-    "startCall": "Wicitaan muuqaal ah la bilow {name}"
+    "startCall": "Wicitaan muuqaal ah la bilow {name}",
+    "noAppointmentsToday": "Maanta ballan ma jirto.",
+    "followUp": "Dabagal",
+    "openAppointment": "Fur ballanta {name}"
   },
   "admin": {
     "title": "Guddiga Maamulka",
@@ -329,7 +340,11 @@
       "usersShort": "Isticmaalayaal",
       "doctors": "Dhakhaatiir",
       "appointments": "Ballamo",
-      "revenue": "Dakhli"
+      "revenue": "Dakhli",
+      "patients": "Bukaannada",
+      "patientsShort": "Bukaannada",
+      "activeDoctors": "Dhakhaatiirta firfircoon",
+      "appointments30": "Ballamaha (30 maalmood)"
     },
     "fromLastMonth": "bishii hore",
     "appointmentsOverview": "Guudmarka Ballamaha",
@@ -339,7 +354,9 @@
     "lastWeek": "Toddobaadkii Hore",
     "doctorVerification": "Xaqiijinta Dhakhaatiirta",
     "review": "Dib u eeg",
-    "submitted": "La soo gudbiyay: {date}"
+    "submitted": "La soo gudbiyay: {date}",
+    "last30Days": "30-kii maalmood ee la soo dhaafay",
+    "weekTotal": "{count} ballan toddobaadkan"
   },
   "consult": {
     "with": "La-tashi lala yeelanayo {name}",
@@ -2168,16 +2185,16 @@
     "paymentsTitle": "Lacag-bixinta",
     "noPayments": "Weli lacag-bixin ma jirto.",
     "refunded": "{amount} ayaa la celiyay",
-    "suspended": "{name} waa la hakiyay. {count} ballan oo soo socda ayaa la joojiyay.",
+    "suspended": "{name} waa la hakiyay oo laga saaray. Ballamihiisii jiray isma beddelin.",
     "reactivated": "{name} mar kale ayuu geli karaa.",
     "suspendTitle": "Ma hakinaysaa {name}?",
     "reactivateTitle": "Ma dib u firfircoonaynaysaa {name}?",
     "consequence": {
-      "access": "Meel kasta waa laga saarayaa mana geli karaan.",
-      "appointments": "Ballamahooda soo socda waa la joojinayaa, wakhtiyaduna waa la sii deynayaa.",
-      "refunds": "Ballamaha la bixiyay waxay helayaan codsi lacag-celin buuxda oo Maaliyaddu fulinayso."
+      "access": "Meel kasta waa laga saarayaa mana geli karaan, ballanna ma qabsan karaan.",
+      "appointments": "Ballamaha jira lama joojinayo, wakhtiyadoodana lama sii deynayo, lacag-celinna lama codsanayo.",
+      "refunds": "Hakin kasta iyo dib-u-firfircoonin kasta waxaa lagu diiwaangeliyaa diiwaanka hubinta."
     },
-    "reactivateBody": "Waxay awoodi doonaan inay galaan oo mar kale ballan qabsadaan. Ballamihii hakintu joojisay way sii joogsanayaan.",
+    "reactivateBody": "Waxay awoodi doonaan inay galaan oo mar kale ballan qabsadaan. Hakintu ma beddelin ballamahooda.",
     "reasonLabel": "Sababta (waxaa lagu kaydiyaa diiwaanka hubinta)",
     "noteLabel": "Qoraal (ikhtiyaari)",
     "confirmSuspend": "Hakii akoonka",
@@ -2337,5 +2354,9 @@
       "NETWORK_ERROR": "Lama gaari karin server-ka. Hubi xiriirkaaga.",
       "GENERIC": "Wax baa khaldamay. Fadlan isku day mar kale."
     }
+  },
+  "dashboard": {
+    "loadError": "Lama soo rari karin bogga guud.",
+    "retry": "Isku day mar kale"
   }
 }

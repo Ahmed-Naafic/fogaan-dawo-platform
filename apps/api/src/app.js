@@ -15,6 +15,7 @@ import {
 import { createPatientAppointmentRouter } from './modules/appointments/appointment.routes.js';
 import { createConsultationRouter } from './modules/consultations/consultation.routes.js';
 import healthRoutes from './modules/health/health.routes.js';
+import { createPublicStatsRouter } from './modules/dashboard/dashboard.routes.js';
 import { createNotificationRouter } from './modules/notifications/notification.routes.js';
 import { createAdminFinanceRouter, createPatientPaymentRouter } from './modules/payments/payment.routes.js';
 import { createAdminUserRouter } from './modules/users/user.routes.js';
@@ -72,6 +73,7 @@ export function createApp({ corsOrigins, authRateLimit, signalingAvailable = tru
   app.use('/api/v1/me', createMeRouter());
   app.use('/api/v1/prescriptions', createPrescriptionRouter());
   app.use('/api/v1/public/prescriptions', createPublicPrescriptionRouter());
+  app.use('/api/v1/public/stats', createPublicStatsRouter());
   app.use('/api/v1/medical-documents', createMedicalDocumentRouter());
   app.use('/api/v1/admin/medical-records', createAdminRecordsRouter());
   app.use('/api/v1/admin/patients', createAdminPatientRouter());

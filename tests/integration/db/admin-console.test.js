@@ -111,38 +111,60 @@ describe('admin console: patients, appointments, reports, audit logs (Neon, isol
     assert.equal((await api('GET', `/api/v1/admin/patients/${crypto.randomUUID()}`, { token: admin.token })).status, 404);
   });
 
-  test('suspending a patient: signed out, future bookings cancelled and slots released, paid ones refunded, audited; reactivation', async () => {
+  test('suspending a patient: signed out, cannot sign in or book, appointments untouched, audited; reactivation audited', async () => {
     const p = await account({ roles: ['PATIENT'], name: 'To Suspend' });
     const d = await account({ roles: ['DOCTOR'], doctor: true });
     const paidFuture = await appointment(p.patient.id, d.doctor.id, 'CONFIRMED', 48, { paid: true });
     const pending = await appointment(p.patient.id, d.doctor.id, 'PENDING_PAYMENT', 72);
     const past = await appointment(p.patient.id, d.doctor.id, 'COMPLETED', -48);
+    const before = new Map();
+    for (const a of [paidFuture, pending]) before.set(a.id, await prisma.appointment.findUnique({ where: { id: a.id }, include: { slot: true } }));
 
     assert.equal((await api('POST', `/api/v1/admin/patients/${p.patient.id}/suspend`, { token: admin.token, body: { reason: 'short' } })).status, 400);
     const r = await api('POST', `/api/v1/admin/patients/${p.patient.id}/suspend`, { token: admin.token, body: { reason: 'Repeated abusive messages to doctors' } });
     assert.equal(r.status, 200);
-    assert.equal(r.body.data.cancelledAppointments, 2);
-    assert.equal(r.body.data.refundRequests, 1);
+    assert.ok(r.body.data.sessionsRevoked >= 1);
+    assert.equal(r.body.data.upcomingAppointments, 2);
+    assert.equal(r.body.data.cancelledAppointments, undefined);
+    assert.equal(r.body.data.refundRequests, undefined);
     assert.equal(r.body.data.patient.status, 'SUSPENDED');
     assert.equal(r.body.data.patient.suspension.reason, 'Repeated abusive messages to doctors');
 
-    assert.equal((await api('GET', '/api/v1/auth/me', { token: p.token })).status, 401); // sessions revoked
-    assert.equal((await api('POST', '/api/v1/auth/login', { body: { email: p.email, password: PASSWORD } })).status, 403);
+    // Access: the old token is dead, sign-in is refused, so no new booking is possible.
+    assert.equal((await api('GET', '/api/v1/auth/me', { token: p.token })).status, 401);
+    assert.equal((await api('POST', '/api/v1/appointments', { token: p.token, body: {} })).status, 401);
+    const signIn = await api('POST', '/api/v1/auth/login', { body: { email: p.email, password: PASSWORD } });
+    assert.equal(signIn.status, 403);
+    assert.equal(signIn.body.error.code, 'ACCOUNT_SUSPENDED');
+    assert.equal(await prisma.session.count({ where: { userId: p.user.id, revokedAt: null } }), 0);
+
+    // Existing appointments: not cancelled, slots not released, no refunds, no status history.
     for (const a of [paidFuture, pending]) {
       const row = await prisma.appointment.findUnique({ where: { id: a.id }, include: { slot: true } });
-      assert.equal(row.status, 'CANCELLED');
-      assert.equal(row.slot.status, 'AVAILABLE');
+      assert.equal(row.status, before.get(a.id).status);
+      assert.equal(row.slot.status, before.get(a.id).slot.status);
+      assert.equal(row.cancelledAt, null);
+      assert.equal(await prisma.appointmentStatusHistory.count({ where: { appointmentId: a.id } }), 0);
     }
     assert.equal((await prisma.appointment.findUnique({ where: { id: past.id } })).status, 'COMPLETED');
-    assert.equal(await prisma.refund.count({ where: { appointmentId: paidFuture.id, status: 'REQUESTED' } }), 1);
+    assert.equal(await prisma.refund.count({ where: { appointmentId: { in: [paidFuture.id, pending.id] } } }), 0);
+
     const log = await prisma.auditLog.findFirst({ where: { entityType: 'PatientAccount', entityId: p.user.id, action: 'SUSPEND' } });
     assert.equal(log.actorUserId, admin.user.id);
+    assert.equal(log.newValues.reason, 'Repeated abusive messages to doctors');
+    assert.equal(log.newValues.upcomingAppointments, 2);
 
     assert.equal((await api('POST', `/api/v1/admin/patients/${p.patient.id}/suspend`, { token: admin.token, body: { reason: 'Second time is refused' } })).body.error.code, 'PATIENT_ALREADY_SUSPENDED');
-    const back = await api('POST', `/api/v1/admin/patients/${p.patient.id}/reactivate`, { token: admin.token, body: {} });
+    const back = await api('POST', `/api/v1/admin/patients/${p.patient.id}/reactivate`, { token: admin.token, body: { reason: 'Apologised; reviewed by the team' } });
     assert.equal(back.status, 200);
     assert.equal(back.body.data.patient.status, 'ACTIVE');
+    const reLog = await prisma.auditLog.findFirst({ where: { entityType: 'PatientAccount', entityId: p.user.id, action: 'UPDATE' } });
+    assert.equal(reLog.actorUserId, admin.user.id);
+    assert.equal(reLog.oldValues.status, 'SUSPENDED');
+    assert.equal(reLog.newValues.status, 'ACTIVE');
+    assert.equal(reLog.newValues.reason, 'Apologised; reviewed by the team');
     assert.ok(await login(p.email, 'PATIENT'));
+    assert.equal((await prisma.appointment.findUnique({ where: { id: paidFuture.id } })).status, 'CONFIRMED');
   });
 
   test('administrators and active doctors cannot be suspended from Admin › Patients', async () => {

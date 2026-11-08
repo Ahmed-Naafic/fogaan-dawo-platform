@@ -12,14 +12,28 @@ import { useI18n } from '@/lib/i18n';
 import { formatNumber } from '@/lib/format';
 import { overview as financeOverview } from '@/features/finance/services/financeApi';
 import { formatMoney } from '@/features/finance/financeUi';
-import { getAdminStats, getAppointmentsOverview } from '@/services';
+import { useLoad } from '@/features/finance/financeUi';
+import { browserTimeZone } from '@/features/dashboard/dashboardApi';
+import { reportOverview } from '../services/adminConsoleApi';
 import { specialtyName } from '@/features/doctors/doctorApplicationForm';
 import { listApplications } from '../services/verificationApi';
 
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const iso = (d) => d.toISOString().slice(0, 10);
+
+/** Monday–Sunday (YYYY-MM-DD) of this week or last week, as calendar days in the viewer's zone. */
+export function weekRange(which, now = new Date(), timeZone = browserTimeZone()) {
+  const today = new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)}T00:00:00Z`);
+  const monday = new Date(today.getTime() - ((today.getUTCDay() + 6) % 7) * 86_400_000 - (which === 'lastWeek' ? 7 * 86_400_000 : 0));
+  return { fromDate: iso(monday), toDate: iso(new Date(monday.getTime() + 6 * 86_400_000)) };
+}
+
+/** Appointments per day (by start time) from the activity report — this week or last week. */
 function AppointmentsOverview({ compact = false }) {
   const { t } = useI18n();
   const [range, setRange] = useState('thisWeek');
-  const data = getAppointmentsOverview(range).map((d) => ({ label: t(`days.${d.day}`), value: d.value }));
+  const state = useLoad(() => reportOverview({ preset: 'custom', ...weekRange(range), tz: browserTimeZone() }), [range]);
+  const data = (state.data?.trend ?? []).map((d) => ({ label: t(`days.${DAY_KEYS[new Date(`${d.period}T12:00:00Z`).getUTCDay()]}`), value: d.appointments }));
   return (
     <Card className="p-5 sm:p-6">
       <CardHeader
@@ -31,7 +45,16 @@ function AppointmentsOverview({ compact = false }) {
           </Select>
         }
       />
-      <AreaChart data={data} width={compact ? 340 : 560} height={compact ? 190 : 230} />
+      {state.error ? (
+        <p className="py-10 text-center text-sm text-danger">{t('dashboard.loadError')}</p>
+      ) : state.loading && !state.data ? (
+        <div className={compact ? 'h-[190px] animate-pulse rounded-xl bg-subtle' : 'h-[230px] animate-pulse rounded-xl bg-subtle'} aria-busy="true" />
+      ) : (
+        <>
+          <AreaChart data={data} width={compact ? 340 : 560} height={compact ? 190 : 230} />
+          <p className="mt-2 text-right text-2xs text-muted">{t('admin.weekTotal', { count: data.reduce((n, d) => n + d.value, 0) })}</p>
+        </>
+      )}
     </Card>
   );
 }
@@ -91,7 +114,10 @@ export default function AdminDashboard() {
     };
   }, []);
   const { t, locale } = useI18n();
-  const s = getAdminStats();
+  // Real activity figures (last 30 days) from the admin reports API.
+  const overview = useLoad(() => reportOverview({ preset: '30d', tz: browserTimeZone() }), []);
+  const o = overview.data;
+  const plus = (n) => (n > 0 ? `+${formatNumber(n, locale)}` : null);
   const [gross30, setGross30] = useState(null);
   useEffect(() => {
     let live = true;
@@ -103,9 +129,9 @@ export default function AdminDashboard() {
     };
   }, []);
   const cards = [
-    { icon: Users, tone: 'blue', label: t('admin.stats.users'), short: t('admin.stats.usersShort'), value: formatNumber(s.users.value, locale), trend: s.users.trend, trendLabel: t('admin.fromLastMonth') },
-    { icon: Stethoscope, tone: 'purple', label: t('admin.stats.doctors'), short: t('admin.stats.doctors'), value: formatNumber(s.doctors.value, locale), trend: s.doctors.trend },
-    { icon: CalendarCheck, tone: 'green', label: t('admin.stats.appointments'), short: t('admin.stats.appointments'), value: formatNumber(s.appointments.value, locale), trend: s.appointments.trend },
+    { icon: Users, tone: 'blue', label: t('admin.stats.patients'), short: t('admin.stats.patientsShort'), value: o ? formatNumber(o.users.totalPatients, locale) : '—', trend: o ? plus(o.users.newPatients) : null, trendLabel: t('admin.last30Days') },
+    { icon: Stethoscope, tone: 'purple', label: t('admin.stats.activeDoctors'), short: t('admin.stats.doctors'), value: o ? formatNumber(o.users.activeDoctors, locale) : '—', trend: o ? plus(o.users.newDoctors) : null, trendLabel: t('admin.last30Days') },
+    { icon: CalendarCheck, tone: 'green', label: t('admin.stats.appointments30'), short: t('admin.stats.appointments'), value: o ? formatNumber(o.appointments.total, locale) : '—', trend: null },
     // Real figure from the finance API (simulated payments), never sample data.
     { icon: Database, tone: 'gold', label: t('finance.cards.gross30'), short: t('finance.cards.gross30'), value: gross30 ? formatMoney(gross30) : '—', trend: null },
   ];

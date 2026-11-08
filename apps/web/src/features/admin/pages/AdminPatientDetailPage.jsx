@@ -60,8 +60,8 @@ export default function AdminPatientDetailPage() {
     setBusy(true);
     try {
       if (dialog === 'suspend') {
-        const r = await api.suspendPatient(patient.patientId, reason);
-        notify(t('adminPatients.suspended', { name: patient.name, count: r.cancelledAppointments }), 'success');
+        await api.suspendPatient(patient.patientId, reason);
+        notify(t('adminPatients.suspended', { name: patient.name }), 'success');
       } else {
         await api.reactivatePatient(patient.patientId, reason);
         notify(t('adminPatients.reactivated', { name: patient.name }), 'success');

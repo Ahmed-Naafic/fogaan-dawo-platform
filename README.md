@@ -55,10 +55,10 @@ See [docs/architecture.md](docs/architecture.md) for the folder-by-folder guide.
 
 ## Phase status
 
-- **Phase 1 (done):** the visual foundation, built to match `design-reference/`. All data is static mock data behind `apps/web/src/services/`.
+- **Phase 1 (done):** the visual foundation, built to match `design-reference/`. Its static mock data has since been removed: every dashboard and the landing page now read live figures from the API (see "Dashboards" in `docs/api.md`).
 - **Phase 2 (in progress):** the database is implemented (Prisma + Neon); see `docs/database.md`. Next: authentication, the HTTP API, provider payments and realtime features.
 
 Before launch:
 
-- Replace the portraits in `apps/web/src/assets/images/`. They're cropped from the reference renders.
+- Replace the remaining design images in `apps/web/src/assets/images/` (hero and consultation artwork). They're cropped from the reference renders.
 - Have a native medical translator review `apps/web/src/locales/so.json`.
