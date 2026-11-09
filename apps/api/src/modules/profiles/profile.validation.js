@@ -59,6 +59,7 @@ export const doctorProfileSchema = z
     bio: z.string().trim().min(50, 'Biography must be at least 50 characters').max(2000),
     qualifications: nullableText(1000, { min: 2 }),
     yearsExperience: z.preprocess((v) => (v === '' ? null : v), z.coerce.number().int().min(0).max(60).nullable()),
+    country: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? null : v), z.string().trim().min(2).max(100).nullable()),
     consultationFee: z.coerce
       .number({ message: 'Consultation fee must be a number' })
       .min(5, 'Consultation fee must be at least USD 5')

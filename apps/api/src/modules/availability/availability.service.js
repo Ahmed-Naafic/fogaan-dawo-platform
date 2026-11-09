@@ -120,6 +120,7 @@ export async function syncAllDoctorSlots({ now = new Date(), client = prisma } =
 
 /* ------------------------------------------------------------ doctor: read */
 
+/** GET /api/v1/doctors/me/availability: the doctor's weekly rules, time zone, slot length and blocked dates. */
 export async function getMyAvailability(auth, now = new Date()) {
   const doctor = await doctorFor(prisma, auth);
   const rules = await repo.listActiveRules(prisma, doctor.id);
@@ -228,6 +229,7 @@ function blockRange(input) {
   return { startAt, endAt };
 }
 
+/** POST /api/v1/doctors/me/availability/blocks: blocks a date; open slots that day are withdrawn, booked ones are kept. Audited. */
 export async function addMyBlock(auth, input, now = new Date()) {
   return withTransaction(async (tx) => {
     const doctor = await lockManageableDoctor(tx, auth); // permission first, then the range checks

@@ -59,6 +59,7 @@ export async function legacyOverview(client = prisma) {
   };
 }
 
+/** GET /api/v1/admin/finance/payments: payments with filters (status, provider, search, dates) and paging. */
 export async function listPayments({ status, provider, q, page, pageSize, range = null }, client = prisma) {
   const filters = { status, provider, q, from: range?.from ?? null, to: range?.to ?? null };
   const [rows, total] = await Promise.all([
@@ -80,6 +81,7 @@ async function auditTrail(client, payment) {
   return logs.map((l) => ({ action: l.action, entity: l.entityType, entityId: l.entityId, details: l.newValues, by: l.actor?.fullName ?? 'System', at: l.createdAt.toISOString() }));
 }
 
+/** GET /api/v1/admin/finance/payments/:id: one payment with attempts, ledger entries, refunds and audit history. */
 export async function getPayment(paymentId, client = prisma) {
   const payment = await paymentRepository.findPaymentDetail(client, paymentId);
   if (!payment) throw ApiError.notFound('Payment not found');
@@ -100,6 +102,7 @@ export async function getPayment(paymentId, client = prisma) {
   };
 }
 
+/** GET /api/v1/admin/finance/refunds: refunds with filters and paging. */
 export async function listRefunds({ status, q, page, pageSize, range = null }, client = prisma) {
   const filters = { status, q, from: range?.from ?? null, to: range?.to ?? null };
   const [rows, total] = await Promise.all([refundRepository.listRefundsForAdmin(client, filters, { skip: (page - 1) * pageSize, take: pageSize }), refundRepository.countRefundsForAdmin(client, filters)]);

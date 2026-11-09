@@ -91,7 +91,8 @@ describe('doctor approval workflow (Neon, isolated schema)', { skip: skip ?? fal
     return { user, email, token: res.body.data.accessToken };
   }
   const doctorIdOf = async (userId) => (await prisma.doctorProfile.findUniqueOrThrow({ where: { userId } })).id;
-  const listed = async (doctorId) => (await api('GET', '/api/v1/doctors?pageSize=50')).body.data.items.some((d) => d.id === doctorId);
+  // Publicly listed = the public profile resolves (search additionally needs a free slot in the next 30 days).
+  const listed = async (doctorId) => (await api('GET', `/api/v1/doctors/${doctorId}`)).status === 200;
 
   /* ------------------------------------------------------------ lifecycle: approval */
 

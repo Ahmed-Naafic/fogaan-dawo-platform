@@ -18,6 +18,42 @@
 - **History is preserved.** Every foreign key is `ON DELETE RESTRICT`, so financial and medical records can't disappear through cascades. The one exception is `audit_logs.actor_user_id`, which is `SET NULL` as approved.
 - **Files:** only private object-storage keys are stored, never file contents.
 
+## Database diagram (core tables)
+
+```mermaid
+erDiagram
+  users ||--o{ user_roles : has
+  roles ||--o{ user_roles : grants
+  users ||--o| patient_profiles : "is a"
+  users ||--o| doctor_profiles : "is a"
+  specialties ||--o{ doctor_profiles : "classifies (admin-managed)"
+  doctor_profiles ||--o{ doctor_documents : "licence uploads"
+  doctor_profiles ||--o{ verification_requests : "verified via"
+  doctor_profiles ||--o{ availability_rules : "weekly, own time zone"
+  doctor_profiles ||--o{ availability_slots : "UTC slots"
+  availability_slots ||--o{ appointments : "booked as"
+  patient_profiles ||--o{ appointments : books
+  doctor_profiles ||--o{ appointments : holds
+  appointments ||--o| payments : "paid by"
+  payments ||--o{ payment_attempts : tries
+  payments ||--o{ refunds : refunded
+  appointments ||--o| consultations : "takes place as"
+  consultations ||--o{ appointments : "follow-ups of"
+  consultations ||--o| consultation_notes : documents
+  consultations ||--o{ consultation_attachments : files
+  appointments ||--o{ messages : chat
+  consultations ||--o{ prescriptions : issues
+  prescriptions ||--o{ prescription_items : lists
+  appointments ||--o| reviews : "rated once"
+  users ||--o{ notifications : receives
+  users ||--o{ sms_outbox : "SMS (simulated)"
+  users ||--o{ audit_logs : "acts in"
+```
+
+The minimum data model in the brief maps to: doctors → `doctor_profiles`, patients → `patient_profiles`,
+specialties, availability_slots, appointments, payments, consultations, messages, prescriptions,
+ratings → `reviews`, users and roles (+ `user_roles`).
+
 ## Relationship summary
 
 ```
@@ -40,7 +76,7 @@ Appointment ─┬── original Appointment (rescheduling chain) / follow-up o
              └── Consultation ─┬─< ConsultationEvent, Message (sender User), ConsultationAttachment (uploader User)
                                ├── ConsultationNote
                                └─< Prescription ─< PrescriptionItem
-SmsOutbox, PlatformSetting (updated-by User) stand alone.
+SmsOutbox (optional recipient User), PlatformSetting (updated-by User).
 ```
 
 ## Where each business rule is enforced
@@ -152,6 +188,12 @@ Review the test accounts and the commission rate before going live.
   - `dr.maxamed.faarax@…` (doctor)
 
   Both doctors are pre-verified. The password comes from `SEED_DEV_PASSWORD`; if it isn't set, the accounts get a random, unusable password.
+- **Demo data** (`prisma/seed-demo.js`, skip with `SEED_DEMO=false`): five more verified doctors in
+  Hargeisa, London, Nairobi, Toronto and Dubai (each with weekly availability in their own time zone, created
+  through the availability service so slots are stored in UTC), one doctor whose application is pending,
+  six patients in Somali cities with +252 numbers, six completed consultations with payments (ledger,
+  commission, earnings), notes, reviews and a chat message, two upcoming paid bookings and one cancellation
+  with a 100 % refund request. Idempotent: running the seed again changes nothing.
 
 ## Database tests
 

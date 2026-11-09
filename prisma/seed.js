@@ -8,6 +8,7 @@
 import { randomBytes } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../apps/api/src/utils/password.js';
+import { seedDemoData } from './seed-demo.js';
 
 if (process.env.DATABASE_ENV !== 'development') {
   console.error('[seed] Refusing to run: seed data (test accounts, placeholder settings) is for development databases only.');
@@ -109,6 +110,10 @@ async function main() {
     }
   }
 
+  // Realistic demo data (more doctors in several time zones, patients in Somali cities, past and
+  // upcoming consultations, payments, ratings). Skip with SEED_DEMO=false.
+  const demo = process.env.SEED_DEMO === 'false' ? 'skipped' : await seedDemoData({ prisma, roles, specialties, passwordHash: password ? passwordHash : null, hashPassword });
+
   const counts = {
     roles: await prisma.role.count(),
     specialties: await prisma.specialty.count(),
@@ -116,6 +121,7 @@ async function main() {
     doctors: await prisma.doctorProfile.count(),
     patients: await prisma.patientProfile.count(),
   };
+  console.log('[seed] demo', demo);
   console.log('[seed] done', counts, password ? '(test accounts use SEED_DEV_PASSWORD)' : '(no SEED_DEV_PASSWORD: test accounts have a random, unusable password)');
 }
 

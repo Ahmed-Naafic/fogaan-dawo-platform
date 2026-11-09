@@ -7,9 +7,10 @@ import { JOIN_EARLY_MINUTES, JOIN_LATE_MINUTES, JOINABLE_APPOINTMENT_STATUSES } 
 
 const MIN = 60_000;
 
-/** The join window: [start − 10 min, end + 15 min], both ends inclusive. */
-export function joinWindow({ startAtUtc, endAtUtc }) {
-  return { opensAt: new Date(new Date(startAtUtc).getTime() - JOIN_EARLY_MINUTES * MIN), closesAt: new Date(new Date(endAtUtc).getTime() + JOIN_LATE_MINUTES * MIN) };
+/** The join window: [start − 10 min, start + 30 min], both ends inclusive. */
+export function joinWindow({ startAtUtc }) {
+  const start = new Date(startAtUtc).getTime();
+  return { opensAt: new Date(start - JOIN_EARLY_MINUTES * MIN), closesAt: new Date(start + JOIN_LATE_MINUTES * MIN) };
 }
 
 /**
@@ -25,7 +26,8 @@ export function joinBlocker({ appointment, consultation = null, paymentStatus, r
   if (refunded) return 'NOT_JOINABLE';
   const { opensAt, closesAt } = joinWindow(appointment);
   if (now < opensAt) return 'TOO_EARLY';
-  if (now > closesAt) return 'TOO_LATE';
+  // A call already in progress may be reconnected after the window (it is continuing, not being joined).
+  if (now > closesAt && consultation?.status !== 'IN_PROGRESS') return 'TOO_LATE';
   return null;
 }
 
@@ -57,4 +59,5 @@ export function admissionState(consultation, events = []) {
 
 /** Lifecycle transitions allowed for a consultation status. */
 const TRANSITIONS = Object.freeze({ WAITING: ['IN_PROGRESS', 'CANCELLED'], IN_PROGRESS: ['COMPLETED'], COMPLETED: [], CANCELLED: [] });
+/** True when a consultation may move from status `from` to `to` (WAITING → IN_PROGRESS/CANCELLED, IN_PROGRESS → COMPLETED). */
 export const canTransition = (from, to) => (TRANSITIONS[from] ?? []).includes(to);

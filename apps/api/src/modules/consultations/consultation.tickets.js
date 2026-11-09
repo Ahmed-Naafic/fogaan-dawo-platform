@@ -15,6 +15,7 @@ function sweep(now) {
   for (const [key, t] of tickets) if (t.expiresAt <= now) tickets.delete(key);
 }
 
+/** A random single-use signalling ticket for { userId, role, consultationId } that expires after 60 seconds. */
 export function issueTicket({ userId, role, consultationId }, now = Date.now(), ttlSeconds = SIGNAL_TICKET_TTL_SECONDS) {
   sweep(now);
   const ticket = randomBytes(32).toString('base64url');

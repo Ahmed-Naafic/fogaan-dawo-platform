@@ -24,6 +24,7 @@ export function sharedSections(note) {
 export const doctorSections = (note) =>
   SUMMARY_SECTIONS.map(([field, flag]) => ({ key: field, text: note?.[field] ?? null, shared: Boolean(note?.[flag]) }));
 
+/** GET /api/v1/consultations/:id/summary: the patient sees advice and shared sections; the doctor sees all sections and the lock time. */
 export async function getConsultationSummary(auth, consultationId) {
   const c = await prisma.consultation.findUnique({
     where: { id: consultationId },

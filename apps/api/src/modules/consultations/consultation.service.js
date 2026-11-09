@@ -23,11 +23,18 @@ async function requireConsultationDoctor(tx, consultationId, actorUserId) {
   return consultation;
 }
 
+/** True when at least one note section (complaint, assessment, diagnosis, advice) has text. */
+export const hasNoteText = (note) => ['complaint', 'assessment', 'diagnosis', 'advice'].some((f) => typeof note?.[f] === 'string' && note[f].trim().length > 0);
+
 /**
  * Completes an already-locked consultation inside the caller's transaction: COMPLETED, endedAt,
  * completedAt, the server-measured duration, and the note lock time (completed_at + 24 h).
  */
 export async function completeLockedConsultation(tx, consultation, { now = new Date(), endedBy = null } = {}) {
+  // Requirement: a consultation cannot be marked Completed without notes.
+  if (!hasNoteText(await consultationRepository.findNoteByConsultationId(tx, consultation.id))) {
+    throw ApiError.conflict('Write the consultation notes before completing the consultation', undefined, 'CONSULTATION_NOTES_REQUIRED');
+  }
   const endedAt = consultation.endedAt ?? now;
   const updated = await consultationRepository.updateConsultation(tx, consultation.id, {
     status: 'COMPLETED',

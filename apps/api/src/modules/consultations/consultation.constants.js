@@ -3,9 +3,9 @@ export const NOTE_EDIT_WINDOW_HOURS = 24;
 
 export const NOTE_FIELDS = Object.freeze(['complaint', 'assessment', 'diagnosis', 'advice', 'shareComplaint', 'shareAssessment', 'shareDiagnosis', 'shareAdvice']);
 
-/** Approved join window: from 10 minutes before the scheduled start until 15 minutes after the scheduled end. */
+/** Join window (requirement): from 10 minutes before the scheduled start until 30 minutes after the scheduled START. */
 export const JOIN_EARLY_MINUTES = 10;
-export const JOIN_LATE_MINUTES = 15;
+export const JOIN_LATE_MINUTES = 30;
 
 /** Appointment statuses in which a call can be joined (payment is checked separately). */
 export const JOINABLE_APPOINTMENT_STATUSES = Object.freeze(['CONFIRMED', 'WAITING', 'IN_PROGRESS']);

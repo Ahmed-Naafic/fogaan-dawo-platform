@@ -5,4 +5,5 @@ import { apiRequest } from '@/lib/apiClient';
 export const listDoctors = ({ tab = 'all', q, page = 1 } = {}) =>
   apiRequest(`/v1/admin/doctors?${new URLSearchParams({ tab, page: String(page), ...(q ? { q } : {}) })}`);
 
+export const updateDoctor = (doctorId, body) => apiRequest(`/v1/admin/doctors/${encodeURIComponent(doctorId)}`, { method: 'PATCH', body });
 export const suspendDoctor = (doctorId, reason) => apiRequest(`/v1/admin/doctors/${encodeURIComponent(doctorId)}/suspend`, { method: 'POST', body: { reason } });

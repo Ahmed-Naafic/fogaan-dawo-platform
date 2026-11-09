@@ -1,3 +1,4 @@
+/** Form controls: Input (optional icon/trailing element), Select and Textarea, styled for both themes. */
 import { forwardRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';

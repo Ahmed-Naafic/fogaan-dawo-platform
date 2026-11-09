@@ -1,4 +1,5 @@
 import { apiRequest } from '@/lib/apiClient';
+import { fetchSignedBlob, uploadViaStaging } from '@/lib/stagedFiles';
 
 /** The signed-in user's own doctor application (and, once approved, their doctor profile). */
 
@@ -10,14 +11,17 @@ export const saveMyApplication = (data) => apiRequest('/v1/doctor-application', 
 
 export const submitMyApplication = () => apiRequest('/v1/doctor-application/submit', { method: 'POST', body: {} });
 
-/** Sends the file bytes as-is; the API detects the real type and ignores the browser's MIME type. */
+/**
+ * Uploads through a validated staging step (works with large files and on Vercel): the API authorises the
+ * upload, the browser sends the bytes to storage, then the API checks the real content before recording it.
+ */
 export const uploadDocument = (documentType, file) =>
-  apiRequest(`/v1/doctor-application/documents/${documentType}`, {
-    method: 'POST',
-    rawBody: file,
-    headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) },
+  uploadViaStaging(file, {
+    initiate: (declared) => apiRequest(`/v1/doctor-application/documents/${documentType}/upload-url`, { method: 'POST', body: declared }),
+    finalize: (uploadToken) => apiRequest(`/v1/doctor-application/documents/${documentType}/finalize`, { method: 'POST', body: { uploadToken } }),
   });
 
-export const downloadMyDocument = (documentId) => apiRequest(`/v1/doctor-application/documents/${documentId}/file`, { responseType: 'blob' });
+/** Own document as a Blob, fetched through a short-lived signed URL (authorised + audited by the API). */
+export const downloadMyDocument = (documentId) => fetchSignedBlob(() => apiRequest(`/v1/doctor-application/documents/${documentId}/url`));
 
 export const getMyDoctorProfile = () => apiRequest('/v1/doctors/me');

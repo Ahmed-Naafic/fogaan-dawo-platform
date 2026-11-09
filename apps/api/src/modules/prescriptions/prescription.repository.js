@@ -54,10 +54,13 @@ export const DETAIL_SELECT = Object.freeze({
   consultation: { select: { id: true, appointmentId: true, completedAt: true, startedAt: true } },
 });
 
+/** Data access: find prescription detail (prescription.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findPrescriptionDetail = (client, id) => client.prescription.findUnique({ where: { id }, select: DETAIL_SELECT });
 
+/** Data access: find prescription row (prescription.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findPrescriptionRow = (client, id) => client.prescription.findUnique({ where: { id } });
 
+/** Data access: create draft (prescription.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createDraft = (client, { consultationId, patientId, doctorId, generalNotes, items }) =>
   client.prescription.create({
     data: {
@@ -79,13 +82,16 @@ export async function replaceDraftItems(client, prescriptionId, items) {
   await client.prescriptionItem.createMany({ data: items.map((it, position) => ({ ...it, prescriptionId, position })) });
 }
 
+/** Data access: update prescription (prescription.update: updates a row). `client` is the Prisma client or a transaction. */
 export const updatePrescription = (client, id, data) => client.prescription.update({ where: { id }, data, select: { id: true, status: true } });
 
+/** Data access: delete draft (prescriptionItem.deleteMany: deletes matching rows). `client` is the Prisma client or a transaction. */
 export const deleteDraft = async (client, id) => {
   await client.prescriptionItem.deleteMany({ where: { prescriptionId: id } });
   await client.prescription.delete({ where: { id } });
 };
 
+/** Data access: next reference number ($queryRawUnsafe: raw SQL query). `client` is the Prisma client or a transaction. */
 export async function nextReferenceNumber(client) {
   const [{ n }] = await client.$queryRawUnsafe(`SELECT nextval('${qualifiedSequence('prescription_reference_seq')}')::int AS n`);
   return n;
@@ -108,6 +114,7 @@ const LIST_SELECT = Object.freeze({
   consultation: { select: { appointmentId: true } },
 });
 
+/** Data access: list prescriptions (prescription.count: count of matching rows). `client` is the Prisma client or a transaction. */
 export async function listPrescriptions(client, where, { page, pageSize }) {
   const [total, rows] = await Promise.all([
     client.prescription.count({ where }),
@@ -133,6 +140,7 @@ export const findConsultationForPrescribing = (client, consultationId) =>
     },
   });
 
+/** Data access: list for consultation (prescription.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const listForConsultation = (client, consultationId, { includeDrafts }) =>
   client.prescription.findMany({
     where: { consultationId, ...(includeDrafts ? {} : { status: { not: 'DRAFT' } }) },

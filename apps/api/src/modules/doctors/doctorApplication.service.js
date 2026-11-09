@@ -1,5 +1,6 @@
-import { randomUUID } from 'node:crypto';
-import { getPrivateObject, putPrivateObject, removePrivateObject } from '../../adapters/storage/privateStorage.js';
+import { createHash, randomUUID } from 'node:crypto';
+import { getPrivateObject, putPrivateObject, removePrivateObject, signedDownloadUrl } from '../../adapters/storage/privateStorage.js';
+import { consumeUploadIntent, createUploadIntent } from '../storage/uploadIntent.service.js';
 import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { detectDocumentType, MAX_DOCUMENT_BYTES, safeDisplayName } from '../../utils/fileType.js';
@@ -25,6 +26,7 @@ const locked = (status) =>
 /** Public list of active specialties for the application form (bilingual names). */
 export const listSpecialties = () => doctorRepository.listActiveSpecialties(prisma);
 
+/** GET /api/v1/doctor-application: the caller's application with completion, documents and history, or null before the first save. */
 export async function getMyApplication(auth) {
   const profile = await doctorRepository.findApplicationByUserId(prisma, auth.user.id);
   return profile ? presentApplication(profile) : null;
@@ -97,6 +99,7 @@ export async function uploadMyDocument(auth, { documentType, buffer, fileName })
       fileName: safeDisplayName(fileName, type.ext),
       mimeType: type.mime,
       fileSize: buffer.length,
+      sha256: createHash('sha256').update(buffer).digest('hex'),
       allowedStatuses: EDITABLE_STATUSES,
       actorUserId: auth.user.id,
     }));
@@ -113,6 +116,34 @@ export async function uploadMyDocument(auth, { documentType, buffer, fileName })
     newValues: { documentType, versionNumber: document.versionNumber, mimeType: document.mimeType, fileSize: document.fileSize },
   });
   return presentDocument(document);
+}
+
+/**
+ * Large-file upload, step 1: the applicant (own application, editable status) gets a staging upload URL.
+ * The bytes are validated at finalisation exactly like a direct upload (uploadMyDocument).
+ */
+export async function initiateMyDocumentUpload(auth, documentType, { size, contentType, fileName }) {
+  const profile = await doctorRepository.findDoctorByUserId(prisma, auth.user.id);
+  if (!profile) throw ApiError.conflict('Save your application details before uploading documents', undefined, DoctorErrorCode.applicationNotFound);
+  if (!EDITABLE_STATUSES.includes(profile.verificationStatus)) throw locked(profile.verificationStatus);
+  return createUploadIntent(auth, { purpose: 'verification-document', target: { doctorId: profile.id, documentType }, meta: { fileName: String(fileName ?? '').slice(0, 300) }, declared: { size, contentType }, maxBytes: MAX_DOCUMENT_BYTES });
+}
+
+/** Large-file upload, step 2: claim the staged bytes and run the normal validated upload. */
+export async function finalizeMyDocumentUpload(auth, documentType, uploadToken) {
+  const profile = await doctorRepository.findDoctorByUserId(prisma, auth.user.id);
+  if (!profile) throw notFound();
+  const { buffer, meta } = await consumeUploadIntent(auth, uploadToken, { purpose: 'verification-document', target: { doctorId: profile.id, documentType } });
+  return uploadMyDocument(auth, { documentType, buffer, fileName: meta.fileName });
+}
+
+/** Short-lived signed URL for one of the applicant's own documents (authorised + audited first). */
+export async function getMyDocumentUrl(auth, documentId) {
+  const profile = await doctorRepository.findDoctorByUserId(prisma, auth.user.id);
+  const doc = profile ? await doctorRepository.findDocumentForDownload(prisma, { doctorId: profile.id, documentId }) : null;
+  if (!doc) throw ApiError.notFound('Document not found');
+  await auditRepository.createAuditLog(prisma, { actorUserId: auth.user.id, action: 'OTHER', entityType: 'DoctorDocument', entityId: doc.id, newValues: { action: 'SIGNED_URL_ISSUED', by: 'APPLICANT' } });
+  return signedDownloadUrl(doc.fileKey, { downloadName: doc.fileName });
 }
 
 /** Returns { buffer, fileName, mimeType } for one of the applicant's own documents. */

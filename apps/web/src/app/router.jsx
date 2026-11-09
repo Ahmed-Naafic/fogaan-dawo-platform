@@ -1,3 +1,4 @@
+/** All routes of the web app: public pages, sign-in, and the patient, doctor and admin areas (each guarded by role). */
 import { Navigate, Route, Routes } from 'react-router';
 import ComingSoonPage from '@/components/shared/ComingSoonPage';
 import LandingPage from '@/features/landing/pages/LandingPage';
@@ -10,8 +11,20 @@ import PatientLayout from '@/features/patient/layouts/PatientLayout';
 import PatientDashboard from '@/features/patient/pages/PatientDashboard';
 import DoctorLayout from '@/features/doctor/layouts/DoctorLayout';
 import DoctorDashboard from '@/features/doctor/pages/DoctorDashboard';
+import DoctorPatientsPage from '@/features/doctor/pages/DoctorPatientsPage';
+import DoctorPatientDetailPage from '@/features/doctor/pages/DoctorPatientDetailPage';
+import MyEarningsPage from '@/features/doctor/pages/MyEarningsPage';
+import MessagesPage from '@/features/messaging/pages/MessagesPage';
 import AdminLayout from '@/features/admin/layouts/AdminLayout';
 import AdminDashboard from '@/features/admin/pages/AdminDashboard';
+import AdminSmsOutboxPage from '@/features/admin/pages/AdminSmsOutboxPage';
+import AdminPatientsPage from '@/features/admin/pages/AdminPatientsPage';
+import AdminPatientDetailPage from '@/features/admin/pages/AdminPatientDetailPage';
+import AdminAppointmentsPage from '@/features/admin/pages/AdminAppointmentsPage';
+import AdminAppointmentDetailPage from '@/features/admin/pages/AdminAppointmentDetailPage';
+import AdminReportsPage from '@/features/admin/pages/AdminReportsPage';
+import AdminAuditLogsPage from '@/features/admin/pages/AdminAuditLogsPage';
+import AdminSettingsPage from '@/features/admin/pages/AdminSettingsPage';
 import FindDoctorsPage from '@/features/doctors/pages/FindDoctorsPage';
 import VideoConsultationPage from '@/features/video/pages/VideoConsultationPage';
 import RequireRole from '@/features/auth/components/RequireRole';
@@ -98,6 +111,8 @@ export default function AppRouter() {
         <Route path="prescriptions" element={<PrescriptionsListPage viewer="PATIENT" />} />
         <Route path="prescriptions/:prescriptionId" element={<PrescriptionDetailPage viewer="PATIENT" />} />
         <Route path="documents" element={<PatientDocumentsPage />} />
+        <Route path="messages" element={<MessagesPage viewer="PATIENT" />} />
+        <Route path="messages/:appointmentId" element={<MessagesPage viewer="PATIENT" />} />
         <Route path="*" element={<ComingSoonPage />} />
       </Route>
 
@@ -116,6 +131,11 @@ export default function AppRouter() {
         <Route path="prescriptions/:prescriptionId" element={<PrescriptionDetailPage viewer="DOCTOR" />} />
         <Route path="appointments" element={<AppointmentsListPage viewer="DOCTOR" />} />
         <Route path="appointments/:appointmentId" element={<AppointmentDetailPage viewer="DOCTOR" />} />
+        <Route path="patients" element={<DoctorPatientsPage />} />
+        <Route path="patients/:patientId" element={<DoctorPatientDetailPage />} />
+        <Route path="earnings" element={<MyEarningsPage />} />
+        <Route path="messages" element={<MessagesPage viewer="DOCTOR" />} />
+        <Route path="messages/:appointmentId" element={<MessagesPage viewer="DOCTOR" />} />
         <Route path="*" element={<ComingSoonPage />} />
       </Route>
 
@@ -139,6 +159,14 @@ export default function AppRouter() {
         <Route path="medical-records" element={<AdminMedicalRecordsPage />} />
         <Route path="verification" element={<DoctorVerificationPage />} />
         <Route path="verification/:doctorId" element={<DoctorApplicationReviewPage />} />
+        <Route path="patients" element={<AdminPatientsPage />} />
+        <Route path="patients/:patientId" element={<AdminPatientDetailPage />} />
+        <Route path="appointments" element={<AdminAppointmentsPage />} />
+        <Route path="appointments/:appointmentId" element={<AdminAppointmentDetailPage />} />
+        <Route path="reports" element={<AdminReportsPage />} />
+        <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+        <Route path="sms-outbox" element={<AdminSmsOutboxPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="*" element={<ComingSoonPage />} />
       </Route>
 

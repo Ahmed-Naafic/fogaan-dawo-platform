@@ -62,7 +62,8 @@ describe('strict doctor re-verification (Neon, isolated schema)', { skip: skip ?
   const login = (email, role) => api('POST', '/api/v1/auth/login', { body: { email, password: PASSWORD, ...(role ? { role } : {}) } });
   const roleNames = async (userId) => (await prisma.userRole.findMany({ where: { userId }, include: { role: true } })).map((r) => r.role.name).sort();
   const openSlots = (doctorId) => prisma.availabilitySlot.count({ where: { doctorId, status: 'AVAILABLE', startAtUtc: { gt: new Date() } } });
-  const listed = async (doctorId) => (await api('GET', '/api/v1/doctors?pageSize=50')).body.data.items.some((d) => d.id === doctorId);
+  // Publicly listed = the public profile resolves (search additionally needs a free slot in the next 30 days).
+  const listed = async (doctorId) => (await api('GET', `/api/v1/doctors/${doctorId}`)).status === 200;
 
   async function adminSession() {
     const email = `admin-${uniq()}@fogaandawo.test`;

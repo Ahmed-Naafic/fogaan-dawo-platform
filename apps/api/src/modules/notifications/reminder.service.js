@@ -25,8 +25,10 @@ export const REMINDERS = Object.freeze([
 const PLAN_HORIZON_MS = 25 * 3_600_000;
 const byKind = Object.fromEntries(REMINDERS.map((r) => [r.kind, r]));
 
+/** When a reminder of a kind (24 h, 1 h, 10 min before) is due for an appointment start. */
 export const reminderDueAt = (startAtUtc, kind) => new Date(new Date(startAtUtc).getTime() - byKind[kind].minutesBefore * 60_000);
 
+/** Creates the reminder rows for a confirmed appointment (skipping ones already past). */
 export async function planReminders(now = new Date(), client = prisma) {
   const appointments = await client.appointment.findMany({
     where: { status: 'CONFIRMED', startAtUtc: { gt: now, lte: new Date(now.getTime() + PLAN_HORIZON_MS) } },
@@ -43,6 +45,7 @@ export async function planReminders(now = new Date(), client = prisma) {
 export const cancelRemindersForAppointment = (tx, appointmentId) =>
   tx.appointmentReminder.updateMany({ where: { appointmentId, status: 'PENDING' }, data: { status: 'CANCELLED' } });
 
+/** Cancels pending reminders of appointments that are no longer confirmed. */
 export const cancelStaleReminders = (client = prisma) =>
   client.appointmentReminder.updateMany({ where: { status: 'PENDING', appointment: { status: { not: 'CONFIRMED' } } }, data: { status: 'CANCELLED' } });
 
@@ -94,6 +97,7 @@ export async function dispatchDueReminders(now = new Date(), { limit = 100 } = {
   return result;
 }
 
+/** Background job: plans, cancels and sends due reminders (claims rows with SKIP LOCKED, safe to overlap). */
 export async function runReminderSweep(now = new Date()) {
   const planned = await planReminders(now);
   const { count: cancelled } = await cancelStaleReminders();

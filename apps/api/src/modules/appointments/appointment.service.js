@@ -7,7 +7,7 @@ import * as patientRepository from '../patients/patient.repository.js';
 import { getCommissionRate } from '../settings/setting.service.js';
 import * as paymentRepository from '../payments/payment.repository.js';
 import * as appointmentRepository from './appointment.repository.js';
-import { FOLLOW_UP_DEADLINE_HOURS, PAYMENT_HOLD_MINUTES } from './appointment.constants.js';
+import { getBookingPolicy } from '../settings/bookingPolicy.js';
 
 const addMinutes = (date, minutes) => new Date(date.getTime() + minutes * 60_000);
 
@@ -24,21 +24,33 @@ export async function expireAppointment(tx, appointment, reason) {
   await appointmentRepository.setSlotStatus(tx, appointment.slotId, 'AVAILABLE');
 }
 
-async function followUpDeadline(tx, { patientId, slot, followUpOfConsultationId, now }) {
+/**
+ * A failed payment releases the slot immediately (requirement: "Failed payment releases the slot
+ * immediately"). The appointment becomes EXPIRED with the reason recorded; the FAILED payment is kept as
+ * the record of the attempt. Caller must hold the appointment lock. The patient books again to retry.
+ */
+export async function releaseAfterFailedPayment(tx, appointment, reason = 'Payment failed — slot released') {
+  await appointmentRepository.updateAppointment(tx, appointment.id, { status: 'EXPIRED', holdExpiresAt: null });
+  await appointmentRepository.recordStatusChange(tx, { appointmentId: appointment.id, fromStatus: 'PENDING_PAYMENT', toStatus: 'EXPIRED', reason });
+  await lockRow(tx, 'availability_slots', appointment.slotId);
+  await appointmentRepository.setSlotStatus(tx, appointment.slotId, 'AVAILABLE');
+}
+
+async function followUpDeadline(tx, { patientId, slot, followUpOfConsultationId, now, hours }) {
   const consultation = followUpOfConsultationId ? await consultationRepository.findConsultationById(tx, followUpOfConsultationId) : null;
   if (!consultation || consultation.status !== 'COMPLETED' || consultation.patientId !== patientId || consultation.doctorId !== slot.doctorId) {
     throw ApiError.badRequest('A follow-up must reference a completed consultation between the same patient and doctor');
   }
-  const deadline = addMinutes(now, FOLLOW_UP_DEADLINE_HOURS * 60);
+  const deadline = addMinutes(now, hours * 60);
   return deadline > slot.startAtUtc ? slot.startAtUtc : deadline;
 }
 
 /**
  * Reserves a slot for a patient: locks the slot, checks the doctor is verified and active, creates a
- * PENDING_PAYMENT appointment with a payment deadline (10 min standard, 48 h follow-up) and marks the
+ * PENDING_PAYMENT appointment with a payment deadline (Admin › Settings booking policy; defaults 10 min standard, 48 h follow-up) and marks the
  * slot HELD. A stale hold on the slot is expired first. One transaction, slot row locked throughout.
  */
-export async function reserveSlot({ patientId, slotId, reason = null, bookingType = 'STANDARD', followUpOfConsultationId = null, now = new Date() }) {
+export async function reserveSlot({ patientId, slotId, reason = null, bookingType = 'STANDARD', followUpOfConsultationId = null, feeAmount = null, now = new Date() }) {
   try {
     return await withTransaction(async (tx) => {
       if (!(await lockRow(tx, 'availability_slots', slotId))) throw ApiError.notFound('Slot not found');
@@ -58,13 +70,14 @@ export async function reserveSlot({ patientId, slotId, reason = null, bookingTyp
       if (!doctor) throw ApiError.conflict('Doctor is not verified or not active');
       if (!(await patientRepository.findPatientById(tx, patientId))) throw ApiError.notFound('Patient not found');
 
+      const policy = await getBookingPolicy(tx);
       let deadline;
       if (bookingType === 'FOLLOW_UP') {
-        deadline = await followUpDeadline(tx, { patientId, slot, followUpOfConsultationId, now });
+        deadline = await followUpDeadline(tx, { patientId, slot, followUpOfConsultationId, now, hours: policy.followUpDeadlineHours });
       } else if (followUpOfConsultationId) {
         throw ApiError.badRequest('followUpOfConsultationId is only valid for FOLLOW_UP bookings');
       } else {
-        deadline = addMinutes(now, PAYMENT_HOLD_MINUTES);
+        deadline = addMinutes(now, policy.paymentHoldMinutes);
       }
 
       const appointment = await appointmentRepository.createAppointment(tx, {
@@ -73,7 +86,8 @@ export async function reserveSlot({ patientId, slotId, reason = null, bookingTyp
         slotId,
         bookingType,
         reason,
-        feeAmount: doctor.consultationFee,
+        // A follow-up may carry the doctor's chosen fee (normal, discounted or free); otherwise the current fee.
+        feeAmount: bookingType === 'FOLLOW_UP' && feeAmount != null ? feeAmount : doctor.consultationFee,
         currency: doctor.currency,
         commissionRateSnapshot: await getCommissionRate(tx),
         startAtUtc: slot.startAtUtc,

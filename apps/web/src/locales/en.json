@@ -77,7 +77,8 @@
     "financeReports": "Financial reports",
     "financeSettings": "Finance settings",
     "documents": "Documents",
-    "medicalRecordsAdmin": "Medical records"
+    "medicalRecordsAdmin": "Medical records",
+    "smsOutbox": "SMS outbox"
   },
   "specialty": {
     "general": "General",
@@ -150,8 +151,10 @@
     },
     "stats": {
       "doctors": "Verified Doctors",
-      "consultations": "Consultations",
-      "satisfaction": "Patient Satisfaction"
+      "consultations": "Consultations completed",
+      "satisfaction": "Patient Satisfaction",
+      "rating": "Average rating",
+      "noRating": "No ratings yet"
     },
     "specialties": {
       "eyebrow": "Specialties",
@@ -236,7 +239,11 @@
     "searchPlaceholder": "Search doctors, e.g. Cardiologist…",
     "bookConsultation": "Book a Consultation",
     "bookConsultationSub": "Find and book verified doctors",
-    "myVisits": "My Visits"
+    "myVisits": "My Visits",
+    "noUpcoming": "No upcoming appointments",
+    "noUpcomingSub": "Book a consultation with a verified doctor.",
+    "viewDetails": "View details",
+    "view": "View"
   },
   "doctors": {
     "title": "Find a Doctor",
@@ -258,8 +265,8 @@
     "addFavorite": "Save to favourites",
     "removeFavorite": "Remove from favourites",
     "resultCount": "{count} doctors available",
-    "emptyTitle": "No doctors match your search",
-    "emptyBody": "Try another name, specialty or condition.",
+    "emptyTitle": "No doctors match; try removing a filter",
+    "emptyBody": "Only verified doctors with a free time in the next 30 days are shown.",
     "clearFilters": "Clear filters",
     "searchPlaceholder": "Search doctors by name or specialty…",
     "language": "Language",
@@ -310,7 +317,9 @@
       "waiting": "Waiting Patients",
       "waitingShort": "Waiting",
       "completed": "Completed",
-      "earnings": "Earnings"
+      "earnings": "Earnings",
+      "completed30": "Completed (30 days)",
+      "earnings30": "Earnings (30 days)"
     },
     "todaysAppointments": "Today’s Appointments",
     "yourSchedule": "Your Schedule",
@@ -319,7 +328,10 @@
     "viewSchedule": "View Schedule",
     "nextPatient": "Next Patient",
     "inMinutes": "in {n} min",
-    "startCall": "Start video call with {name}"
+    "startCall": "Start video call with {name}",
+    "noAppointmentsToday": "No appointments today.",
+    "followUp": "Follow-up",
+    "openAppointment": "Open the appointment with {name}"
   },
   "admin": {
     "title": "Admin Dashboard",
@@ -329,7 +341,11 @@
       "usersShort": "Users",
       "doctors": "Doctors",
       "appointments": "Appointments",
-      "revenue": "Revenue"
+      "revenue": "Revenue",
+      "patients": "Patients",
+      "patientsShort": "Patients",
+      "activeDoctors": "Active doctors",
+      "appointments30": "Appointments (30 days)"
     },
     "fromLastMonth": "from last month",
     "appointmentsOverview": "Appointments Overview",
@@ -339,7 +355,9 @@
     "lastWeek": "Last Week",
     "doctorVerification": "Doctor Verification",
     "review": "Review",
-    "submitted": "Submitted: {date}"
+    "submitted": "Submitted: {date}",
+    "last30Days": "in the last 30 days",
+    "weekTotal": "{count} appointments this week"
   },
   "consult": {
     "with": "Consultation with {name}",
@@ -416,14 +434,15 @@
       "patientNotWaiting": "The patient is no longer waiting.",
       "notFound": "Consultation not found.",
       "network": "Can't reach the server. Check your internet connection and try again.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "notesRequired": "Write the consultation notes (at least one section) before ending the consultation."
     },
     "media": {
       "denied": "Camera and microphone access is blocked. Allow it in your browser's site settings, then try again.",
       "insecure": "Video calls need a secure (HTTPS) connection.",
       "unsupported": "This browser can't make video calls. Please use a recent Chrome, Edge, Firefox or Safari.",
       "noCamera": "No camera was found, so you've joined with audio only.",
-      "cameraUnavailable": "Your camera couldn't be started (another app may be using it), so you've joined with audio only.",
+      "cameraUnavailable": "Video unavailable — your camera couldn't be started (another app may be using it), so the call continues with audio only.",
       "noDevices": "No camera or microphone was found. You can still see and hear the other person.",
       "continueWithout": "Join without camera and microphone"
     },
@@ -465,7 +484,7 @@
     },
     "peerAway": "{name} has left or lost connection",
     "peerAwayBody": "Waiting for them to come back…",
-    "remoteCameraOff": "{name}'s camera is off",
+    "remoteCameraOff": "Video unavailable — {name}'s camera is off. The call continues with audio.",
     "waitingForVideo": "Connecting to {name}…",
     "remoteMuted": "{name} is muted",
     "signalLost": "Connection to the server was lost. Reconnecting…",
@@ -480,7 +499,15 @@
     "leave": "Leave",
     "leaveLabel": "Leave the consultation",
     "endCallLabel": "End the consultation for both of you",
-    "confirmEnd": "Tap again to end"
+    "confirmEnd": "Tap again to end",
+    "bookFollowUp": "Book a follow-up",
+    "chat": {
+      "empty": "No messages yet. Messages and files you share here are saved to the consultation record.",
+      "attach": "Share an image or PDF (up to 5 MB)",
+      "fileType": "Only images (JPG, PNG) or PDF files can be shared.",
+      "fileTooLarge": "Files shared in the chat can be up to 5 MB.",
+      "note": "Saved to the consultation record. Messages sent while someone is reconnecting reach them when they are back."
+    }
   },
   "comingSoon": {
     "title": "Coming soon",
@@ -651,7 +678,13 @@
     "VALIDATION_ERROR": "Please check the highlighted fields.",
     "RATE_LIMITED": "Too many uploads. Please wait a few minutes and try again.",
     "NETWORK_ERROR": "Cannot reach the server. Check your connection and try again.",
-    "GENERIC": "Something went wrong. Please try again."
+    "GENERIC": "Something went wrong. Please try again.",
+    "UPLOAD_INTENT_INVALID": "This upload can't be completed. Please choose the file again.",
+    "UPLOAD_NOT_FOUND": "The upload didn't arrive or has expired. Please try again.",
+    "UPLOAD_ALREADY_FINALISED": "This file was already saved.",
+    "UPLOAD_FAILED": "The upload didn't complete. Check your connection and try again.",
+    "DOWNLOAD_LINK_INVALID": "The download link expired. Please try again.",
+    "DOWNLOAD_FAILED": "The download didn't complete. Please try again."
   },
   "verification": {
     "title": "Doctor verification",
@@ -811,7 +844,8 @@
     "notFoundTitle": "Doctor not found",
     "notFoundBody": "This doctor is not available on Fogaan Dawo right now.",
     "backToDoctors": "Back to doctors",
-    "qualifications": "Qualifications"
+    "qualifications": "Qualifications",
+    "basedIn": "Country and time zone"
   },
   "adminDoctors": {
     "title": "Doctors",
@@ -864,6 +898,29 @@
       "RATE_LIMITED": "Too many requests. Please wait a moment and try again.",
       "NETWORK_ERROR": "You appear to be offline. Check your connection and try again.",
       "GENERIC": "Something went wrong. Please try again."
+    },
+    "cancellationFlag": "Flagged: {count} cancellations this month",
+    "edit": {
+      "button": "Edit",
+      "title": "Edit {name}",
+      "name": "Full name",
+      "specialty": "Specialty",
+      "country": "Country",
+      "timeZone": "Time zone",
+      "years": "Years of experience",
+      "fee": "Consultation fee (USD)",
+      "bio": "Short bio",
+      "languages": "Languages",
+      "feeNote": "A fee change applies to new bookings only. Licence details change only through re-verification.",
+      "save": "Save changes",
+      "saved": "{name} was updated.",
+      "errors": {
+        "fee": "The fee must be between $5 and $200.",
+        "bio": "The bio must be at least 50 characters.",
+        "languages": "Choose at least one language.",
+        "name": "Enter the full name.",
+        "invalid": "Some values are not valid. Check the time zone and the other fields."
+      }
     }
   },
   "apptStatus": {
@@ -939,7 +996,7 @@
     "rescheduleBlocked": {
       "NOT_CONFIRMED": "Only paid appointments can be rescheduled.",
       "ALREADY_RESCHEDULED": "The free reschedule has already been used for this appointment.",
-      "TOO_LATE": "Free rescheduling is available until 24 hours before the appointment.",
+      "TOO_LATE": "Free rescheduling is available until {hours} hours before the appointment.",
       "PATIENT_ONLY": ""
     },
     "history": "History",
@@ -951,7 +1008,7 @@
     "refund": {
       "none": "Nothing has been paid, so there is nothing to refund. The time is released for other patients.",
       "amount": "Refund: {amount} ({percent})",
-      "rules": "More than 24 hours before: 100 %. Between 2 and 24 hours: 50 %. Less than 2 hours: no refund.",
+      "rules": "More than {full} hours before: 100 %. Between {partial} and {full} hours: 50 %. Less than {partial} hours: no refund.",
       "doctorRule": "When a doctor cancels, the patient is always refunded in full and notified."
     },
     "reasonRequired": "Reason (required, shown to the patient)",
@@ -965,7 +1022,15 @@
     "rescheduleBody": "You can move this appointment once, free of charge, to another open time with the same doctor.",
     "rescheduleTo": "Move to {time}",
     "joinConsultation": "Join consultation",
-    "joinOpensAt": "You can join the video consultation from {time}."
+    "joinOpensAt": "You can join the video consultation from {time}.",
+    "noShowRefund": {
+      "explain": "Your doctor has not admitted you 15 minutes after the start time. You can cancel and request a full refund.",
+      "button": "Request a full refund",
+      "confirm": "Confirm: cancel and refund",
+      "done": "Cancelled. A full refund of {amount} was requested.",
+      "notAllowed": "A refund for this reason is not available for this appointment.",
+      "failed": "The refund could not be requested. Please try again."
+    }
   },
   "bookingErrors": {
     "SLOT_UNAVAILABLE": "That time was just taken. Please choose another time.",
@@ -981,7 +1046,7 @@
     "reschedule": {
       "NOT_CONFIRMED": "Only paid appointments can be rescheduled.",
       "ALREADY_RESCHEDULED": "The free reschedule has already been used.",
-      "TOO_LATE": "Free rescheduling closes 24 hours before the appointment."
+      "TOO_LATE": "Free rescheduling has closed for this appointment."
     }
   },
   "payments": {
@@ -1011,7 +1076,7 @@
       },
       "failed": {
         "title": "Payment failed",
-        "body": "Nothing was charged. You can try again while your reservation is still valid."
+        "body": "Nothing was charged. The time was released straight away, so please choose a time and book again."
       },
       "pending": {
         "title": "Waiting for approval",
@@ -1043,7 +1108,9 @@
     "historyTitle": "Payments",
     "historySubtitle": "Your simulated payments, refunds and demo receipts.",
     "noPayments": "No payments yet.",
-    "attemptsCount": "Attempts: {count}"
+    "attemptsCount": "Attempts: {count}",
+    "refundReceipt": "Refund receipt",
+    "receiptFailed": "The receipt could not be downloaded."
   },
   "paymentErrors": {
     "PAYMENT_ALREADY_SUCCEEDED": "This appointment is already paid.",
@@ -1618,7 +1685,9 @@
     "fields": {
       "qualifications": "Qualifications",
       "qualificationsHint": "Degrees and certifications, e.g. MBBS (Amoud University), MSc Public Health. Optional.",
-      "feeHint": "A new fee applies to new bookings only; existing appointments keep their price."
+      "feeHint": "A new fee applies to new bookings only; existing appointments keep their price.",
+      "country": "Country",
+      "countryHint": "Where you practise from. Your time zone is set with your availability."
     },
     "savedFee": "Profile saved. The new fee applies to new bookings only.",
     "verification": {
@@ -1685,7 +1754,8 @@
       "file": "Choose the new licence file",
       "licenceNumber": "Licence number: 3–60 letters, digits, spaces, \"-\", \"/\" or \".\"",
       "licenceCountry": "Enter the licence country (letters only)",
-      "ack": "Please confirm that you understand"
+      "ack": "Please confirm that you understand",
+      "country": "Enter a country name (2–100 characters)."
     }
   },
   "security": {
@@ -1891,7 +1961,13 @@
     "DOCUMENT_ARCHIVED": "This document is already archived.",
     "DOCUMENT_FORBIDDEN": "Only the patient or the person who shared it can archive this document.",
     "CONSULTATION_NOT_ELIGIBLE": "Documents can be shared only for a consultation that took place.",
-    "DOCUMENT_INTEGRITY": "The document failed its integrity check and was not opened."
+    "DOCUMENT_INTEGRITY": "The document failed its integrity check and was not opened.",
+    "UPLOAD_INTENT_INVALID": "This upload can't be completed. Please choose the file again.",
+    "UPLOAD_NOT_FOUND": "The upload didn't arrive or has expired. Please try again.",
+    "UPLOAD_ALREADY_FINALISED": "This file was already saved.",
+    "UPLOAD_FAILED": "The upload didn't complete. Check your connection and try again.",
+    "DOWNLOAD_LINK_INVALID": "The download link expired. Please try again.",
+    "DOWNLOAD_FAILED": "The download didn't complete. Please try again."
   },
   "docs": {
     "title": "Medical documents",
@@ -2044,5 +2120,373 @@
       "uploaded": "Uploaded",
       "archived": "Archived"
     }
+  },
+  "myPatients": {
+    "title": "My patients",
+    "subtitle": "Patients who have had a paid appointment with you.",
+    "search": "Search patients by name",
+    "visits": "{count} completed of {total} appointments",
+    "next": "Next: {when}",
+    "last": "Last: {when}",
+    "empty": "No patients yet. Patients appear here once they have a paid appointment with you.",
+    "noMatch": "No patients match your search.",
+    "error": "Patients could not be loaded. Please try again.",
+    "inactive": "Your doctor account is not active, so patient information is unavailable.",
+    "denied": "You can only view patients who have a paid appointment with you.",
+    "detailSubtitle": "Patient overview",
+    "appointmentsTitle": "Appointments with this patient"
+  },
+  "myEarnings": {
+    "title": "My earnings",
+    "subtitle": "What you earned from consultations paid in the selected period.",
+    "statusFilter": "Earning status",
+    "allStatuses": "All statuses",
+    "gross": "Consultation fees",
+    "commission": "Platform commission",
+    "deductions": "Refund deductions",
+    "net": "Your earnings",
+    "empty": "No paid consultations in this period.",
+    "noPayouts": "These are calculated earnings. Payments are simulated and payouts are not available yet, so no money has been transferred.",
+    "note": "Earnings are based on the fee and commission saved when each consultation was paid, minus your share of any refunds.",
+    "col": {
+      "consultation": "Consultation",
+      "status": "Status",
+      "month": "Month",
+      "consultations": "Consultations"
+    },
+    "byMonth": "Earnings per month",
+    "byMonthNote": "Fees collected minus platform commission and refund deductions. Fully refunded consultations are excluded."
+  },
+  "earningStatus": {
+    "PENDING": "Pending",
+    "AVAILABLE": "Available",
+    "PARTIALLY_REFUNDED": "Partly refunded",
+    "REFUNDED": "Refunded"
+  },
+  "accountStatus": {
+    "ACTIVE": "Active",
+    "SUSPENDED": "Suspended",
+    "DISABLED": "Disabled",
+    "PENDING_VERIFICATION": "Not verified"
+  },
+  "consultStatus": {
+    "WAITING": "Waiting",
+    "IN_PROGRESS": "In progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "auditAction": {
+    "CREATE": "Create",
+    "UPDATE": "Update",
+    "DELETE": "Delete",
+    "LOGIN": "Sign-in",
+    "LOGOUT": "Sign-out",
+    "VERIFY": "Verify",
+    "SUSPEND": "Suspend",
+    "REFUND": "Refund",
+    "RESCHEDULE": "Reschedule",
+    "OTHER": "Other"
+  },
+  "adminConsole": {
+    "errors": {
+      "PATIENT_ALREADY_SUSPENDED": "This account is already suspended.",
+      "PATIENT_NOT_SUSPENDED": "This account is not suspended.",
+      "PATIENT_ACCOUNT_PROTECTED": "Administrator accounts cannot be suspended here.",
+      "PATIENT_IS_ACTIVE_DOCTOR": "This person is an active doctor. Suspend them from Admin › Doctors first.",
+      "SELF_ACTION_FORBIDDEN": "You cannot do this to your own account.",
+      "FINANCE_RANGE_INVALID": "That date range is not valid.",
+      "VALIDATION_ERROR": "Please check the details and try again.",
+      "NOT_FOUND": "This record was not found.",
+      "RATE_LIMITED": "Too many requests. Please wait a moment and try again.",
+      "NETWORK_ERROR": "Could not reach the server. Check your connection.",
+      "GENERIC": "Something went wrong. Please try again.",
+      "BOOKING_POLICY_INVALID": "Some values are out of range. Check the highlighted fields.",
+      "BOOKING_POLICY_UNCHANGED": "Nothing changed."
+    }
+  },
+  "adminPatients": {
+    "title": "Patients",
+    "subtitle": "Patient accounts, their appointments and payments.",
+    "search": "Search by name, email or phone",
+    "tabs": {
+      "all": "All ({count})",
+      "active": "Active ({count})",
+      "suspended": "Suspended ({count})"
+    },
+    "empty": "No patients here yet.",
+    "noMatch": "No patients match your search.",
+    "rowFacts": "{appointments} appointments · {paid} paid · joined {joined}",
+    "detailSubtitle": "Patient account",
+    "privacyNote": "Account information only. Medical history, documents and prescriptions are visible only to the patient and their assigned doctors.",
+    "email": "Email",
+    "phone": "Phone",
+    "language": "Language",
+    "joined": "Joined",
+    "lastLogin": "Last sign-in",
+    "totalPaid": "Total paid",
+    "suspend": "Suspend",
+    "reactivate": "Reactivate",
+    "activity": "Account activity",
+    "blocker": {
+      "PATIENT_ACCOUNT_PROTECTED": "This is an administrator account, so it cannot be suspended here.",
+      "PATIENT_IS_ACTIVE_DOCTOR": "This person is also an active doctor. Suspend them from Admin › Doctors first, so their own patients are refunded."
+    },
+    "appointmentsTitle": "Appointments ({count})",
+    "noAppointments": "No appointments yet.",
+    "paymentsTitle": "Payments",
+    "noPayments": "No payments yet.",
+    "refunded": "{amount} refunded",
+    "suspended": "{name} was suspended and signed out. Their existing appointments were not changed.",
+    "reactivated": "{name} can sign in again.",
+    "suspendTitle": "Suspend {name}?",
+    "reactivateTitle": "Reactivate {name}?",
+    "consequence": {
+      "access": "They are signed out everywhere and cannot sign in or book.",
+      "appointments": "Existing appointments are not cancelled, their time slots are not released and no refund is requested.",
+      "refunds": "Every suspension and reactivation is recorded in the audit log."
+    },
+    "reactivateBody": "They will be able to sign in and book again. Their appointments were not changed by the suspension.",
+    "reasonLabel": "Reason (kept in the audit log)",
+    "noteLabel": "Note (optional)",
+    "confirmSuspend": "Suspend account",
+    "confirmReactivate": "Reactivate account"
+  },
+  "adminAppointments": {
+    "title": "Appointments",
+    "subtitle": "Every booking on the platform. Refunds are handled in Finance.",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "search": "Search patient or doctor",
+    "empty": "No appointments match these filters.",
+    "col": {
+      "when": "Start",
+      "patient": "Patient",
+      "doctor": "Doctor",
+      "fee": "Fee"
+    },
+    "detailTitle": "Appointment",
+    "followUp": "Follow-up",
+    "start": "Starts",
+    "end": "Ends",
+    "bookedAt": "Booked",
+    "commission": "commission {rate}",
+    "cancelledAt": "Cancelled",
+    "cancellationReason": "Cancellation reason",
+    "consultation": "Consultation",
+    "notStarted": "Not started",
+    "historyTitle": "Status history",
+    "paymentTitle": "Payment",
+    "noPayment": "No payment for this appointment.",
+    "amount": "Amount",
+    "provider": "Method",
+    "paidAt": "Paid",
+    "doctorShare": "Doctor's share",
+    "platformShare": "Platform commission",
+    "openInFinance": "Open in Finance",
+    "refundsTitle": "Refunds",
+    "noRefunds": "No refunds."
+  },
+  "adminReports": {
+    "title": "Reports & analytics",
+    "subtitle": "Platform activity in the selected period.",
+    "financeLink": "Financial reports",
+    "export": "Export CSV",
+    "exported": "Report downloaded.",
+    "newPatients": "New patients",
+    "newDoctors": "Newly verified doctors",
+    "totalPatients": "Total patients",
+    "activeDoctors": "Active doctors",
+    "appointments": "Appointments",
+    "completionRate": "Completion rate",
+    "noShowRate": "No-show rate",
+    "cancellationRate": "Cancellation rate",
+    "trendDaily": "Appointments per day",
+    "trendMonthly": "Appointments per month",
+    "trendHint": "By appointment start time. {booked} bookings were made in this period.",
+    "notEnoughData": "Not enough data for a chart yet.",
+    "byStatus": "By status",
+    "none": "Nothing in this period.",
+    "topSpecialties": "Top specialties",
+    "topDoctors": "Most completed consultations",
+    "note": "Completion and no-show rates count only consultations that reached their end (completed or no-show). Money figures are in Finance."
+  },
+  "adminAudit": {
+    "title": "Audit logs",
+    "subtitle": "Who did what, and when.",
+    "clinicalNote": "Clinical records (prescriptions, medical documents and medical-history access) have their own audit trail under Medical records. Values shown here are limited to non-personal fields.",
+    "action": "Action",
+    "allActions": "All actions",
+    "entity": "Record type",
+    "allEntities": "All record types",
+    "search": "Search by person",
+    "oneActor": "Showing one person's activity",
+    "empty": "No events match these filters.",
+    "system": "System",
+    "before": "Before",
+    "after": "After"
+  },
+  "adminSettings": {
+    "title": "Settings",
+    "subtitle": "Booking rules for the whole platform.",
+    "groups": {
+      "payments": {
+        "title": "Payment deadlines",
+        "body": "How long a reserved time is held while the patient pays."
+      },
+      "reschedule": {
+        "title": "Free rescheduling",
+        "body": "How often, and until when, a patient can move a paid appointment for free."
+      },
+      "refunds": {
+        "title": "Cancellation refunds",
+        "body": "Patients who cancel earlier than the first cut-off get 100 %, between the two cut-offs 50 %, later nothing. Doctor cancellations are always refunded in full."
+      }
+    },
+    "fields": {
+      "paymentHoldMinutes": "Standard booking: time to pay",
+      "followUpDeadlineHours": "Follow-up booking: time to pay",
+      "maxFreeReschedules": "Free reschedules per appointment",
+      "freeRescheduleMinHours": "Free rescheduling closes before the appointment",
+      "fullRefundMinHours": "Full refund if cancelled more than",
+      "partialRefundMinHours": "50 % refund if cancelled at least"
+    },
+    "units": {
+      "minutes": "minutes",
+      "hours": "hours before",
+      "times": "times"
+    },
+    "default": "Default: {value}",
+    "errors": {
+      "range": "Enter a whole number from {min} to {max}.",
+      "order": "Must be smaller than the full-refund cut-off."
+    },
+    "save": "Save changes",
+    "resetDefaults": "Reset to defaults",
+    "confirmTitle": "Apply {count} change(s)?",
+    "change": "{field}: {from} → {to}",
+    "confirmBody": "New rules apply from now on to new bookings, cancellations and reschedules. Existing refunds and payment deadlines are not recalculated.",
+    "confirmSave": "Yes, apply",
+    "saved": "Booking rules updated.",
+    "lastChanged": "Last changed by {by} on {when}.",
+    "usingDefaults": "Using the default rules.",
+    "commissionTitle": "Platform commission",
+    "commissionBody": "Changed in Finance settings, with its own confirmation and history.",
+    "commissionLink": "Open Finance settings",
+    "historyTitle": "Change history",
+    "noHistory": "No changes yet."
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitlePatient": "Message your doctor about a paid appointment. Conversations stay open until {days} days after the consultation.",
+    "subtitleDoctor": "Messages from your patients about their paid appointments. Conversations stay open until {days} days after the consultation.",
+    "conversations": "Conversations",
+    "empty": "No conversations yet. A conversation opens when an appointment is paid.",
+    "pick": "Choose a conversation.",
+    "you": "You",
+    "noMessagesYet": "No messages yet.",
+    "startHint": "Send the first message.",
+    "aboutAppointment": "Appointment {when}",
+    "older": "Show earlier messages",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "sent": "Sent",
+    "seen": "Seen",
+    "back": "Back to conversations",
+    "closed": "Closed",
+    "closedNote": "This conversation has closed. You can still read it.",
+    "closesOn": "Open until {when}. For emergencies, call local emergency services.",
+    "notEmergency": "Not for emergencies — call local emergency services.",
+    "errors": {
+      "CONVERSATION_NOT_FOUND": "This conversation is not available.",
+      "CONVERSATION_CLOSED": "This conversation has closed, so new messages cannot be sent.",
+      "MESSAGING_PROFILE_REQUIRED": "Messages are available to patients and doctors.",
+      "VALIDATION_ERROR": "Write a message of up to 2,000 characters.",
+      "RATE_LIMITED": "You are sending messages too quickly. Please wait a moment.",
+      "NETWORK_ERROR": "Could not reach the server. Check your connection.",
+      "GENERIC": "Something went wrong. Please try again."
+    }
+  },
+  "dashboard": {
+    "loadError": "Could not load your dashboard.",
+    "retry": "Try again"
+  },
+  "reviews": {
+    "title": "Patient reviews",
+    "none": "No reviews yet.",
+    "average": "{avg} out of 5 · {count} reviews",
+    "starsLabel": "{n} out of 5 stars",
+    "yourRating": "Your rating",
+    "rateTitle": "Rate your consultation",
+    "rateSubtitle": "Only completed consultations can be rated, once each.",
+    "commentPlaceholder": "Add a comment (optional)",
+    "submit": "Submit rating",
+    "pickStars": "Choose 1 to 5 stars first.",
+    "thanks": "Thank you for your rating.",
+    "already": "You have already rated this consultation.",
+    "failed": "The rating could not be saved. Please try again."
+  },
+  "followUp": {
+    "title": "Book a follow-up",
+    "subtitle": "Choose one of your free times and the fee. The patient must confirm (and pay, unless free) within 48 hours, or the time is released.",
+    "pickSlot": "Choose a time first.",
+    "feeLabel": "Fee",
+    "fee": {
+      "NORMAL": "Normal",
+      "DISCOUNTED": "Discounted (50%)",
+      "FREE": "Free"
+    },
+    "submit": "Book follow-up",
+    "booked": "Follow-up booked. The patient has been asked to confirm it.",
+    "ofConsultation": "Follow-up of",
+    "free": "Free follow-up — no payment needed",
+    "confirmFree": "Confirm free follow-up",
+    "confirmed": "Follow-up confirmed.",
+    "errors": {
+      "exists": "This consultation already has an active follow-up.",
+      "slot": "That time is no longer free. Choose another.",
+      "notAllowed": "A follow-up can be booked once the consultation has ended.",
+      "generic": "The follow-up could not be booked. Please try again."
+    }
+  },
+  "bookingFiles": {
+    "title": "Attach files (optional)",
+    "subtitle": "Lab results or reports for your doctor. PDF, JPG or PNG.",
+    "body": "Add lab results or other reports your doctor should see before the consultation.",
+    "button": "Attach lab results",
+    "failed": "Files cannot be attached to this booking."
+  },
+  "sms": {
+    "title": "SMS outbox (simulated)",
+    "subtitle": "Text messages the platform would send to your phone. SMS is simulated: nothing leaves the system.",
+    "adminTitle": "SMS outbox",
+    "adminSubtitle": "Every simulated SMS written by the platform. No real messages are sent.",
+    "search": "Search by number or text",
+    "empty": "No SMS messages yet.",
+    "noPhone": "No phone number — in-app only",
+    "status": {
+      "QUEUED": "Queued",
+      "SENT": "Sent (simulated)",
+      "FAILED": "Failed"
+    }
+  },
+  "specialties": {
+    "title": "Specialties",
+    "subtitle": "The list doctors choose from when they apply. Deactivating hides a specialty from new applications and search; doctors who have it keep it.",
+    "nameEn": "Name in English",
+    "nameSo": "Name in Somali",
+    "add": "Add specialty",
+    "save": "Save",
+    "rename": "Rename",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "inactive": "Inactive",
+    "doctors": "{count} doctors",
+    "added": "Specialty added.",
+    "saved": "Specialty renamed.",
+    "activated": "Specialty activated.",
+    "deactivated": "Specialty deactivated.",
+    "exists": "A specialty with this English name already exists.",
+    "failed": "The change could not be saved.",
+    "namesRequired": "Enter both the English and the Somali name."
   }
 }

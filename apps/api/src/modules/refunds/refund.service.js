@@ -61,6 +61,7 @@ export async function createRefundRequest(tx, { appointmentId, reason, amount = 
   return refundRepository.createRefund(tx, { paymentId: payment.id, appointmentId: paid.appointmentId, amount: value, currency: payment.currency, reason });
 }
 
+/** Creates a refund request in its own transaction (see createRefundRequest for the rules). */
 export function requestRefund(input) {
   return withTransaction((tx) => createRefundRequest(tx, input));
 }

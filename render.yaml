@@ -1,0 +1,55 @@
+# Render Blueprint: the API as one always-running web service in Frankfurt (next to the Neon database).
+# One instance only: video-call signalling keeps rooms and join tickets in memory.
+# Secrets marked `sync: false` are entered once in the Render dashboard (never committed).
+services:
+  - type: web
+    name: fogaan-dawo-api
+    runtime: node
+    buildCommand: npm ci --workspace @fogaan-dawo/api --include-workspace-root && npx prisma generate --schema prisma/schema.prisma
+    startCommand: npm run start:api
+    region: frankfurt
+    plan: free # "starter" (paid) never sleeps; free sleeps after 15 min idle
+    numInstances: 1
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: OAUTH_STATE_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://fogaandawo.colabgroup.study,https://fogaan-dawo.vercel.app
+      - key: WEB_APP_URL
+        value: https://fogaandawo.colabgroup.study
+      - key: TRUST_PROXY
+        value: "2"
+      - key: STORAGE_DRIVER
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: https://fogaandawo.colabgroup.study/api/v1/auth/google/callback
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false

@@ -56,6 +56,7 @@ const sum = (rows, pick) => sumMoney(rows.map(pick));
 
 /* ------------------------------------------------------------ overview */
 
+/** GET /api/v1/admin/finance/overview: gross volume, refunds, net, platform and doctor earnings, counts by status and method. */
 export async function overview(query = {}, client = prisma) {
   const range = rangeOf({ preset: 'all', ...query });
   const [payments, statusCounts, failedAttempts, refunds, refundCounts, open, earnings, setting] = await Promise.all([
@@ -136,6 +137,7 @@ export async function rejectRefund({ refundId, adminUserId, reason, now = new Da
   return getRefund(refundId, client);
 }
 
+/** GET /api/v1/admin/finance/refunds/:id: one refund with its payment, appointment and audit history. */
 export async function getRefund(refundId, client = prisma) {
   const r = await client.refund.findUnique({
     where: { id: refundId },
@@ -214,6 +216,7 @@ export async function doctorEarnings(query = {}, client = prisma) {
 
 const DAILY_LIMIT_DAYS = 92;
 
+/** GET /api/v1/admin/finance/reports: revenue, refunds, commission, doctor earnings and daily/monthly trends for a range. */
 export async function report(query = {}, client = prisma) {
   const range = rangeOf(query);
   const [payments, refunds, refundCounts, earnings] = await Promise.all([repo.succeededPayments(client, range), repo.succeededRefunds(client, range), repo.refundStatusCounts(client, range), repo.earningsInRange(client, range)]);
@@ -312,6 +315,7 @@ export function csvCell(value) {
 }
 const csv = (header, rows) => `﻿${[header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`;
 
+/** GET /api/v1/admin/finance/reports/export: CSV of the chosen report (formula-safe cells, no contact details). */
 export async function exportCsv(query, client = prisma) {
   const range = rangeOf(query);
   const stamp = range.fromDate ? `${range.fromDate}_${range.toDate}` : 'all-time';
@@ -361,6 +365,7 @@ export async function exportCsv(query, client = prisma) {
 
 /* ------------------------------------------------------------ commission setting */
 
+/** GET /api/v1/admin/finance/settings: current commission rate and its change history. */
 export async function getSettings(client = prisma) {
   const setting = await repo.findSetting(client, SettingKey.commissionRate);
   const rate = setting?.value?.rate ?? null;

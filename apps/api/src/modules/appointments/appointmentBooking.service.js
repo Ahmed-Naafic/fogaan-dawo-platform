@@ -7,9 +7,19 @@ import { cancelRemindersForAppointment } from '../notifications/reminder.service
 import { joinAction } from '../consultations/consultation.policy.js';
 import { createRefundRequest, findPaymentForAppointment } from '../refunds/refund.service.js';
 import * as appointmentRepository from './appointment.repository.js';
-import { cancellationPreview, refundAmount, refundRate, rescheduleBlocker } from './appointment.policy.js';
+import { NO_ADMIT_REFUND_MINUTES, cancellationPreview, noShowRefundBlocker, refundAmount, refundRate, rescheduleBlocker } from './appointment.policy.js';
+import * as auditRepository from '../audit/audit.repository.js';
+import { presentReview, ratingAction } from '../reviews/review.service.js';
+import { checkDoctorCancellationFlag } from '../doctors/doctorCancellations.js';
+import { isFreeAppointment } from './followUp.service.js';
+
+async function followUpOrigin(client, consultationId) {
+  const c = await client.consultation.findUnique({ where: { id: consultationId }, select: { id: true, appointment: { select: { id: true, startAtUtc: true } } } });
+  return c ? { consultationId: c.id, appointmentId: c.appointment.id, startAtUtc: c.appointment.startAtUtc.toISOString() } : null;
+}
 import { cancelLockedAppointment, reserveSlot } from './appointment.service.js';
 import { assignedDoctorPhotoPath } from '../medical-history/medicalHistory.constants.js';
+import { getBookingPolicy } from '../settings/bookingPolicy.js';
 
 /**
  * Patient and doctor booking operations over HTTP. Every rule lives in an existing service or in
@@ -76,6 +86,8 @@ async function presentDetail(client, a, viewer, now) {
   const refunds = await appointmentRepository.findRefundsForAppointments(client, [...new Set([a.id, paid?.appointmentId].filter(Boolean))]);
   const status = displayStatus(a, now);
   const live = { ...a, status };
+  const policy = await getBookingPolicy(client);
+  const review = viewer === 'PATIENT' ? await client.review.findUnique({ where: { appointmentId: a.id } }) : null;
   return {
     ...presentListItem(a, viewer, now),
     reason: a.reason ?? null,
@@ -91,11 +103,19 @@ async function presentDetail(client, a, viewer, now) {
     rescheduledTo: a.rescheduledAppointments[0] ? { id: a.rescheduledAppointments[0].id, startAtUtc: a.rescheduledAppointments[0].startAtUtc.toISOString() } : null,
     serverTime: now.toISOString(),
     actions: {
-      cancel: cancellationPreview(live, { paid: isPaid, now, cancelledBy: viewer }),
-      reschedule: viewer === 'PATIENT' ? { allowed: rescheduleBlocker(live, now) === null, blocker: rescheduleBlocker(live, now) } : { allowed: false, blocker: 'PATIENT_ONLY' },
-      join: joinAction(a, { paymentStatus: paid?.payment.status ?? null, refunded: refunds.some((r) => r.status !== 'FAILED'), consultation: a.consultation, now }),
+      cancel: cancellationPreview(live, { paid: isPaid, now, cancelledBy: viewer, policy }),
+      reschedule: viewer === 'PATIENT' ? { allowed: rescheduleBlocker(live, now, policy) === null, blocker: rescheduleBlocker(live, now, policy) } : { allowed: false, blocker: 'PATIENT_ONLY' },
+      join: joinAction(a, { paymentStatus: paid?.payment.status ?? (isFreeAppointment(a) && a.status !== 'PENDING_PAYMENT' ? 'SUCCEEDED' : null), refunded: refunds.some((r) => r.status !== 'FAILED'), consultation: a.consultation, now }),
+      rate: viewer === 'PATIENT' ? ratingAction(a, review) : { allowed: false, blocker: 'PATIENT_ONLY' },
+      noShowRefund: viewer === 'PATIENT' ? noShowRefundAction(a, { paid: isPaid, refunded: refunds.some((r) => r.status !== 'FAILED'), now }) : { allowed: false, blocker: 'PATIENT_ONLY', availableAt: null },
     },
     consultation: a.consultation ? { id: a.consultation.id, status: a.consultation.status } : null,
+    review: review ? presentReview(review) : null,
+    // Follow-ups link to the original consultation in the patient's history (requirement 12).
+    followUpOf: a.followUpOfConsultationId ? await followUpOrigin(client, a.followUpOfConsultationId) : null,
+    freeFollowUp: isFreeAppointment(a),
+    // The thresholds in force now, so the cancellation/reschedule wording matches what the server applies.
+    policy: { fullRefundMinHours: policy.fullRefundMinHours, partialRefundMinHours: policy.partialRefundMinHours, freeRescheduleMinHours: policy.freeRescheduleMinHours, maxFreeReschedules: policy.maxFreeReschedules },
   };
 }
 
@@ -126,11 +146,13 @@ export async function bookSlot(auth, { slotId, reason }, now = new Date()) {
   return presentDetail(prisma, await appointmentRepository.findAppointmentDetail(prisma, appointment.id), 'PATIENT', now);
 }
 
+/** GET /api/v1/appointments?scope=upcoming|past: the signed-in patient's appointments (expired holds shown as EXPIRED). */
 export async function listMine(auth, { scope }, now = new Date()) {
   const patient = await patientOf(prisma, auth);
   return (await appointmentRepository.listAppointments(prisma, { patientId: patient.id, scope, now })).map((a) => presentListItem(a, 'PATIENT', now));
 }
 
+/** GET /api/v1/appointments/:id: one of the patient's appointments with payment, refunds, history and allowed actions. 404 for anyone else's. */
 export async function getMine(auth, id, now = new Date()) {
   const patient = await patientOf(prisma, auth);
   return presentDetail(prisma, await loadOwned(prisma, id, { patientId: patient.id }), 'PATIENT', now);
@@ -143,7 +165,7 @@ async function cancelOwned({ id, ownerWhere, viewer, reason, actorUserId, now })
     const a = await loadOwned(tx, id, ownerWhere);
     if (displayStatus(a, now) === 'EXPIRED') throw ApiError.conflict('This reservation has already expired', undefined, BookingErrorCode.NOT_CANCELLABLE);
     const paid = (await findPaymentForAppointment(tx, a.id))?.payment.status === 'SUCCEEDED';
-    const rate = paid ? refundRate({ startAtUtc: a.startAtUtc, now, cancelledBy: viewer }) : 0;
+    const rate = paid ? refundRate({ startAtUtc: a.startAtUtc, now, cancelledBy: viewer, policy: await getBookingPolicy(tx) }) : 0;
     const label = viewer === 'DOCTOR' ? 'Cancelled by the doctor' : 'Cancelled by the patient';
     await cancelLockedAppointment(tx, a, { reason: reason ? `${label}: ${reason}` : label, changedBy: actorUserId, now, slotStatus: viewer === 'DOCTOR' ? 'CANCELLED' : 'AVAILABLE' });
     let refund = null;
@@ -152,11 +174,69 @@ async function cancelOwned({ id, ownerWhere, viewer, reason, actorUserId, now })
     }
     if (refund) await notificationEvents.refundRequested(tx, refund);
     await notificationEvents.appointmentCancelled(tx, { appointmentId: a.id, by: viewer, wasConfirmed: a.status === 'CONFIRMED', refund: Boolean(refund) });
+    if (viewer === 'DOCTOR') await checkDoctorCancellationFlag(tx, { doctorId: a.doctorId, actorUserId, now });
     return { rate, refund };
   });
   return result;
 }
 
+const noShowRefundAction = (a, { paid, refunded, now }) => {
+  const blocker = noShowRefundBlocker(a, { paid, refunded, consultation: a.consultation, now });
+  return { allowed: blocker === null, blocker, availableAt: new Date(a.startAtUtc.getTime() + NO_ADMIT_REFUND_MINUTES * 60_000).toISOString() };
+};
+
+/**
+ * POST /api/v1/appointments/:id/no-show-refund — requirement 6: the doctor did not admit the patient
+ * within 15 minutes of the start. Cancels the appointment (and an un-admitted consultation), withdraws
+ * the slot, creates a FULL refund request, notifies the doctor and audits. One transaction, rows locked.
+ */
+export async function requestNoShowRefund(auth, id, now = new Date()) {
+  const patient = await patientOf(prisma, auth);
+  const refund = await withTransaction(async (tx) => {
+    if (!(await lockRow(tx, 'appointments', id))) throw ApiError.notFound('Appointment not found');
+    const a = await loadOwned(tx, id, { patientId: patient.id });
+    const paid = await findPaymentForAppointment(tx, a.id);
+    const refunds = await appointmentRepository.findRefundsForAppointments(tx, [...new Set([a.id, paid?.appointmentId].filter(Boolean))]);
+    const blocker = noShowRefundBlocker(a, { paid: paid?.payment.status === 'SUCCEEDED', refunded: refunds.some((r) => r.status !== 'FAILED'), consultation: a.consultation, now });
+    if (blocker) throw ApiError.conflict('A no-show refund is not available for this appointment', { blocker, availableAt: new Date(a.startAtUtc.getTime() + NO_ADMIT_REFUND_MINUTES * 60_000).toISOString() }, 'NO_SHOW_REFUND_NOT_ALLOWED');
+    const reason = `Doctor did not admit the patient within ${NO_ADMIT_REFUND_MINUTES} minutes`;
+    await appointmentRepository.updateAppointment(tx, a.id, { status: 'CANCELLED', cancelledAt: now, cancellationReason: reason, holdExpiresAt: null });
+    await appointmentRepository.recordStatusChange(tx, { appointmentId: a.id, fromStatus: a.status, toStatus: 'CANCELLED', reason, changedBy: auth.user.id });
+    await cancelRemindersForAppointment(tx, a.id);
+    await lockRow(tx, 'availability_slots', a.slotId);
+    await appointmentRepository.setSlotStatus(tx, a.slotId, 'CANCELLED');
+    if (a.consultation && a.consultation.status === 'WAITING') {
+      await tx.consultation.update({ where: { id: a.consultation.id }, data: { status: 'CANCELLED', endedAt: now } });
+    }
+    const created = await createRefundRequest(tx, { appointmentId: a.id, reason: `${reason} — full refund` });
+    await notificationEvents.refundRequested(tx, created);
+    await notificationEvents.appointmentCancelled(tx, { appointmentId: a.id, by: 'PATIENT', wasConfirmed: true, refund: true });
+    await auditRepository.createAuditLog(tx, { actorUserId: auth.user.id, action: 'REFUND', entityType: 'Appointment', entityId: a.id, newValues: { status: 'CANCELLED', reason: 'DOCTOR_DID_NOT_ADMIT', refundId: created.id, amount: created.amount.toFixed(2) } });
+    return created;
+  });
+  return { appointment: await getMine(auth, id, now), refund: { amount: refund.amount.toFixed(2), status: refund.status } };
+}
+
+/**
+ * POST /api/v1/appointments/:id/consultation-record — requirement 5 ("optionally attach files"): makes sure
+ * the appointment has its consultation record so the patient can attach lab results while booking. Allowed
+ * for the patient's own reservation (still within its hold) or a paid appointment. Returns { consultationId }.
+ * The doctor can see these files only once the booking is paid.
+ */
+export async function ensureConsultationRecord(auth, id, now = new Date()) {
+  const patient = await patientOf(prisma, auth);
+  return withTransaction(async (tx) => {
+    if (!(await lockRow(tx, 'appointments', id))) throw ApiError.notFound('Appointment not found');
+    const a = await loadOwned(tx, id, { patientId: patient.id });
+    if (a.consultation) return { consultationId: a.consultation.id };
+    const open = displayStatus(a, now) === 'PENDING_PAYMENT' || ['CONFIRMED', 'WAITING', 'IN_PROGRESS'].includes(a.status);
+    if (!open) throw ApiError.conflict('Files can be attached only to an active booking', { status: displayStatus(a, now) }, 'ATTACHMENTS_NOT_ALLOWED');
+    const c = await tx.consultation.create({ data: { appointmentId: a.id, patientId: a.patientId, doctorId: a.doctorId } });
+    return { consultationId: c.id };
+  });
+}
+
+/** POST /api/v1/appointments/:id/cancel: patient cancellation with the refund tier (>24 h 100 %, 2–24 h 50 %, <2 h none); slot offered again. */
 export async function cancelMine(auth, id, { reason }, now = new Date()) {
   const patient = await patientOf(prisma, auth);
   const { rate, refund } = await cancelOwned({ id, ownerWhere: { patientId: patient.id }, viewer: 'PATIENT', reason, actorUserId: auth.user.id, now });
@@ -175,7 +255,7 @@ export async function rescheduleMine(auth, id, { slotId }, now = new Date()) {
     newId = await withTransaction(async (tx) => {
       if (!(await lockRow(tx, 'appointments', id))) throw ApiError.notFound('Appointment not found');
       const original = await loadOwned(tx, id, { patientId: patient.id });
-      const blocker = rescheduleBlocker(original, now);
+      const blocker = rescheduleBlocker(original, now, await getBookingPolicy(tx));
       if (blocker) throw ApiError.conflict('This appointment cannot be rescheduled for free', { blocker }, BookingErrorCode.RESCHEDULE_NOT_ALLOWED);
       if (slotId === original.slotId) throw ApiError.badRequest('Choose a different time', [{ path: 'slotId', message: 'Same slot' }], 'VALIDATION_ERROR');
 
@@ -220,11 +300,13 @@ export async function rescheduleMine(auth, id, { slotId }, now = new Date()) {
 
 /* ------------------------------------------------------------ doctor */
 
+/** GET /api/v1/doctors/me/appointments: the signed-in doctor's appointments (patient name and gated photo, never contact details). */
 export async function listForDoctor(auth, { scope }, now = new Date()) {
   const doctor = await doctorOf(prisma, auth);
   return (await appointmentRepository.listAppointments(prisma, { doctorId: doctor.id, scope, now })).map((a) => presentListItem(a, 'DOCTOR', now));
 }
 
+/** GET /api/v1/doctors/me/appointments/:id: one of the doctor's appointments with actions. 404 for anyone else's. */
 export async function getForDoctor(auth, id, now = new Date()) {
   const doctor = await doctorOf(prisma, auth);
   return presentDetail(prisma, await loadOwned(prisma, id, { doctorId: doctor.id }), 'DOCTOR', now);

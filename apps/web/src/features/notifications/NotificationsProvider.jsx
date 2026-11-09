@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { openAuthenticatedStream } from '@/lib/apiClient';
 import { useI18n } from '@/lib/i18n';
+import { MESSAGES_CHANGED } from '@/features/messaging/services/messagingApi';
 import * as api from './services/notificationApi';
 
 /**
@@ -80,6 +81,7 @@ export function NotificationsProvider({ children }) {
                 window.dispatchEvent(new CustomEvent(NOTIFICATIONS_CHANGED, { detail: data.item }));
               }
               if (event === 'sync') refresh();
+              if (event === 'message' || event === 'message-read') window.dispatchEvent(new CustomEvent(MESSAGES_CHANGED, { detail: { type: event, ...data } }));
             });
           }
         } catch {

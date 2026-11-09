@@ -1,11 +1,15 @@
 /** Data access for medical histories and their entries. Entries are never deleted (database trigger). */
 
+/** Data access: ensure medical history (medicalHistory.upsert: inserts or updates a row). `client` is the Prisma client or a transaction. */
 export const ensureMedicalHistory = (client, patientId) => client.medicalHistory.upsert({ where: { patientId }, update: {}, create: { patientId } });
 
+/** Data access: create entry (medicalHistoryEntry.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createEntry = (client, data) => client.medicalHistoryEntry.create({ data, select: ENTRY_SELECT });
 
+/** Data access: find entry with history (medicalHistoryEntry.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findEntryWithHistory = (client, id) => client.medicalHistoryEntry.findUnique({ where: { id }, include: { history: true } });
 
+/** Data access: update entry (medicalHistoryEntry.update: updates a row). `client` is the Prisma client or a transaction. */
 export const updateEntry = (client, id, data) => client.medicalHistoryEntry.update({ where: { id }, data, select: ENTRY_SELECT });
 
 /** What the history screens show. The author's name is included only to label doctor-written entries. */
@@ -34,6 +38,7 @@ export const listEntriesForPatient = (client, patientId, { includeArchived }) =>
     take: 500,
   });
 
+/** Data access: count active entries by type (medicalHistoryEntry.groupBy: grouped counts/sums). `client` is the Prisma client or a transaction. */
 export const countActiveEntriesByType = (client, patientId) =>
   client.medicalHistoryEntry.groupBy({ by: ['entryType'], where: { history: { patientId }, archivedAt: null }, _count: { _all: true } });
 

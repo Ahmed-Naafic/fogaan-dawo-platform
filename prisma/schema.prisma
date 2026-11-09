@@ -280,6 +280,7 @@ model User {
   medicalEntriesArchived   MedicalHistoryEntry[]      @relation("HistoryEntryArchiver")
   verificationReviews      VerificationReview[]       @relation("VerificationReviewer")
   messagesSent             Message[]                  @relation("MessageSender")
+  smsOutbox                SmsOutbox[]                @relation("SmsOutboxUser")
   attachmentsUploaded      ConsultationAttachment[]   @relation("AttachmentUploader")
   attachmentsArchived      ConsultationAttachment[]   @relation("AttachmentArchiver")
   prescriptionsCancelled   Prescription[]             @relation("PrescriptionCanceller")
@@ -463,6 +464,8 @@ model DoctorProfile {
   currency             String                   @default("USD") @db.VarChar(3)
   bio                  String?                  @db.Text
   yearsExperience      Int?                     @map("years_experience")
+  /// Country the doctor practises from (requirement 1: "country and time zone"); the time zone is users.time_zone.
+  country              String?                  @db.VarChar(100)
   /// Public qualifications summary written by the doctor (documents stay private).
   qualifications       String?                  @db.Text
   accountStatus        DoctorAccountStatus      @default(ACTIVE) @map("account_status")
@@ -505,6 +508,8 @@ model DoctorDocument {
   fileName           String           @map("file_name") @db.VarChar(255)
   mimeType           String           @map("mime_type") @db.VarChar(100)
   fileSize           Int              @map("file_size")
+  /// SHA-256 of the stored file (null for files stored before this column existed).
+  sha256             String?          @db.Char(64)
   versionNumber      Int              @map("version_number")
   replacesDocumentId String?          @map("replaces_document_id") @db.Uuid
   isCurrent          Boolean          @default(true) @map("is_current")
@@ -630,6 +635,7 @@ model Appointment {
   review                   Review?
   statusHistory            AppointmentStatusHistory[]
   reminders                AppointmentReminder[]
+  messages                 Message[]
 
   @@index([patientId, startAtUtc])
   @@index([doctorId, startAtUtc, status])
@@ -791,15 +797,21 @@ model ConsultationEvent {
   @@map("consultation_events")
 }
 
+/// Patient–doctor conversation of one paid appointment (text only). The consultation link is set once the
+/// call exists; read_at is when the OTHER participant first opened the message.
 model Message {
-  id             String       @id @default(uuid()) @db.Uuid
-  consultationId String       @map("consultation_id") @db.Uuid
-  senderUserId   String       @map("sender_user_id") @db.Uuid
-  body           String       @db.Text
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Restrict)
-  sender         User         @relation("MessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+  id             String        @id @default(uuid()) @db.Uuid
+  appointmentId  String        @map("appointment_id") @db.Uuid
+  consultationId String?       @map("consultation_id") @db.Uuid
+  senderUserId   String        @map("sender_user_id") @db.Uuid
+  body           String        @db.Text
+  readAt         DateTime?     @map("read_at") @db.Timestamptz(6)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  appointment    Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  consultation   Consultation? @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+  sender         User          @relation("MessageSender", fields: [senderUserId], references: [id], onDelete: Restrict)
 
+  @@index([appointmentId, createdAt])
   @@index([consultationId, createdAt])
   @@map("messages")
 }
@@ -984,6 +996,8 @@ model Notification {
 
 model SmsOutbox {
   id        String      @id @default(uuid()) @db.Uuid
+  /// The user the SMS is for (in-app outbox); null for messages to a bare number.
+  userId    String?     @map("user_id") @db.Uuid
   recipient String      @db.VarChar(32)
   message   String      @db.VarChar(1000)
   provider  SmsProvider @default(SIMULATED)
@@ -993,7 +1007,10 @@ model SmsOutbox {
   sentAt    DateTime?   @map("sent_at") @db.Timestamptz(6)
   createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  user User? @relation("SmsOutboxUser", fields: [userId], references: [id], onDelete: SetNull)
+
   @@index([status, createdAt])
+  @@index([userId, createdAt])
   @@map("sms_outbox")
 }
 

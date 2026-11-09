@@ -5,7 +5,7 @@ import { ApiError } from '../../utils/ApiError.js';
 import { roundMoney } from '../../utils/money.js';
 import { lockRow, rethrowConflict, withTransaction } from '../../utils/transaction.js';
 import * as appointmentRepository from '../appointments/appointment.repository.js';
-import { expireAppointment } from '../appointments/appointment.service.js';
+import { expireAppointment, releaseAfterFailedPayment } from '../appointments/appointment.service.js';
 import * as auditRepository from '../audit/audit.repository.js';
 import * as paymentRepository from './payment.repository.js';
 import { postSuccessfulPayment } from './payment.service.js';
@@ -13,7 +13,7 @@ import { postSuccessfulPayment } from './payment.service.js';
 /**
  * SIMULATED payments (no real provider, no real money). The server asks the provider adapter for the
  * outcome; the browser only chooses the method and wallet and can never claim a result. Only a
- * SUCCESS confirms the appointment. Everything runs in one transaction with the appointment row locked,
+ * SUCCESS confirms the appointment; a FAILED outcome releases the slot at once (the patient books again). Everything runs in one transaction with the appointment row locked,
  * so double clicks, two tabs or concurrent requests cannot pay twice.
  */
 
@@ -37,6 +37,7 @@ async function patientOf(client, auth) {
 
 const attemptOutcome = (a) => a.responseData?.outcome ?? (a.status === 'SUCCEEDED' ? 'SUCCESS' : a.status === 'FAILED' ? 'FAILED' : 'PENDING');
 
+/** Response shape of a payment with attempts (wallet masked), refunds and the last provider message. */
 export function presentPayment(p, { forAdmin = false } = {}) {
   if (!p) return null;
   const last = p.attempts?.at(-1) ?? null;
@@ -161,6 +162,7 @@ export async function payForAppointment(auth, appointmentId, { provider: provide
       const paymentStatus = charge.outcome === 'SUCCESS' ? 'SUCCEEDED' : charge.outcome === 'FAILED' ? 'FAILED' : 'PENDING';
       payment = await paymentRepository.updatePayment(tx, payment.id, { status: paymentStatus, provider: provider.code, ...(charge.outcome === 'SUCCESS' ? { paidAt: now } : {}) });
       if (charge.outcome === 'SUCCESS') await postSuccessfulPayment(tx, { appointment, payment });
+      if (charge.outcome === 'FAILED') await releaseAfterFailedPayment(tx, appointment);
       await auditRepository.createAuditLog(tx, {
         actorUserId: auth.user.id,
         action: 'CREATE',
@@ -199,6 +201,7 @@ export async function refreshPayment(auth, appointmentId, now = new Date()) {
     await paymentRepository.updatePaymentAttempt(tx, pending.id, { status: status.outcome === 'SUCCESS' ? 'SUCCEEDED' : 'FAILED', responseData: { ...pending.responseData, outcome: status.outcome, message: status.message } });
     const updated = await paymentRepository.updatePayment(tx, payment.id, { status: status.outcome === 'SUCCESS' ? 'SUCCEEDED' : 'FAILED', ...(status.outcome === 'SUCCESS' ? { paidAt: now } : {}) });
     if (status.outcome === 'SUCCESS') await postSuccessfulPayment(tx, { appointment, payment: updated });
+    else await releaseAfterFailedPayment(tx, appointment);
     await auditRepository.createAuditLog(tx, { actorUserId: auth.user.id, action: 'UPDATE', entityType: 'PaymentAttempt', entityId: pending.id, oldValues: { outcome: 'PENDING' }, newValues: { simulated: true, outcome: status.outcome } });
     return { outcome: status.outcome };
   });
@@ -207,12 +210,30 @@ export async function refreshPayment(auth, appointmentId, now = new Date()) {
 
 /* ------------------------------------------------------------ history and receipts */
 
+/** GET /api/v1/payments: the signed-in patient's payments, attempts and refunds. */
 export async function listMyPayments(auth) {
   const patient = await patientOf(prisma, auth);
   return (await paymentRepository.listPaymentsForPatient(prisma, patient.id)).map((p) => presentPayment(p));
 }
 
 /** Receipt data for a SUCCEEDED payment: the owner (patient) or an administrator only. */
+/**
+ * A refund of a payment for its receipt: the payment's patient or an administrator only (404 otherwise).
+ * Returns { payment, refund } with the presented payment; any refund status is allowed.
+ */
+export async function getRefundReceipt(auth, paymentId, refundId, { asAdmin = false } = {}) {
+  const payment = await paymentRepository.findPaymentDetail(prisma, paymentId);
+  if (!payment) throw ApiError.notFound('Payment not found');
+  if (!asAdmin) {
+    const patient = await patientOf(prisma, auth);
+    if (payment.patientId !== patient.id) throw ApiError.notFound('Payment not found');
+  }
+  const presented = presentPayment(payment, { forAdmin: true });
+  const refund = presented.refunds.find((r) => r.id === refundId);
+  if (!refund) throw ApiError.notFound('Refund not found');
+  return { payment: presented, refund };
+}
+
 export async function getReceipt(auth, paymentId, { asAdmin = false } = {}) {
   const payment = await paymentRepository.findPaymentDetail(prisma, paymentId);
   if (!payment) throw ApiError.notFound('Payment not found');

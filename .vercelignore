@@ -1,0 +1,11 @@
+# Never upload local secrets or local data with CLI deployments.
+.env
+.env.*
+!.env.example
+/storage/
+/.vercel/
+# Not needed by either build.
+apps/web/dist/
+/design-reference/
+/coverage/
+*.log

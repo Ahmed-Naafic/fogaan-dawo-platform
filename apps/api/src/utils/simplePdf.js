@@ -12,6 +12,7 @@ const ascii = (s) =>
     .replace(/[^\x20-\x7e]/g, '?');
 const escapePdf = (s) => ascii(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
 
+/** Builds a simple text PDF (Buffer) from line objects { text, size, bold, gap, rule }. */
 export function renderTextPdf(lines, { title = 'Document' } = {}) {
   const width = 595; // A4 portrait, points
   const height = 842;

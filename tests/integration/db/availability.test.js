@@ -257,13 +257,22 @@ describe('doctor availability and public directory API (Neon, isolated schema)',
     const pending = await makeDoctor({ name: 'Dr. Pending Applicant', status: 'PENDING' });
     const suspended = await makeDoctor({ name: 'Dr. Suspended Person' });
     await prisma.doctorProfile.update({ where: { id: suspended.doctor.id }, data: { accountStatus: 'SUSPENDED' } });
+    const noSlots = await makeDoctor({ name: 'Dr. No Free Slots' });
+    const farAway = await makeDoctor({ name: 'Dr. Only Far Future' });
     await api('PUT', '/api/v1/doctors/me/availability/schedule', { token: cheap.token, body: schedule() });
+    await api('PUT', '/api/v1/doctors/me/availability/schedule', { token: pricey.token, body: schedule() });
+    const far = new Date(Date.now() + 40 * 86_400_000);
+    await prisma.availabilitySlot.create({ data: { doctorId: farAway.doctor.id, startAtUtc: far, endAtUtc: new Date(far.getTime() + 30 * 60_000), timeZoneSnapshot: 'Africa/Mogadishu' } });
 
     const all = await api('GET', '/api/v1/doctors?pageSize=50');
     assert.equal(all.status, 200, 'no login required');
     const names = all.body.data.items.map((d) => d.name);
     assert.ok(names.includes(cheap.user.fullName) && names.includes(pricey.user.fullName));
     assert.ok(!names.includes(pending.user.fullName) && !names.includes(suspended.user.fullName), 'pending and suspended excluded');
+    assert.ok(!names.includes(noSlots.user.fullName), 'no free slot → not in search');
+    assert.ok(!names.includes(farAway.user.fullName), 'only slots beyond 30 days → not in search');
+    assert.ok(all.body.data.items.every((d) => d.nextAvailableAt && Date.parse(d.nextAvailableAt) <= Date.now() + 30 * 86_400_000));
+    assert.equal((await api('GET', `/api/v1/doctors/${noSlots.doctor.id}`)).status, 200, 'the profile page itself stays reachable');
     assert.equal((await api('GET', `/api/v1/doctors/${pending.doctor.id}`)).status, 404);
     assert.equal((await api('GET', `/api/v1/doctors/${suspended.doctor.id}/slots`)).status, 404);
 
@@ -302,7 +311,7 @@ describe('doctor availability and public directory API (Neon, isolated schema)',
       }
     }
     const profile = responses[1].body.data;
-    assert.deepEqual(Object.keys(profile).sort(), ['bio', 'consultationFee', 'currency', 'id', 'languages', 'name', 'nextAvailableAt', 'photoUrl', 'qualifications', 'rating', 'reviewCount', 'slotDurationMinutes', 'specialty', 'timeZone', 'verified', 'verifiedSince', 'yearsExperience'].sort());
+    assert.deepEqual(Object.keys(profile).sort(), ['bio', 'consultationFee', 'country', 'currency', 'id', 'languages', 'name', 'nextAvailableAt', 'photoUrl', 'qualifications', 'rating', 'reviewCount', 'slotDurationMinutes', 'specialty', 'timeZone', 'verified', 'verifiedSince', 'yearsExperience'].sort());
   });
 
   test('authentication and registration still work', async () => {

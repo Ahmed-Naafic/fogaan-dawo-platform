@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import sharp from 'sharp';
-import { getPrivateObject, putPrivateObject, removePrivateObject } from '../../adapters/storage/privateStorage.js';
+import { getPrivateObject, putPrivateObject, removePrivateObject, signedDownloadUrl } from '../../adapters/storage/privateStorage.js';
+import { consumeUploadIntent, createUploadIntent } from '../storage/uploadIntent.service.js';
 import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { detectDocumentType, safeDisplayName } from '../../utils/fileType.js';
@@ -17,6 +18,14 @@ import * as notificationEvents from '../notifications/notification.events.js';
 export const MAX_MEDICAL_DOCUMENT_BYTES = 10 * 1024 * 1024;
 export const DOCUMENT_CATEGORIES = Object.freeze(['LAB_RESULT', 'MEDICAL_REPORT', 'REFERRAL_LETTER', 'DIAGNOSTIC_REPORT', 'SCANNED_DOCUMENT', 'OTHER']);
 const ELIGIBLE_APPOINTMENT_STATUSES = ['WAITING', 'IN_PROGRESS', 'COMPLETED'];
+/** Requirement 5: the patient may attach files (e.g. lab results) while booking, before the call. */
+const PATIENT_PRE_CALL_STATUSES = ['PENDING_PAYMENT', 'CONFIRMED'];
+/** A doctor sees a consultation's documents only once the booking is paid (same rule as patient records). */
+const DOCTOR_VISIBLE_STATUSES = ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'COMPLETED'];
+/** Requirement 8: files shared through the in-call chat are limited to 5 MB. */
+export const MAX_CHAT_FILE_BYTES = 5 * 1024 * 1024;
+
+const mayUpload = (role, status) => ELIGIBLE_APPOINTMENT_STATUSES.includes(status) || (role === 'PATIENT' && PATIENT_PRE_CALL_STATUSES.includes(status));
 
 export const DocumentErrorCode = Object.freeze({
   notFound: 'DOCUMENT_NOT_FOUND',
@@ -76,6 +85,7 @@ async function participation(client, auth, consultationId) {
   if (auth.activeRole === 'PATIENT' && c.patient.userId === auth.user.id) return { c, role: 'PATIENT' };
   if (auth.activeRole === 'DOCTOR' && c.doctor.userId === auth.user.id) {
     if (c.doctor.verificationStatus !== 'VERIFIED' || c.doctor.accountStatus !== 'ACTIVE') throw ApiError.forbidden('Your doctor account is not active', undefined, 'DOCTOR_NOT_ACTIVE');
+    if (!DOCTOR_VISIBLE_STATUSES.includes(c.appointment.status)) throw ApiError.notFound('Consultation not found');
     return { c, role: 'DOCTOR' };
   }
   throw ApiError.notFound('Consultation not found');
@@ -129,12 +139,14 @@ export function presentDocument(d, auth) {
   };
 }
 
+/** Stores a validated medical document for a consultation participant (type from bytes, size, SHA-256). Audited and notified. */
 export async function uploadDocument(auth, consultationId, { buffer, fileName, category, description }) {
   // Authorise first: strangers never get the (potentially expensive) file validation.
   const { c, role } = await participation(prisma, auth, consultationId);
-  if (!ELIGIBLE_APPOINTMENT_STATUSES.includes(c.appointment.status)) {
+  if (!mayUpload(role, c.appointment.status)) {
     throw ApiError.conflict('Documents can be shared only for a consultation that took place', { status: c.appointment.status }, DocumentErrorCode.notEligible);
   }
+  if (!DOCUMENT_CATEGORIES.includes(category)) throw ApiError.badRequest('Unknown document category');
   const type = await validateMedicalDocument(buffer);
   const fileKey = `medical-documents/${consultationId}/${randomUUID()}.${type.ext}`;
   await putPrivateObject(fileKey, buffer);
@@ -167,6 +179,42 @@ export async function uploadDocument(auth, consultationId, { buffer, fileName, c
   }
 }
 
+/**
+ * Large-file upload, step 1 (the path used by the web app; required on Vercel, whose request bodies are
+ * limited to ~4.5 MB): authorise the participant and the consultation, then issue a staging upload URL.
+ */
+export async function initiateUpload(auth, consultationId, { category, description, fileName, size, contentType, context }) {
+  const { c, role } = await participation(prisma, auth, consultationId);
+  if (!mayUpload(role, c.appointment.status)) {
+    throw ApiError.conflict('Documents can be shared only for a consultation that took place', { status: c.appointment.status }, DocumentErrorCode.notEligible);
+  }
+  return createUploadIntent(auth, {
+    purpose: 'medical-document',
+    target: { consultationId },
+    meta: { category, description: description ?? null, fileName: String(fileName ?? '').slice(0, 300) },
+    declared: { size, contentType },
+    maxBytes: context === 'CHAT' ? MAX_CHAT_FILE_BYTES : MAX_MEDICAL_DOCUMENT_BYTES,
+  });
+}
+
+/**
+ * Step 2: claim the staged bytes, then the normal upload path re-authorises the caller and validates the
+ * real bytes (type from content, structure, size, SHA-256) before storing and recording the document.
+ */
+export async function finalizeUpload(auth, consultationId, uploadToken) {
+  await participation(prisma, auth, consultationId); // authorise before touching any staged bytes
+  const { buffer, meta } = await consumeUploadIntent(auth, uploadToken, { purpose: 'medical-document', target: { consultationId } });
+  return uploadDocument(auth, consultationId, { buffer, fileName: meta.fileName, category: meta.category, description: meta.description ?? undefined });
+}
+
+/** Short-lived signed download URL — only after the access check and an audit entry. */
+export async function getDownloadUrl(auth, id) {
+  const d = await accessibleDocument(prisma, auth, id);
+  await auditRepository.createAuditLog(prisma, { actorUserId: auth.user.id, action: 'OTHER', entityType: 'MedicalDocument', entityId: id, newValues: { action: 'SIGNED_URL_ISSUED', by: auth.activeRole } });
+  return signedDownloadUrl(d.fileKey, { downloadName: d.fileName });
+}
+
+/** GET /api/v1/consultations/:id/documents: the consultation's documents for a participant (archived ones optional). */
 export async function listForConsultation(auth, consultationId, { includeArchived = false } = {}) {
   await participation(prisma, auth, consultationId);
   const rows = await prisma.consultationAttachment.findMany({
@@ -202,10 +250,12 @@ async function accessibleDocument(client, auth, id) {
   return d;
 }
 
+/** GET /api/v1/medical-documents/:id: document metadata for someone allowed to see it. */
 export async function getDocument(auth, id) {
   return presentDocument(await accessibleDocument(prisma, auth, id), auth);
 }
 
+/** GET /api/v1/medical-documents/:id/download: the document bytes for someone allowed to see it. Audited. */
 export async function downloadDocument(auth, id) {
   const d = await accessibleDocument(prisma, auth, id);
   let buffer;

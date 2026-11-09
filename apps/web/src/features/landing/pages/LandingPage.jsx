@@ -1,3 +1,4 @@
+/** Public landing page: hero with live platform figures, specialties with real doctor counts, featured doctors, how it works. */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
@@ -27,7 +28,11 @@ import Logo from '@/components/shared/Logo';
 import { getSpecialtyIcon } from '@/components/shared/SpecialtyIcon';
 import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/lib/i18n';
-import { getPlatformStats, getSpecialties } from '@/services';
+import { formatNumber } from '@/lib/format';
+import { useLoad } from '@/features/finance/financeUi';
+import { publicStats } from '@/features/dashboard/dashboardApi';
+import { specialtyLabel } from '@/features/doctors/doctorDirectory';
+import { specialtyVisual } from '@/features/doctors/specialtyVisuals';
 import { searchDoctors } from '@/features/doctors/services/doctorDirectoryApi';
 import { DoctorCard } from '@/features/doctors/components/DoctorCard';
 import BookingSheet from '@/features/appointments/components/BookingSheet';
@@ -86,13 +91,13 @@ function HeroVisual() {
   );
 }
 
-function Hero() {
-  const { t } = useI18n();
-  const stats = getPlatformStats();
+function Hero({ stats }) {
+  const { t, locale } = useI18n();
+  // Live figures from listed doctors and completed consultations; "—" until loaded or when there is no rating yet.
   const items = [
-    { icon: UserRound, value: stats.doctors, label: 'landing.stats.doctors' },
-    { icon: CalendarCheck2, value: stats.consultations, label: 'landing.stats.consultations' },
-    { icon: Star, value: stats.satisfaction, label: 'landing.stats.satisfaction' },
+    { icon: UserRound, value: stats ? formatNumber(stats.doctors, locale) : '—', label: 'landing.stats.doctors' },
+    { icon: CalendarCheck2, value: stats ? formatNumber(stats.completedConsultations, locale) : '—', label: 'landing.stats.consultations' },
+    { icon: Star, value: stats?.rating ? `${stats.rating.average.toLocaleString(locale)}/5` : '—', label: stats?.rating ? 'landing.stats.rating' : 'landing.stats.noRating' },
   ];
   return (
     <section id="home" className="relative scroll-mt-24 overflow-hidden">
@@ -151,23 +156,25 @@ function SectionTitle({ eyebrow, title, subtitle, center = true }) {
   );
 }
 
-function Specialties() {
-  const { t } = useI18n();
+function Specialties({ specialties }) {
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   return (
     <section id="specialties" className="scroll-mt-24 pb-16 pt-8 sm:pb-20 sm:pt-12">
       <div className="mx-auto max-w-site px-4 sm:px-6">
         <SectionTitle eyebrow={t('landing.specialties.eyebrow')} title={t('landing.specialties.title')} subtitle={t('landing.specialties.subtitle')} />
         <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-          {getSpecialties().map((s) => (
+          {specialties === undefined &&
+            Array.from({ length: 8 }, (_, i) => <div key={i} className="card h-40 animate-pulse" aria-hidden="true" />)}
+          {(specialties ?? []).map((s) => (
             <button
-              key={s.key}
-              onClick={() => navigate(`/doctors?specialty=${s.key}`)}
+              key={s.id}
+              onClick={() => navigate(`/doctors?specialty=${s.id}`)}
               className="card group flex flex-col items-start gap-4 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-float sm:p-5"
             >
-              <IconTile icon={getSpecialtyIcon(s.icon)} tone={s.tone} />
+              <IconTile icon={getSpecialtyIcon(specialtyVisual(s).icon)} tone={specialtyVisual(s).tone} />
               <div>
-                <p className="font-bold">{t(`specialty.${s.key}`)}</p>
+                <p className="font-bold">{specialtyLabel(s, lang)}</p>
                 <p className="mt-0.5 text-xs text-muted">{t('landing.specialties.count', { count: s.doctors })}</p>
               </div>
               <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-primary opacity-80 group-hover:opacity-100">
@@ -314,12 +321,13 @@ function Footer() {
 }
 
 export default function LandingPage() {
+  const stats = useLoad(() => publicStats(), []);
   return (
     <div className="hero-bg min-h-screen">
       <PublicHeader />
       <main>
-        <Hero />
-        <Specialties />
+        <Hero stats={stats.data} />
+        <Specialties specialties={stats.error ? [] : stats.data?.specialties} />
         <FeaturedDoctors />
         <HowItWorks />
         <About />

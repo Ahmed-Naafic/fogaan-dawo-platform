@@ -24,6 +24,7 @@ const keyFor = (secret) => createHash('sha256').update(`fogaan-dawo/oauth-state/
 /** RFC 7636 S256 challenge for a verifier. */
 export const codeChallengeFor = (verifier) => createHash('sha256').update(verifier, 'ascii').digest('base64url');
 
+/** A new Google sign-in transaction: random state, nonce and PKCE verifier/challenge. */
 export function newOAuthTransaction({ mode, userId = null, sessionId = null, next = null, language = null }) {
   return {
     state: random(32),
@@ -37,6 +38,7 @@ export function newOAuthTransaction({ mode, userId = null, sessionId = null, nex
   };
 }
 
+/** Encrypts the OAuth transaction into a short-lived cookie value (state is checked on the callback). */
 export async function sealOAuthTransaction(secret, tx, now = new Date()) {
   const iat = Math.floor(now.getTime() / 1000);
   return new EncryptJWT({ st: tx.state, nc: tx.nonce, cv: tx.codeVerifier, m: tx.mode, u: tx.userId, sid: tx.sessionId, nx: tx.next, lg: tx.language })
@@ -59,6 +61,7 @@ export async function openOAuthTransaction(secret, value, now = new Date()) {
   }
 }
 
+/** Constant-time comparison of the returned and expected OAuth state. */
 export function statesMatch(expected, received) {
   if (typeof received !== 'string' || received.length > 512) return false;
   const a = Buffer.from(expected);
@@ -75,6 +78,7 @@ export function statesMatch(expected, received) {
 const usedStates = new Map(); // sha256(state) -> expiry (ms)
 const MAX_TRACKED = 50_000;
 
+/** Marks an OAuth state as used so a callback cannot be replayed. Returns false on reuse. */
 export function consumeState(state, expiresAtMs, nowMs = Date.now()) {
   for (const [key, expiry] of usedStates) {
     if (expiry > nowMs && usedStates.size < MAX_TRACKED) break;
@@ -86,10 +90,12 @@ export function consumeState(state, expiresAtMs, nowMs = Date.now()) {
   return true;
 }
 
+/** Sets the sealed OAuth transaction cookie (HTTP-only, path-scoped, short-lived). */
 export function setOAuthCookie(res, value, { secure }) {
   res.cookie(OAUTH_COOKIE, value, { httpOnly: true, secure, sameSite: 'lax', path: OAUTH_COOKIE_PATH, maxAge: OAUTH_TTL_SECONDS * 1000 });
 }
 
+/** Clears the OAuth transaction cookie after the callback. */
 export function clearOAuthCookie(res, { secure }) {
   res.clearCookie(OAUTH_COOKIE, { httpOnly: true, secure, sameSite: 'lax', path: OAUTH_COOKIE_PATH });
 }

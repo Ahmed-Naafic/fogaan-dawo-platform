@@ -10,7 +10,23 @@
 ## Health
 
 ### `GET /api/health`
-`200` → `{ "status": "ok", "service": "fogaan-dawo-api", "uptimeSeconds": 12, "timestamp": "…" }`
+`200` → `{ "status": "ok", "service": "fogaan-dawo-api", "uptimeSeconds": 12, "timestamp": "…" }` (liveness, no database access)
+
+### `GET /api/health/ready`
+Readiness: auth configuration is valid and the database answers within 5 s.
+`200` → `{ "status": "ready", "checks": { "config": true, "database": true }, "timestamp": "…" }`; otherwise `503` with `"status": "not_ready"`. Only check names and booleans are returned.
+
+## Scheduled jobs (`/api/internal/jobs`)
+
+These are for a scheduler (Vercel Cron or an external one), not for clients. Every request needs `Authorization: Bearer <CRON_SECRET>`. If `CRON_SECRET` is unset or shorter than 32 characters, they return `503 JOBS_DISABLED`. Wrong credentials return `401`.
+
+- `GET /api/internal/jobs/tick` runs expire-holds, reminders and notifications, in that order.
+- `GET /api/internal/jobs/expire-holds`, `/reminders` and `/notifications` each run one job.
+
+The response is `200` (or `500` if any job failed): `{ "ok": true, "results": { "<job>": { "ok": true, …counts, "ms": 120 } } }`. See [deployment-vercel.md](deployment-vercel.md).
+
+### Video signaling on serverless
+On the Vercel deployment, `/api/v1/consultations/signal` returns `503 SIGNALING_UNAVAILABLE`, because the WebSocket hub runs only in `src/server.js`.
 
 ## Authentication (`/api/v1/auth`)
 
@@ -243,6 +259,39 @@ Active role PATIENT with `appointments:manage:own`. The patient is always the si
 ## Appointments — doctor (`/api/v1/doctors/me/appointments`)
 Active role DOCTOR with `appointments:manage:doctor`: `GET /?scope=`, `GET /:id` (patient name, never contact details) and `POST /:id/cancel` with a required `reason` (10–500). A doctor cancellation is always a full refund; the slot is withdrawn and the patient notified.
 
+## Dashboards (real data, no sample figures)
+
+| Method and path | Purpose |
+|---|---|
+| `GET /api/v1/appointments/summary` | PATIENT. `{ counts: { upcoming, completed, prescriptions, documents }, nextAppointment, serverTime }`. `upcoming` = own `CONFIRMED`/`WAITING`/`IN_PROGRESS` not yet ended (unpaid holds excluded); `prescriptions` = issued (non-draft); `documents` = non-archived medical documents. `nextAppointment` is the soonest of those: `{ id, status, startAtUtc, endAtUtc, durationMinutes, doctor: { id, name, specialty, photoUrl }, canJoin, canReschedule }` (actions computed by the same rules as the appointment detail), or `null`. |
+| `GET /api/v1/doctors/me/appointments/summary?tz=` | DOCTOR. The day in `tz` (default: the doctor's own zone): `{ timeZone, today, days (7 dates), stats: { today, waiting, completed30d, earnings30d: { amount, currency, simulated } \| null }, schedule: [appointment list items + day], serverTime }`. `schedule` = own paid visits (`CONFIRMED`/`WAITING`/`IN_PROGRESS`) in the next 7 days; `earnings30d` = calculated net after commission and refund deductions (same as My earnings). |
+| `GET /api/v1/public/stats` | Public, cached 5 minutes, public rate limit. `{ doctors, completedConsultations, rating: { average, count } \| null, specialties: [{ id, nameEn, nameSo, doctors }] }` — listed (verified, active) doctors only; counts, never personal data. |
+
+The admin dashboard uses `GET /api/v1/admin/reports/overview` (30-day cards; Monday–Sunday custom range for the weekly chart) and the finance overview.
+
+## Requirement features (follow-ups, ratings, refunds, chat files, admin tools, SMS)
+
+| Method and path | Who | Purpose |
+|---|---|---|
+| `POST /api/v1/appointments/:id/no-show-refund` | PATIENT | Req. 6: the doctor has not admitted the patient 15 min after the start → appointment CANCELLED, slot withdrawn, **full** refund request, doctor notified, audited. `409 NO_SHOW_REFUND_NOT_ALLOWED` with `details.blocker` (`TOO_EARLY`, `ADMITTED`, `NOT_PAID`, `NOT_ELIGIBLE`) and `availableAt`. The appointment detail carries `actions.noShowRefund { allowed, blocker, availableAt }`. |
+| `POST /api/v1/appointments/:id/review` | PATIENT | Req. 13: `{ rating: 1..5, comment? (≤1000) }`. COMPLETED appointments only (`409 REVIEW_NOT_ALLOWED`), once (`409 REVIEW_ALREADY_SUBMITTED`). Detail carries `actions.rate` and `review`. |
+| `GET /api/v1/doctors/:doctorId/reviews?page=` | public | `{ average, count, distribution, items: [{ rating, comment, createdAt, author: "First L." }] }` for listed doctors. |
+| `POST /api/v1/consultations/:consultationId/follow-up` | DOCTOR | Req. 12: `{ slotId, fee: NORMAL\|DISCOUNTED\|FREE }` on a COMPLETED consultation, own open slot. Creates a PENDING_PAYMENT FOLLOW_UP appointment (deadline: follow-up hours from Admin › Settings, default 48 h, never after the slot). `FOLLOW_UP_EXISTS`, `FOLLOW_UP_SLOT_INVALID`, `FOLLOW_UP_NOT_ALLOWED`. Patient notified (in-app + SMS). |
+| `POST /api/v1/appointments/:id/confirm-free` | PATIENT | Confirms a free follow-up before its deadline (no payment). `409 FOLLOW_UP_NOT_FREE`. The detail shows `freeFollowUp` and `followUpOf { appointmentId, startAtUtc }`. |
+| `POST /api/v1/appointments/:id/consultation-record` | PATIENT | Req. 5: creates the consultation record for an active reservation or paid booking so lab results can be attached with the normal document upload. Returns `{ consultationId }`. Doctors see those files only once the booking is paid. |
+| `POST /api/v1/consultations/:id/documents/upload-url` | participant | Now also accepts `context: "CHAT"` (in-call chat, req. 8): the limit becomes **5 MB**. Patients may upload while the booking is PENDING_PAYMENT or CONFIRMED. |
+| `PATCH /api/v1/admin/doctors/:doctorId` | ADMIN | Req. 1: edit `fullName, specialtyId, country, timeZone, yearsExperience, consultationFee (5–200), bio, languages`. Fee changes affect new bookings only. Audited. The list now includes `country`, `timeZone`, `bio`, `cancellationsThisMonth` and `cancellationFlag` (req. 11: more than 3 doctor cancellations this month; admins notified once). |
+| `GET/POST/PATCH /api/v1/admin/specialties[/:id]` | ADMIN | The admin-managed specialty list: add `{ nameEn, nameSo }`, rename, `isActive` on/off (never deleted). `409 SPECIALTY_EXISTS`. Audited. |
+| `GET /api/v1/notifications/sms?page=` | any | The signed-in user's simulated SMS outbox. |
+| `GET /api/v1/admin/sms-outbox?q=&page=` | ADMIN | Every simulated SMS (number, text, status, recipient name). |
+| `GET /api/v1/payments/:id/receipt?lang=en\|so` | PATIENT / ADMIN | Receipt PDF in English or Somali (default: the reader's language). |
+| `GET /api/v1/payments/:paymentId/refunds/:refundId/receipt?lang=en\|so` | PATIENT | Req. 11: refund receipt PDF (refund id and reference, original payment, requested/paid-back dates, reason, amount, status), simulated. 404 for anyone else's. Admins: `GET /api/v1/admin/finance/payments/:paymentId/refunds/:refundId/receipt`. |
+
+Other rule changes: the join window is **[start − 10 min, start + 30 min]**; a FAILED payment releases the slot
+immediately (`EXPIRED`, pay again → `409 APPOINTMENT_NOT_PAYABLE`); search lists only doctors with a free slot
+in the next 30 days; ending or completing a consultation without any note text → `409
+CONSULTATION_NOTES_REQUIRED`; `GET /api/v1/doctors/me/earnings` adds `byMonth` (fully refunded excluded).
+
 ## Simulated payments and refunds (DEMO — no real provider, no real money)
 
 Providers `EVC_PLUS`, `ZAAD` and `EDAHAB` are **simulated adapters** (`apps/api/src/adapters/payment/`) behind one interface (`validateWallet`, `charge`, `checkStatus`, `refund`); a real provider later replaces one entry in the registry. The **server** decides each outcome from documented demo wallet numbers (last four digits `0001` fail, `0002` stays pending, `0003` pending then approved, `0004` refund fails, anything else succeeds); the client never sends an amount, a status or an outcome.
@@ -336,7 +385,7 @@ writes. Someone else's appointment/consultation answers **404**. Nothing is reco
 
 **Eligibility (enforced on every join, ticket and admit):** appointment `CONFIRMED`/`WAITING`/`IN_PROGRESS`;
 covered by a `SUCCEEDED` payment (following reschedule links) with no requested/processing/paid refund;
-inside the join window **[start − 10 min, end + 15 min]** (UTC, inclusive); doctor verified and active.
+inside the join window **[start − 10 min, start + 30 min]** (an in-progress call can be reconnected after that) (UTC, inclusive); doctor verified and active.
 Errors (409): `CONSULTATION_NOT_JOINABLE`, `CONSULTATION_NOT_PAID`, `CONSULTATION_TOO_EARLY`,
 `CONSULTATION_TOO_LATE` (details: `opensAt`, `closesAt`), `CONSULTATION_ENDED`; 403 `DOCTOR_NOT_ACTIVE`,
 `CONSULTATION_DOCTOR_ONLY`; 409 `PATIENT_NOT_WAITING`.
@@ -419,6 +468,71 @@ A refund paid out posts REFUND plus two ADJUSTMENT entries (`PLATFORM_COMMISSION
 `DOCTOR_EARNING_REVERSAL`) linked to the original references. `doctor_earnings` amounts and
 `appointments.commission_rate_snapshot` are protected by database triggers.
 
+## Admin console (`/api/v1/admin/patients`, `/appointments`, `/reports`, `/audit-logs`)
+
+ADMIN role; each router checks its own permission. Responses are `Cache-Control: private, no-store`.
+Date filters use the admin finance range fields (`preset`, `fromDate`, `toDate`, `tz`); an invalid range is
+`400 FINANCE_RANGE_INVALID`. None of these endpoints return clinical data (date of birth, sex, address,
+emergency contact, visit reason, medical history, documents, prescriptions, notes or messages).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/admin/patients?tab=all\|active\|suspended&q=&page=&pageSize=` | `patients:manage`. `q` matches name, email or phone. Items `{ patientId, userId, name, email, phone, status, registeredAt, lastLoginAt, appointments, totalPaid, suspension }`; plus `counts` per tab. |
+| GET | `/api/v1/admin/patients/:patientId` | `{ patient: { …row, preferredLanguage, roles, isDoctor, canSuspend, suspendBlocker }, appointments (≤50: id, status, start/end, fee, doctor), payments (≤50: amount, refunded, status, provider, paidAt) }`. `404` if unknown. |
+| POST | `/api/v1/admin/patients/:patientId/suspend` | Body `{ reason }` (10–500 chars); needs the client header. One transaction: user `SUSPENDED` (sign-in refused with `ACCOUNT_SUSPENDED` and every request re-checks the status, so the patient can neither use the app nor book), all active sessions revoked, audit `SUSPEND` / `PatientAccount` (reason, sessions revoked, count of upcoming appointments). **Existing appointments are not touched**: not cancelled, slots not released, no refund requested. Errors: `PATIENT_ALREADY_SUSPENDED` (409), `PATIENT_ACCOUNT_PROTECTED` (403, administrators), `PATIENT_IS_ACTIVE_DOCTOR` (409 — suspend the doctor from Admin › Doctors first), `SELF_ACTION_FORBIDDEN`. Returns `{ sessionsRevoked, upcomingAppointments, patient }`. |
+| POST | `/api/v1/admin/patients/:patientId/reactivate` | Body `{ reason? }`. `SUSPENDED` → `ACTIVE` (appointments were never changed by the suspension). Audit `UPDATE` / `PatientAccount` with `{ status: ACTIVE, reason, reactivated: true }`. `PATIENT_NOT_SUSPENDED` (409). |
+| GET | `/api/v1/admin/appointments?preset=&…&status=&q=&page=&pageSize=` | `appointments:monitor`. Range applies to the start time (default `all`); `q` matches patient or doctor name. `{ range, statusCounts, items: [{ id, status, bookingType, start/end, fee, rescheduled, bookedAt, paymentStatus, patient, doctor }], total, page, pageSize }`. |
+| GET | `/api/v1/admin/appointments/:appointmentId` | The list item plus `cancellationReason`, `cancelledAt`, `rescheduleCount`, `commissionRate`, `statusHistory`, `payment`, `refunds`, `consultation` (status and times only) and `earning`. Read-only. |
+| GET | `/api/v1/admin/reports/overview?preset=&…` | `reports:read`. Default `30d`. `{ users: { newPatients, newDoctors, totalPatients, activeDoctors }, appointments: { total, booked, byStatus, paid, completed, noShow, cancelled, completionRate, noShowRate, cancellationRate }, topSpecialties, topDoctors, granularity: day\|month, trend: [{ period, appointments, completed, cancelled }] }`. Appointments count by start time, bookings by creation time; rates are fractions (or `null`). Money stays in Admin finance reports. |
+| GET | `/api/v1/admin/reports/export?preset=&…` | The same figures as CSV (formula-safe cells). 20 per minute. |
+| GET | `/api/v1/admin/audit-logs?preset=&…&action=&entityType=&actorUserId=&q=&page=&pageSize=` | `audit:read`. Default `7d`. Excludes clinical audit types (`Prescription`, `MedicalDocument`, `MedicalHistoryEntry`, `PatientMedicalHistoryAccess`, `SecurityEvent` — see Admin medical records). `q` matches the actor's name. Items `{ id, at, action, entityType, entityRef, actor: { userId, name, role }, oldValues, newValues }`; values pass an allow-list of non-personal keys and ids become 8-character references. Also returns `entityTypes` for the filter. |
+
+### Booking rules (`/api/v1/admin/settings`)
+
+Permission `settings:manage`. The rules live in one `PlatformSetting` row (`booking_policy`); anything not
+stored falls back to the defaults, so behaviour only changes after an administrator saves. Rules are read
+when they are applied (reserving, cancelling, rescheduling, appointment detail) — existing holds, refunds
+and appointments are never recalculated. The 50 % partial-refund rate and the doctor/system full refund
+are fixed.
+
+| Field | Default | Range | Used by |
+|---|---|---|---|
+| `paymentHoldMinutes` | 10 | 5–60 | New standard reservations (slot `HELD` until then) |
+| `followUpDeadlineHours` | 48 | 1–168 | New follow-up reservations (capped at the slot start) |
+| `maxFreeReschedules` | 1 | 0–5 | Reschedule blocker `ALREADY_RESCHEDULED` |
+| `freeRescheduleMinHours` | 24 | 0–168 | Reschedule blocker `TOO_LATE` (must be more than this many hours ahead) |
+| `fullRefundMinHours` | 24 | 1–168 | Patient cancellation: more than this → 100 % |
+| `partialRefundMinHours` | 2 | 0–72 | Patient cancellation: at least this → 50 %, below → 0 %; must be less than `fullRefundMinHours` |
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/admin/settings` | `{ bookingPolicy: { values, defaults, limits, updatedAt, updatedBy, history (≤20: at, by, before, after) }, commission: { percent, managedIn } }`. Commission is read-only here (Admin finance settings). |
+| PUT | `/api/v1/admin/settings/booking-policy` | Body: all six fields as integers plus `confirm: true`; needs the client header. `400 BOOKING_POLICY_INVALID` (with per-field details), `409 BOOKING_POLICY_UNCHANGED`. Audit `UPDATE` / `PlatformSetting` / `booking_policy` with only the changed fields. Returns the same shape as GET. |
+
+Patient/doctor appointment detail responses now include `policy: { fullRefundMinHours, partialRefundMinHours,
+freeRescheduleMinHours, maxFreeReschedules }` so the cancellation and reschedule wording matches the rules in force.
+
+## Messages (`/api/v1/messages`)
+
+PATIENT or DOCTOR role, permission `messages:own`. One text conversation per **paid** appointment
+(`CONFIRMED`, `WAITING`, `IN_PROGRESS`, `COMPLETED`), between the patient and the assigned doctor only;
+administrators have no access. Writing is open from payment until **7 days** after the consultation ended
+(or the slot ended if no call took place); after that the conversation is read-only. Anything that is not
+the viewer's eligible appointment is the same `404 CONVERSATION_NOT_FOUND`. Responses are
+`Cache-Control: private, no-store`. Messages are stored in `messages` (`appointment_id`, optional
+`consultation_id` once the call exists, `read_at` = when the other participant opened it).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/messages/conversations` | Conversations that have messages or are still open, latest activity first: `{ items: [{ appointmentId, appointmentStatus, startAtUtc, counterpart: { userId, name, role, specialty?, photoUrl }, open, closesAt, lastMessage, unread }], unreadTotal, windowDays }`. The patient's photo URL is the doctor's gated route; the doctor's is the public directory photo. |
+| GET | `/api/v1/messages/conversations/:appointmentId?before=<messageId>` | `{ conversation, messages (≤50, oldest first: id, body, mine, createdAt, readAt), hasMore }`; `before` pages back. |
+| POST | `/api/v1/messages/conversations/:appointmentId/messages` | Body `{ body }` (trimmed, 1–2000 chars); client header required; `MESSAGE_RATE_LIMIT_MAX` per minute (default 30). `201` with the message. `409 CONVERSATION_CLOSED` after the window. Publishes a `message` event to both participants. |
+| POST | `/api/v1/messages/conversations/:appointmentId/read` | Marks the other person's messages read (`{ marked }`); publishes `message-read`. |
+| GET | `/api/v1/messages/unread-count` | `{ unreadMessages }` for the menu badge. |
+
+The notification stream (`GET /api/v1/notifications/stream`) now also emits `message` and `message-read`
+events with `{ appointmentId, messageId }` only; clients reload through the endpoints above.
+
 ## Profiles (Phase 9)
 
 Every private endpoint acts on the signed-in user only — no user, patient or entry owner id is accepted from
@@ -470,3 +584,44 @@ The doctor's appointment list/detail (`/api/v1/doctors/me/appointments…`) and 
 include `patient.id` and `patient.photoUrl` (the gated route above, only for eligible statuses; `null`
 otherwise). Patient-facing responses are unchanged. Doctors still add entries / edit their own entries only
 through the existing medical-history service rules (no new write endpoint).
+
+### Doctor workspace: my patients and my earnings (`/api/v1/doctors/me`)
+
+DOCTOR role. Responses are `Cache-Control: private, no-store`. Rate limit: `PATIENT_RECORDS_RATE_LIMIT_MAX`
+per 15 minutes.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/doctors/me/patients?q=&page=&pageSize=` | Permission `patient-records:read:assigned`; doctor must be VERIFIED + ACTIVE. Only patients with at least one appointment with **this** doctor in `CONFIRMED`, `WAITING`, `IN_PROGRESS` or `COMPLETED` (cancelled/expired/rescheduled/no-show bookings never list a patient). `q` matches the name. Items `{ id, name, photoUrl, appointmentId, appointmentStatus, appointments, completedConsultations, lastVisitAt, nextVisitAt }` — `appointmentId` is the newest eligible appointment (what the photo URL and the Patient Information panel use). Patients with a visit ahead come first (soonest first), then by most recent visit. No age, sex or contact details (those stay behind the audited Patient Information route). `{ items, total, page, pageSize }`. |
+| GET | `/api/v1/doctors/me/patients/:patientId` | Same rule; otherwise `403 PATIENT_ACCESS_DENIED`. `{ patient: <list item>, appointments: [{ id, status, startAtUtc, endAtUtc, reason, bookingType, rescheduled }] }` — every appointment the doctor has had with the patient (any status), newest first. |
+| GET | `/api/v1/doctors/me/earnings?preset=&fromDate=&toDate=&tz=&status=&page=&pageSize=` | Permission `earnings:read:own`. The doctor's earning snapshots for consultations paid in the range (same range fields as admin finance; default `30d`). `status` ∈ `PENDING`, `AVAILABLE`, `PARTIALLY_REFUNDED`, `REFUNDED`. Each item `{ id, appointmentId, appointmentStatus, appointmentStartAt, patientName, paidAt, status, gross, commission, refunds, refundDeduction, net, currency }`; `refundDeduction` is the doctor's share of successful refunds (same allocation as admin finance). `{ simulated: true, currency, range, totals, statusCounts, items, total, page, pageSize, payoutsSupported: false }`. Calculated earnings only — no payouts exist. |
+
+## File storage (Supabase Storage / local driver)
+
+`STORAGE_DRIVER=local|supabase` (default `local`). Neon stays the database; Supabase is object storage only.
+Supabase credentials (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) are read by the API only; the API refuses to
+start if the key appears in a `VITE_*` variable. Private buckets (no anon/authenticated policies):
+`fd-verification` (doctor-documents/, 5 MB), `fd-photos` (avatars/, 1 MB), `fd-prescriptions` (prescriptions/,
+2 MB), `fd-medical` (medical-documents/, 10 MB), `fd-staging` (unvalidated uploads, removed after 24 h).
+Keys are unchanged and server-generated; uploads never overwrite.
+
+**Small files stay on the API path:** profile photos (re-encoded), licence replacement, prescription PDFs
+(streamed with the SHA-256 check on every download) and public doctor photos (listed doctors only).
+
+**Large files — staged upload (works within Vercel's ~4.5 MB body limit):**
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/v1/consultations/:id/documents/upload-url` | Participant only. `{ fileName, size, contentType, category, description? }` → `{ uploadToken, upload: { url, method, headers }, expiresAt, maxBytes }`. Declared size/type checked. |
+| PUT | `upload.url` | Browser sends the bytes to a random staging path (Supabase signed upload URL, or `/v1/storage/local/upload/:token` with the local driver; one use). |
+| POST | `/api/v1/consultations/:id/documents/finalize` | `{ uploadToken }`. Re-authorises, then the token must match the same user, role and consultation; the staged object is claimed (single use — concurrent finalisations: one wins), then validated (type from bytes, structure, ≤ 10 MB, SHA-256) and stored + recorded + audited + notified. Refused bytes are not kept. `UPLOAD_NOT_FOUND`, `UPLOAD_ALREADY_FINALISED`, `UPLOAD_INTENT_INVALID`. |
+| POST | `/api/v1/doctor-application/documents/:type/upload-url`, `/finalize` | Same flow for the applicant's verification documents (5 MB); stores `doctor_documents.sha256`. |
+
+**Signed downloads (issued only after the access check, each audited as `SIGNED_URL_ISSUED`, valid 60 s):**
+`GET /api/v1/medical-documents/:id/download-url`, `GET /api/v1/doctor-application/documents/:id/url`,
+`GET /api/v1/admin/doctor-applications/:doctorId/documents/:id/url` → `{ url, expiresAt }` (absolute for
+Supabase; relative to the API base for the local driver: `/v1/storage/local/download/:token`).
+
+Maintenance: `npm run storage:cleanup-staging` (removes staging uploads older than 24 h);
+`npm run storage:setup-dev` (creates/verifies the private buckets in the **development** project only).
+See `docs/vercel-realtime.md` for WebSocket/SSE/scheduler constraints on Vercel.

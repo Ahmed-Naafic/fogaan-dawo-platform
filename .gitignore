@@ -11,10 +11,13 @@ coverage/
 .env.*
 !.env.example
 
+# Vercel CLI (project link, local build output)
+.vercel/
+
 # OS / editor / logs
 .DS_Store
 Thumbs.db
 *.log
 
 # Private uploaded documents (local storage adapter) — never commit
-storage/
+/storage/

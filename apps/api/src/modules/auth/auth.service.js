@@ -13,6 +13,7 @@ import { generateRefreshToken, hashToken, parseRefreshToken, signAccessToken, to
 
 /* ------------------------------------------------------------------ helpers */
 
+/** Role names assigned to a user record. */
 export const rolesOf = (user) => user.roles.map((r) => r.role.name).sort((a, b) => ROLE_PRECEDENCE.indexOf(a) - ROLE_PRECEDENCE.indexOf(b));
 
 /** Why `role` can't be used right now (null = usable). A suspended/disabled doctor loses DOCTOR. */
@@ -44,6 +45,7 @@ function roleError(reason, role) {
     : ApiError.forbidden(`The ${role} role is not available for this account`, undefined, reason);
 }
 
+/** Picks the active role for a session: the requested one if assigned and usable, otherwise the default order. Throws ROLE_NOT_ASSIGNED / ROLE_UNAVAILABLE / NO_USABLE_ROLE. */
 export function chooseActiveRole(user, requested) {
   if (requested) {
     const reason = roleUnavailableReason(user, requested);
@@ -55,6 +57,7 @@ export function chooseActiveRole(user, requested) {
   return role;
 }
 
+/** Safe user shape for responses (no password hash or internal fields). */
 export const publicUser = (user) => ({
   id: user.id,
   fullName: user.fullName,
@@ -83,6 +86,7 @@ const sessionMeta = ({ userAgent, ipAddress }) => ({
   ipAddress: ipAddress ? String(ipAddress).slice(0, 64) : null,
 });
 
+/** Creates a session with a hashed refresh token and returns { accessToken, refreshToken, session } for the chosen role. Audited (LOGIN). */
 export async function startSession(tx, user, role, meta, now) {
   const id = randomUUID();
   const refreshToken = generateRefreshToken(id, role);
@@ -251,6 +255,7 @@ export async function logout({ sessionId = null, refreshToken = null, actorUserI
   });
 }
 
+/** Revokes every active session of the signed-in user (sign out everywhere). */
 export async function logoutAll(userId, now = new Date()) {
   return withTransaction(async (tx) => {
     const { count } = await authRepository.revokeActiveSessionsForUser(tx, userId, now);
@@ -294,6 +299,7 @@ export async function resolveAuthContext(client, claims, now = new Date()) {
   return { user, sessionId: session.id, sessionExpiresAt: session.expiresAt, activeRole: claims.role, roles: rolesOf(user), permissions: permissionsFor(claims.role) };
 }
 
+/** GET /api/v1/auth/me: the signed-in user, active role, roles and permissions. */
 export function getMe(auth) {
   return {
     user: publicUser(auth.user),

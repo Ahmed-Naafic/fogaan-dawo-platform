@@ -7,6 +7,7 @@ import Tabs from '@/components/ui/Tabs';
 import Toggle from '@/components/ui/Toggle';
 import ConsultationPrescriptions from '@/features/prescriptions/components/ConsultationPrescriptions';
 import DocumentsPanel from '@/features/prescriptions/components/DocumentsPanel';
+import CallChat from './CallChat';
 import { useToast } from '@/components/ui/Toast';
 import { useI18n } from '@/lib/i18n';
 import { browserTimeZone, formatDateTime } from '@/lib/timezone';
@@ -19,7 +20,7 @@ import usePrivateImage from '@/features/profile/usePrivateImage';
  *    existing note rules, locked 24 h after completion) with a per-section "share with patient" switch.
  *  - Prescriptions: drafts / issue (doctor, within the issuing window) or the issued list (patient).
  *  - Files: consultation documents shared between the patient and the assigned doctor.
- *  - Chat: not available in this phase — shown as such, never with sample content.
+ *  - Chat: text and image/PDF files (≤ 5 MB) saved to the consultation record (CallChat).
  */
 
 const NOTE_FIELDS = ['complaint', 'assessment', 'diagnosis', 'advice'];
@@ -147,7 +148,7 @@ export default function ConsultationPanel({ consult, role, tab, setTab, onClose,
       </div>
       <div className="flex-1 overflow-y-auto p-5">
         {tab === 'consultation' && (consult ? <ConsultationTab consult={consult} role={role} onSaveNote={onSaveNote} /> : <p className="text-sm text-muted">{t('consult.panelBeforeJoin')}</p>)}
-        {tab === 'chat' && <Unavailable icon={MessageSquareText} text={t('consult.chatUnavailable')} />}
+        {tab === 'chat' && (consult?.appointmentId ? <CallChat appointmentId={consult.appointmentId} consultationId={consult.id} /> : <Unavailable icon={MessageSquareText} text={t('consult.panelBeforeJoin')} />)}
         {tab === 'prescriptions' && (consult?.id ? <ConsultationPrescriptions consultationId={consult.id} role={role} compact refreshKey={consult.appointment?.status} /> : <p className="text-sm text-muted">{t('consult.panelBeforeJoin')}</p>)}
         {tab === 'files' && (consult?.id ? <DocumentsPanel consultationId={consult.id} compact /> : <p className="text-sm text-muted">{t('consult.panelBeforeJoin')}</p>)}
       </div>

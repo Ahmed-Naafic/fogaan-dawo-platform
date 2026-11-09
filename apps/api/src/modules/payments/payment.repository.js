@@ -1,27 +1,37 @@
 /** Data access for payments, payment attempts and doctor earnings. */
 
+/** Data access: find attempt by idempotency key (paymentAttempt.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findAttemptByIdempotencyKey = (client, idempotencyKey) =>
   client.paymentAttempt.findUnique({ where: { idempotencyKey }, include: { payment: true } });
 
+/** Data access: find payment by id (payment.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findPaymentById = (client, id) => client.payment.findUnique({ where: { id } });
 
+/** Data access: find payment by appointment id (payment.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findPaymentByAppointmentId = (client, appointmentId) => client.payment.findUnique({ where: { appointmentId } });
 
+/** Data access: create payment (payment.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createPayment = (client, data) => client.payment.create({ data });
 
+/** Data access: create payment attempt (paymentAttempt.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createPaymentAttempt = (client, data) => client.paymentAttempt.create({ data });
 
+/** Data access: create doctor earning (doctorEarning.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createDoctorEarning = (client, data) => client.doctorEarning.create({ data });
 
+/** Data access: set doctor earning status (doctorEarning.updateMany: updates matching rows). `client` is the Prisma client or a transaction. */
 export const setDoctorEarningStatus = (client, appointmentId, status) =>
   client.doctorEarning.updateMany({ where: { appointmentId }, data: { status } });
 
 /* ---------------------------------------------------------------- simulated payment flow */
 
+/** Data access: update payment (payment.update: updates a row). `client` is the Prisma client or a transaction. */
 export const updatePayment = (client, id, data) => client.payment.update({ where: { id }, data });
 
+/** Data access: update payment attempt (paymentAttempt.update: updates a row). `client` is the Prisma client or a transaction. */
 export const updatePaymentAttempt = (client, id, data) => client.paymentAttempt.update({ where: { id }, data });
 
+/** Data access: find attempts for payment (paymentAttempt.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const findAttemptsForPayment = (client, paymentId) => client.paymentAttempt.findMany({ where: { paymentId }, orderBy: { attemptNumber: 'asc' } });
 
 /** Closes an unfinished payment of an expiring reservation (no-op if there is none or it already succeeded). */
@@ -47,10 +57,13 @@ const PAYMENT_LIST_INCLUDE = Object.freeze({
   },
 });
 
+/** Data access: find payment detail (payment.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findPaymentDetail = (client, id) => client.payment.findUnique({ where: { id }, include: PAYMENT_LIST_INCLUDE });
 
+/** Data access: find payment detail by appointment (payment.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findPaymentDetailByAppointment = (client, appointmentId) => client.payment.findUnique({ where: { appointmentId }, include: PAYMENT_LIST_INCLUDE });
 
+/** Data access: list payments for patient (payment.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const listPaymentsForPatient = (client, patientId) =>
   client.payment.findMany({ where: { patientId }, include: PAYMENT_LIST_INCLUDE, orderBy: { createdAt: 'desc' }, take: 100 });
 
@@ -72,13 +85,18 @@ const adminPaymentWhere = ({ status, provider, q, from = null, to = null }) => (
     : {}),
 });
 
+/** Data access: list payments for admin (payment.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const listPaymentsForAdmin = (client, filters, { skip, take }) =>
   client.payment.findMany({ where: adminPaymentWhere(filters), include: PAYMENT_LIST_INCLUDE, orderBy: { createdAt: 'desc' }, skip, take });
 
+/** Data access: count payments for admin (payment.count: count of matching rows). `client` is the Prisma client or a transaction. */
 export const countPaymentsForAdmin = (client, filters) => client.payment.count({ where: adminPaymentWhere(filters) });
 
+/** Data access: sum payments (payment.aggregate: aggregate values). `client` is the Prisma client or a transaction. */
 export const sumPayments = (client, where) => client.payment.aggregate({ where, _sum: { amount: true }, _count: { _all: true } });
 
+/** Data access: count payments (payment.count: count of matching rows). `client` is the Prisma client or a transaction. */
 export const countPayments = (client, where) => client.payment.count({ where });
 
+/** Data access: count attempts (paymentAttempt.count: count of matching rows). `client` is the Prisma client or a transaction. */
 export const countAttempts = (client, where) => client.paymentAttempt.count({ where });

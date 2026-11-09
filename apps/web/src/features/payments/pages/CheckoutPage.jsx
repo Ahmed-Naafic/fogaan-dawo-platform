@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import BookingAttachments from '@/features/appointments/components/BookingAttachments';
 import { Link, useParams } from 'react-router';
 import { CheckCircle2, CircleAlert, Download, FlaskConical, Hourglass, Loader2, RefreshCw, Smartphone, TimerOff, Wallet } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
@@ -26,11 +27,11 @@ export function DemoBanner({ className }) {
 }
 
 function ResultPanel({ outcome, payment, appointmentId, onRetry, onCheck, checking }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const notify = useToast();
   const receipt = async () => {
     try {
-      saveBlob(await api.downloadMyReceipt(payment.id), `fogaan-dawo-demo-receipt-${payment.reference}.pdf`);
+      saveBlob(await api.downloadMyReceipt(payment.id, lang), `fogaan-dawo-demo-receipt-${payment.reference}.pdf`);
     } catch (error) {
       notify(t(paymentErrorKey(error)), 'error');
     }
@@ -62,7 +63,7 @@ function ResultPanel({ outcome, payment, appointmentId, onRetry, onCheck, checki
             <Button to={`/patient/appointments/${appointmentId}`}>{t('payments.viewAppointment')}</Button>
           </>
         )}
-        {outcome === 'FAILED' && <Button onClick={onRetry}>{t('payments.tryAgain')}</Button>}
+        {outcome === 'FAILED' && <Button to="/patient/doctors">{t('payments.findAnotherTime')}</Button>}
         {outcome === 'PENDING' && (
           <Button variant="secondary" onClick={onCheck} disabled={checking}>
             <RefreshCw className={cn('h-4 w-4', checking && 'animate-spin')} /> {t('payments.checkStatus')}
@@ -241,7 +242,7 @@ export default function CheckoutPage() {
 
         <div className="space-y-5">
           {a.status === 'PENDING_PAYMENT' && phase !== 'result' && <HoldCountdown holdExpiresAt={a.holdExpiresAt} serverTime={data.serverTime} receivedAt={receivedAt} onExpire={load} />}
-          {a.status === 'PENDING_PAYMENT' && phase === 'result' && (outcome === 'PENDING' || outcome === 'FAILED') && <HoldCountdown holdExpiresAt={a.holdExpiresAt} serverTime={data.serverTime} receivedAt={receivedAt} onExpire={outcome === 'PENDING' ? check : load} />}
+          {a.status === 'PENDING_PAYMENT' && phase === 'result' && outcome === 'PENDING' && <HoldCountdown holdExpiresAt={a.holdExpiresAt} serverTime={data.serverTime} receivedAt={receivedAt} onExpire={outcome === 'PENDING' ? check : load} />}
           <Card className="p-5 sm:p-6">
             <CardHeader title={t('payments.summary')} />
             <p className="font-bold">{a.doctor.name}</p>
@@ -252,6 +253,12 @@ export default function CheckoutPage() {
               <span className="text-xl font-extrabold">{formatFee(a.fee, a.currency)}</span>
             </div>
             <p className="mt-2 text-2xs text-muted">{t('payments.demoAmountNote')}</p>
+            {a.status === 'PENDING_PAYMENT' && (
+              <div className="mt-4 border-t border-line pt-4">
+                <p className="mb-2 text-sm font-bold">{t('bookingFiles.title')}</p>
+                <BookingAttachments compact appointmentId={appointmentId} consultationId={a.consultation?.id} />
+              </div>
+            )}
             <Link to={`/patient/appointments/${appointmentId}`} className="mt-4 inline-block text-xs font-semibold text-primary hover:underline">
               {t('payments.backToAppointment')}
             </Link>

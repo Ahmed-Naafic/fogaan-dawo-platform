@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { putPrivateObject, removePrivateObject } from '../../adapters/storage/privateStorage.js';
 import { prisma } from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
@@ -31,6 +31,7 @@ export const DoctorProfileErrorCode = Object.freeze({
 
 const isListed = (p) => p.verificationStatus === 'VERIFIED' && p.accountStatus === 'ACTIVE' && p.user.status === 'ACTIVE';
 
+/** The doctor's own professional profile with verification state, photo, public listing and completeness. */
 export function presentDoctorProfile(profile) {
   const base = presentApplication(profile);
   const latest = base.latestRequest;
@@ -62,10 +63,12 @@ async function loadOwn(client, auth) {
   return profile;
 }
 
+/** GET /api/v1/doctors/me/profile: the signed-in doctor's professional profile. */
 export async function getMyProfessionalProfile(auth) {
   return presentDoctorProfile(await loadOwn(prisma, auth));
 }
 
+/** PATCH /api/v1/doctors/me/profile: edits bio, qualifications, experience, country, fee (new bookings only) and languages. 409 unless verified and active. Audited. */
 export async function updateMyProfessionalProfile(auth, input) {
   await withTransaction(async (tx) => {
     const own = await doctorRepository.findDoctorByUserId(tx, auth.user.id);
@@ -79,6 +82,7 @@ export async function updateMyProfessionalProfile(auth, input) {
     if ('bio' in input) data.bio = input.bio;
     if ('qualifications' in input) data.qualifications = input.qualifications;
     if ('yearsExperience' in input) data.yearsExperience = input.yearsExperience;
+    if ('country' in input) data.country = input.country;
     if ('consultationFee' in input) data.consultationFee = input.consultationFee.toFixed(2);
     if (Object.keys(data).length) await doctorRepository.updateDoctor(tx, own.id, data);
     if ('languages' in input) await doctorRepository.replaceDoctorLanguages(tx, own.id, input.languages);
@@ -120,6 +124,7 @@ export async function replaceMyLicence(auth, { buffer, fileName, licenceNumber, 
       fileName: safeDisplayName(fileName, type.ext),
       mimeType: type.mime,
       fileSize: buffer.length,
+      sha256: createHash('sha256').update(buffer).digest('hex'),
       allowedStatuses: ['VERIFIED'], // checked under the row lock
       actorUserId: auth.user.id,
       licenceDetails: { licenceNumber, licenceCountry },

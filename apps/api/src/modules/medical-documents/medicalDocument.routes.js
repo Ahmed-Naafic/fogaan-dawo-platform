@@ -21,6 +21,15 @@ const uploadQuerySchema = z
   .strict();
 const listQuerySchema = z.object({ includeArchived: z.enum(['true', 'false']).optional(), category: z.enum(service.DOCUMENT_CATEGORIES).optional() }).strict();
 const downloadQuerySchema = z.object({ download: z.enum(['1']).optional() }).strict();
+const declaredFile = {
+  fileName: z.string().trim().min(1).max(300),
+  size: z.number().int().positive(),
+  contentType: z.enum(['application/pdf', 'image/jpeg', 'image/png']),
+};
+const finalizeSchema = z.object({ uploadToken: z.string().min(20).max(4096) }).strict();
+const initiateSchema = z
+  .object({ ...declaredFile, context: z.enum(['CHAT']).optional(), category: z.enum(service.DOCUMENT_CATEGORIES), description: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().max(500).optional()) })
+  .strict();
 
 /* ------------------------------------------------------------ controllers */
 
@@ -59,6 +68,16 @@ async function download(req, res) {
   });
   res.end(buffer);
 }
+async function initiate(req, res) {
+  res.status(201).json({ data: await service.initiateUpload(req.auth, req.params.consultationId, req.body) });
+}
+async function finalize(req, res) {
+  res.status(201).json({ data: await service.finalizeUpload(req.auth, req.params.consultationId, req.body.uploadToken) });
+}
+async function downloadUrl(req, res) {
+  res.set('Cache-Control', 'private, no-store');
+  res.json({ data: await service.getDownloadUrl(req.auth, req.params.documentId) });
+}
 async function archive(req, res) {
   res.json({ data: await service.archiveDocument(req.auth, req.params.documentId) });
 }
@@ -75,6 +94,7 @@ export function createMedicalDocumentRouter() {
   const writes = rateLimiter({ windowMs: 15 * 60_000, limit: Number.parseInt(process.env.PROFILE_RATE_LIMIT_MAX ?? '60', 10) });
   router.get('/:documentId', validate({ params: documentParamsSchema }), asyncHandler(get));
   router.get('/:documentId/download', validate({ params: documentParamsSchema, query: downloadQuerySchema }), asyncHandler(download));
+  router.get('/:documentId/download-url', validate({ params: documentParamsSchema }), asyncHandler(downloadUrl));
   router.post('/:documentId/archive', writes, requireClientHeader, validate({ params: documentParamsSchema, body: emptyBodySchema }), asyncHandler(archive));
   return router;
 }
@@ -91,6 +111,9 @@ export function attachConsultationDocumentRoutes(router) {
     express.raw({ type: () => true, limit: service.MAX_MEDICAL_DOCUMENT_BYTES }),
     asyncHandler(upload),
   );
+  // Large files (browser → storage): authorised initiation, then validated finalisation.
+  router.post('/:consultationId/documents/upload-url', uploadRateLimiter(), requireClientHeader, ...participant, validate({ params: consultationParamsSchema, body: initiateSchema }), asyncHandler(initiate));
+  router.post('/:consultationId/documents/finalize', uploadRateLimiter(), requireClientHeader, ...participant, validate({ params: consultationParamsSchema, body: finalizeSchema }), asyncHandler(finalize));
   router.get('/:consultationId/documents', ...participant, validate({ params: consultationParamsSchema, query: listQuerySchema }), asyncHandler(listForConsultation));
 }
 

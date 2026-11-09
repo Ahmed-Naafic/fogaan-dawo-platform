@@ -36,6 +36,7 @@ function resolveSchema(url) {
 
 export const databaseSchema = resolveSchema(process.env.DATABASE_URL);
 
+/** Closes the Prisma connection pool (graceful shutdown and tests). */
 export async function disconnectDatabase() {
   await prisma.$disconnect();
 }

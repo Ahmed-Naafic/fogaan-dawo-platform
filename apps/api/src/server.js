@@ -1,10 +1,11 @@
+import { storageConfigProblem, storageDescription } from './adapters/storage/privateStorage.js';
 import { createApp } from './app.js';
 import { getAuthConfig } from './config/auth.js';
 import { disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { googleConfigProblem } from './config/google.js';
 import { pushConfigProblem } from './config/push.js';
-import { webrtcConfigProblem } from './config/webrtc.js';
+import { turnConfigured, webrtcConfigProblem } from './config/webrtc.js';
 import { attachSignaling, closeSignaling } from './modules/consultations/consultation.signaling.js';
 
 // Fail fast on missing/weak auth configuration instead of on the first login.
@@ -12,6 +13,12 @@ try {
   getAuthConfig();
 } catch (error) {
   console.error(`[api] configuration error: ${error.message}`);
+  process.exit(1);
+}
+// Storage: refuse to start on an incomplete or unsafe configuration (messages name variables only).
+const storageProblem = storageConfigProblem();
+if (storageProblem) {
+  console.error(`[api] storage configuration error: ${storageProblem}`);
   process.exit(1);
 }
 
@@ -22,7 +29,8 @@ const server = createApp().listen(env.port, () => {
   const pushProblem = pushConfigProblem();
   console.log(`[api] Web Push ${pushProblem ? `disabled: ${pushProblem}` : 'enabled'}`);
   const rtcProblem = webrtcConfigProblem();
-  console.log(`[api] Video consultations: STUN only (no TURN)${rtcProblem ? ` — ${rtcProblem}` : ''}`);
+  console.log(`[api] Video consultations: ${turnConfigured() ? 'STUN + Cloudflare TURN' : 'STUN only (no TURN)'}${rtcProblem ? ` — ${rtcProblem}` : ''}`);
+  console.log(`[api] File storage: ${storageDescription()}`);
 });
 // WebRTC signaling (WebSocket) on the same HTTP server: /api/v1/consultations/signal
 attachSignaling(server);

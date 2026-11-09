@@ -4,16 +4,18 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Fogaan Dawo App — REST/realtime API and database services (Prisma + Neon PostgreSQL).",
-  "main": "src/server.js",
+  "main": "src/index.js",
   "scripts": {
     "dev": "node --watch --env-file-if-exists=../../.env src/server.js",
-    "start": "node --env-file-if-exists=../../.env src/server.js"
+    "start": "node --env-file-if-exists=../../.env src/server.js",
+    "build": "prisma generate --schema ../../prisma/schema.prisma"
   },
   "engines": {
-    "node": ">=22.9"
+    "node": "^22.9.0 || ^24.0.0"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
+    "@supabase/supabase-js": "2.118.0",
     "bcrypt": "6.0.0",
     "cookie-parser": "1.4.7",
     "express": "^4.21.2",

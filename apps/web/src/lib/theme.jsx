@@ -1,3 +1,4 @@
+/** Theme provider: light/dark mode following the system or the saved choice. */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'fd-theme';

@@ -2,18 +2,24 @@ import { tableSql } from '../../utils/sql.js';
 
 /** Data access for slots, appointments and status history. Writes must run inside a transaction. */
 
+/** Data access: find slot by id (availabilitySlot.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findSlotById = (client, id) => client.availabilitySlot.findUnique({ where: { id } });
 
+/** Data access: set slot status (availabilitySlot.update: updates a row). `client` is the Prisma client or a transaction. */
 export const setSlotStatus = (client, slotId, status, holdExpiresAt = null) =>
   client.availabilitySlot.update({ where: { id: slotId }, data: { status, holdExpiresAt } });
 
+/** Data access: find pending appointment for slot (appointment.findFirst: first matching row). `client` is the Prisma client or a transaction. */
 export const findPendingAppointmentForSlot = (client, slotId) =>
   client.appointment.findFirst({ where: { slotId, status: 'PENDING_PAYMENT' } });
 
+/** Data access: find appointment by id (appointment.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findAppointmentById = (client, id) => client.appointment.findUnique({ where: { id } });
 
+/** Data access: create appointment (appointment.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createAppointment = (client, data) => client.appointment.create({ data });
 
+/** Data access: update appointment (appointment.update: updates a row). `client` is the Prisma client or a transaction. */
 export const updateAppointment = (client, id, data) => client.appointment.update({ where: { id }, data });
 
 /** Future appointments of a doctor in the given statuses, with payment and patient user id. */
@@ -24,6 +30,7 @@ export const findFutureAppointmentsForDoctor = (client, { doctorId, after, statu
     orderBy: { startAtUtc: 'asc' },
   });
 
+/** Data access: record status change (appointmentStatusHistory.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const recordStatusChange = (client, { appointmentId, fromStatus, toStatus, reason = null, changedBy = null }) =>
   client.appointmentStatusHistory.create({ data: { appointmentId, fromStatus, toStatus, reason, changedBy } });
 
@@ -49,6 +56,7 @@ const DOCTOR_SELECT = { id: true, userId: true, consultationFee: true, specialty
 // avatarUpdatedAt only versions the doctor's gated patient-photo URL; the storage key is never selected.
 const PATIENT_SELECT = { id: true, userId: true, user: { select: { fullName: true, avatarUpdatedAt: true } } };
 
+/** Data access: list appointments (appointment.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const listAppointments = (client, { patientId, doctorId, scope, now, take = 50 }) =>
   client.appointment.findMany({
     where: { ...(patientId ? { patientId } : {}), ...(doctorId ? { doctorId } : {}), ...scopeWhere(scope, now) },
@@ -57,6 +65,7 @@ export const listAppointments = (client, { patientId, doctorId, scope, now, take
     take,
   });
 
+/** Data access: find appointment detail (appointment.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findAppointmentDetail = (client, id) =>
   client.appointment.findUnique({
     where: { id },
@@ -70,10 +79,13 @@ export const findAppointmentDetail = (client, id) =>
     },
   });
 
+/** Data access: find patient by user id (patientProfile.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findPatientByUserId = (client, userId) => client.patientProfile.findUnique({ where: { userId } });
 
+/** Data access: find doctor by user id (doctorProfile.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findDoctorByUserId = (client, userId) => client.doctorProfile.findUnique({ where: { userId } });
 
+/** Data access: find refunds for appointments (refund.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const findRefundsForAppointments = (client, appointmentIds) =>
   client.refund.findMany({
     where: { appointmentId: { in: appointmentIds } },

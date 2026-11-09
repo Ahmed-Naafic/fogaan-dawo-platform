@@ -59,7 +59,7 @@ export function CancelDialog({ appointment, viewer, busy, onClose, onConfirm }) 
           ) : (
             <p>
               <span className="font-bold text-ink">{t('appointments.refund.amount', { amount: `$${preview.amount}`, percent: ratePercent(preview.rate) })}</span>
-              <span className="mt-1 block text-xs text-muted">{t(viewer === 'DOCTOR' ? 'appointments.refund.doctorRule' : 'appointments.refund.rules')}</span>
+              <span className="mt-1 block text-xs text-muted">{t(viewer === 'DOCTOR' ? 'appointments.refund.doctorRule' : 'appointments.refund.rules', { full: appointment.policy?.fullRefundMinHours ?? 24, partial: appointment.policy?.partialRefundMinHours ?? 2 })}</span>
             </p>
           )}
         </div>

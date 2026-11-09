@@ -25,6 +25,8 @@ function presentDoctor(d, ratings, next, { full = false } = {}) {
     currency: d.currency,
     languages: d.languages.map((l) => l.language).sort(),
     yearsExperience: d.yearsExperience,
+    country: d.country ?? null,
+    timeZone: d.user.timeZone,
     verified: true,
     rating: r?._count._all ? round1(r._avg.rating) : null,
     reviewCount: r?._count._all ?? 0,
@@ -55,6 +57,10 @@ async function enrich(client, doctors, now) {
   return { ratings: new Map(ratingRows.map((r) => [r.doctorId, r])), next: new Map(nextRows.map((r) => [r.doctorId, r._min.startAtUtc])) };
 }
 
+/** Search shows doctors with a free slot within this many days. */
+export const SEARCH_HORIZON_DAYS = 30;
+
+/** GET /api/v1/doctors: public search (verified, active, free slot in the next 30 days) with filters, sorting and paging. */
 export async function searchDirectory({ q, specialtyId, language, minFee, maxFee, sort, page, pageSize }, { now = new Date(), client = prisma } = {}) {
   const where = {
     ...(specialtyId ? { specialtyId, specialty: { isActive: true } } : {}),
@@ -72,11 +78,15 @@ export async function searchDirectory({ q, specialtyId, language, minFee, maxFee
   };
   const doctors = await doctorRepository.findPublicDoctors(client, where, MAX_MATCHES);
   const { ratings, next } = await enrich(client, doctors, now);
-  const items = doctors.map((d) => presentDoctor(d, ratings, next)).sort(SORTERS[sort]);
+  // Requirement: only doctors with at least one free slot in the next 30 days appear in search.
+  const horizon = now.getTime() + SEARCH_HORIZON_DAYS * 86_400_000;
+  const bookable = doctors.filter((d) => next.get(d.id) && next.get(d.id).getTime() <= horizon);
+  const items = bookable.map((d) => presentDoctor(d, ratings, next)).sort(SORTERS[sort]);
   const start = (page - 1) * pageSize;
   return { items: items.slice(start, start + pageSize), total: items.length, page, pageSize, sort };
 }
 
+/** GET /api/v1/doctors/:id: public profile of a listed doctor with rating, next slot and time zone. 404 otherwise. */
 export async function getPublicDoctor(doctorId, { now = new Date(), client = prisma } = {}) {
   const doctor = await doctorRepository.findPublicDoctor(client, doctorId);
   if (!doctor) throw ApiError.notFound('Doctor not found');

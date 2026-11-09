@@ -77,7 +77,8 @@
     "financeReports": "Warbixinnada maaliyadda",
     "financeSettings": "Dejinta maaliyadda",
     "documents": "Dukumentiyada",
-    "medicalRecordsAdmin": "Diiwaannada caafimaadka"
+    "medicalRecordsAdmin": "Diiwaannada caafimaadka",
+    "smsOutbox": "Sanduuqa SMS"
   },
   "specialty": {
     "general": "Guud",
@@ -150,8 +151,10 @@
     },
     "stats": {
       "doctors": "Dhakhaatiir La Xaqiijiyay",
-      "consultations": "La-tashiyo",
-      "satisfaction": "Qanacsanaanta Bukaanka"
+      "consultations": "La-tashiyo la dhammeeyay",
+      "satisfaction": "Qanacsanaanta Bukaanka",
+      "rating": "Qiimeynta celceliska",
+      "noRating": "Weli qiimeyn ma jirto"
     },
     "specialties": {
       "eyebrow": "Takhasusyada",
@@ -236,7 +239,11 @@
     "searchPlaceholder": "Raadi dhakhaatiir, tusaale: Wadnaha…",
     "bookConsultation": "Qabso La-tashi",
     "bookConsultationSub": "Hel oo ballan ka qabso dhakhaatiir la xaqiijiyay",
-    "myVisits": "Booqashooyinkayga"
+    "myVisits": "Booqashooyinkayga",
+    "noUpcoming": "Ballan soo socota ma jirto",
+    "noUpcomingSub": "Ballan la qabso dhakhtar la xaqiijiyay.",
+    "viewDetails": "Eeg faahfaahinta",
+    "view": "Eeg"
   },
   "doctors": {
     "title": "Raadi Dhakhtar",
@@ -258,8 +265,8 @@
     "addFavorite": "Ku keydi kuwa aad jeceshahay",
     "removeFavorite": "Ka saar kuwa aad jeceshahay",
     "resultCount": "{count} dhakhtar ayaa diyaar ah",
-    "emptyTitle": "Ma jiro dhakhtar ku habboon raadintaada",
-    "emptyBody": "Isku day magac, takhasus ama xaalad kale.",
+    "emptyTitle": "Dhakhtar ku habboon ma jiro; isku day inaad ka saarto shaandhada",
+    "emptyBody": "Waxaa la tusayaa oo keliya dhakhaatiir la xaqiijiyay oo leh wakhti bannaan 30-ka maalmood ee soo socda.",
     "clearFilters": "Tirtir shaandhada",
     "searchPlaceholder": "Ku raadi dhakhaatiirta magac ama takhasus…",
     "language": "Luqadda",
@@ -310,7 +317,9 @@
       "waiting": "Bukaannada Sugaya",
       "waitingShort": "Sugaya",
       "completed": "La Dhammeeyay",
-      "earnings": "Dakhliga"
+      "earnings": "Dakhliga",
+      "completed30": "La dhammeeyay (30 maalmood)",
+      "earnings30": "Dakhliga (30 maalmood)"
     },
     "todaysAppointments": "Ballamaha Maanta",
     "yourSchedule": "Jadwalkaaga",
@@ -319,7 +328,10 @@
     "viewSchedule": "Eeg Jadwalka",
     "nextPatient": "Bukaanka Xiga",
     "inMinutes": "{n} daqiiqo kadib",
-    "startCall": "Wicitaan muuqaal ah la bilow {name}"
+    "startCall": "Wicitaan muuqaal ah la bilow {name}",
+    "noAppointmentsToday": "Maanta ballan ma jirto.",
+    "followUp": "Dabagal",
+    "openAppointment": "Fur ballanta {name}"
   },
   "admin": {
     "title": "Guddiga Maamulka",
@@ -329,7 +341,11 @@
       "usersShort": "Isticmaalayaal",
       "doctors": "Dhakhaatiir",
       "appointments": "Ballamo",
-      "revenue": "Dakhli"
+      "revenue": "Dakhli",
+      "patients": "Bukaannada",
+      "patientsShort": "Bukaannada",
+      "activeDoctors": "Dhakhaatiirta firfircoon",
+      "appointments30": "Ballamaha (30 maalmood)"
     },
     "fromLastMonth": "bishii hore",
     "appointmentsOverview": "Guudmarka Ballamaha",
@@ -339,7 +355,9 @@
     "lastWeek": "Toddobaadkii Hore",
     "doctorVerification": "Xaqiijinta Dhakhaatiirta",
     "review": "Dib u eeg",
-    "submitted": "La soo gudbiyay: {date}"
+    "submitted": "La soo gudbiyay: {date}",
+    "last30Days": "30-kii maalmood ee la soo dhaafay",
+    "weekTotal": "{count} ballan toddobaadkan"
   },
   "consult": {
     "with": "La-tashi lala yeelanayo {name}",
@@ -416,14 +434,15 @@
       "patientNotWaiting": "Bukaanku hadda ma sugayo.",
       "notFound": "La-tashiga lama helin.",
       "network": "Lama gaari karo server-ka. Hubi internet-kaaga oo isku day mar kale.",
-      "generic": "Wax baa khaldamay. Fadlan isku day mar kale."
+      "generic": "Wax baa khaldamay. Fadlan isku day mar kale.",
+      "notesRequired": "Qor qoraallada la-tashiga (ugu yaraan hal qayb) ka hor intaadan dhammeyn la-tashiga."
     },
     "media": {
       "denied": "Isticmaalka kamarada iyo makarafoonka waa la xiray. U oggolow goobaha bogga ee browser-kaaga, kadibna isku day mar kale.",
       "insecure": "Wicitaannada muuqaalku waxay u baahan yihiin xiriir ammaan ah (HTTPS).",
       "unsupported": "Browser-kani ma samayn karo wicitaan muuqaal ah. Fadlan isticmaal Chrome, Edge, Firefox ama Safari cusub.",
       "noCamera": "Kamarad lama helin, sidaa darteed waxaad ku biirtay cod kaliya.",
-      "cameraUnavailable": "Kamaradaada lama shidi karin (barnaamij kale ayaa laga yaabaa inuu isticmaalayo), sidaa darteed waxaad ku biirtay cod kaliya.",
+      "cameraUnavailable": "Muuqaal lama heli karo — kamaradaada lama shidi karin (barnaamij kale ayaa laga yaabaa inuu isticmaalayo), sidaa darteed wicitaanku wuxuu ku socdaa cod kaliya.",
       "noDevices": "Kamarad iyo makarafoon midna lama helin. Weli waad arki kartaa oo maqli kartaa qofka kale.",
       "continueWithout": "Ku biir kamarad iyo makarafoon la'aan"
     },
@@ -465,7 +484,7 @@
     },
     "peerAway": "{name} wuu baxay ama xiriirkiisa ayaa go'ay",
     "peerAwayBody": "Waxaa la sugayaa inuu soo noqdo…",
-    "remoteCameraOff": "Kamarada {name} waa dansan tahay",
+    "remoteCameraOff": "Muuqaal lama heli karo — kamarada {name} waa dansan tahay. Wicitaanku wuxuu ku socdaa cod.",
     "waitingForVideo": "Waa lagu xidhiidhinayaa {name}…",
     "remoteMuted": "{name} codkiisa waa la damiyay",
     "signalLost": "Xiriirkii server-ka ayaa go'ay. Dib ayaa loo xidhiidhinayaa…",
@@ -480,7 +499,15 @@
     "leave": "Ka bax",
     "leaveLabel": "Ka bax la-tashiga",
     "endCallLabel": "U dhammee la-tashiga labadiinaba",
-    "confirmEnd": "Mar kale taabo si aad u dhammeyso"
+    "confirmEnd": "Mar kale taabo si aad u dhammeyso",
+    "bookFollowUp": "Qabso ballan dabagal ah",
+    "chat": {
+      "empty": "Weli fariin ma jirto. Fariimaha iyo faylasha aad halkan ku wadaagto waxaa lagu keydiyaa diiwaanka la-tashiga.",
+      "attach": "Wadaag sawir ama PDF (ilaa 5 MB)",
+      "fileType": "Kaliya sawirro (JPG, PNG) ama faylal PDF ah ayaa la wadaagi karaa.",
+      "fileTooLarge": "Faylasha sheekada lagu wadaago waxay noqon karaan ilaa 5 MB.",
+      "note": "Waxaa lagu keydiyaa diiwaanka la-tashiga. Fariimaha la diro inta qof dib u xirmayo way gaaraan marka uu soo laabto."
+    }
   },
   "comingSoon": {
     "title": "Dhowaan",
@@ -651,7 +678,13 @@
     "VALIDATION_ERROR": "Fadlan hubi meelaha la calaamadeeyay.",
     "RATE_LIMITED": "Faylal badan ayaa la soo geliyay. Fadlan sug dhowr daqiiqo oo mar kale isku day.",
     "NETWORK_ERROR": "Lagama gaari karo adeegga. Hubi xiriirkaaga oo mar kale isku day.",
-    "GENERIC": "Wax qalad ah ayaa dhacay. Fadlan mar kale isku day."
+    "GENERIC": "Wax qalad ah ayaa dhacay. Fadlan mar kale isku day.",
+    "UPLOAD_INTENT_INVALID": "Soo gelintan lama dhammaystiri karo. Fadlan mar kale dooro faylka.",
+    "UPLOAD_NOT_FOUND": "Faylku ma iman ama wuu dhacay. Fadlan isku day mar kale.",
+    "UPLOAD_ALREADY_FINALISED": "Faylkan horay ayaa loo keydiyay.",
+    "UPLOAD_FAILED": "Soo gelintu ma dhammaan. Hubi xiriirkaaga oo isku day mar kale.",
+    "DOWNLOAD_LINK_INVALID": "Xiriirka soo dejintu wuu dhacay. Fadlan isku day mar kale.",
+    "DOWNLOAD_FAILED": "Soo dejintu ma dhammaan. Fadlan isku day mar kale."
   },
   "verification": {
     "title": "Xaqiijinta dhakhaatiirta",
@@ -811,7 +844,8 @@
     "notFoundTitle": "Dhakhtarka lama helin",
     "notFoundBody": "Dhakhtarkan hadda kuma jiro Fogaan Dawo.",
     "backToDoctors": "Ku noqo dhakhaatiirta",
-    "qualifications": "Shahaadooyinka"
+    "qualifications": "Shahaadooyinka",
+    "basedIn": "Dalka iyo saacadda"
   },
   "adminDoctors": {
     "title": "Dhakhaatiirta",
@@ -864,6 +898,29 @@
       "RATE_LIMITED": "Codsiyo aad u badan. Fadlan wax yar sug oo mar kale isku day.",
       "NETWORK_ERROR": "Waxaad u muuqataa inaadan internet ku xirnayn. Hubi xiriirka oo mar kale isku day.",
       "GENERIC": "Wax qalad ah ayaa dhacay. Fadlan mar kale isku day."
+    },
+    "cancellationFlag": "Calaamadeysan: {count} joojin bishan",
+    "edit": {
+      "button": "Wax ka beddel",
+      "title": "Wax ka beddel {name}",
+      "name": "Magaca oo buuxa",
+      "specialty": "Takhasuska",
+      "country": "Dalka",
+      "timeZone": "Saacadda",
+      "years": "Sannadaha khibradda",
+      "fee": "Lacagta la-tashiga (USD)",
+      "bio": "Taariikh nololeed kooban",
+      "languages": "Luqadaha",
+      "feeNote": "Isbeddelka lacagta wuxuu khuseeyaa ballamaha cusub oo keliya. Faahfaahinta shatiga waxaa lagu beddelaa dib-u-xaqiijin oo keliya.",
+      "save": "Keydi isbeddelada",
+      "saved": "{name} waa la cusbooneysiiyay.",
+      "errors": {
+        "fee": "Lacagtu waa inay u dhexeysaa $5 iyo $200.",
+        "bio": "Taariikh nololeedku waa inay ahaataa ugu yaraan 50 xaraf.",
+        "languages": "Dooro ugu yaraan hal luqad.",
+        "name": "Geli magaca oo buuxa.",
+        "invalid": "Qiimayaal qaar ma saxna. Hubi saacadda iyo meelaha kale."
+      }
     }
   },
   "apptStatus": {
@@ -939,7 +996,7 @@
     "rescheduleBlocked": {
       "NOT_CONFIRMED": "Ballamaha la bixiyay oo keliya ayaa dib loo dhigi karaa.",
       "ALREADY_RESCHEDULED": "Dib-u-dhigista bilaashka ah horay ayaa loogu isticmaalay ballantan.",
-      "TOO_LATE": "Dib-u-dhigista bilaashka ah waa la heli karaa ilaa 24 saacadood ka hor ballanta.",
+      "TOO_LATE": "Dib-u-dhigista bilaashka ah waa la heli karaa ilaa {hours} saacadood ka hor ballanta.",
       "PATIENT_ONLY": ""
     },
     "history": "Taariikhda",
@@ -951,7 +1008,7 @@
     "refund": {
       "none": "Wax lacag ah lama bixin, sidaa darteed wax la celiyo ma jiraan. Wakhtiga waa la siinayaa bukaan kale.",
       "amount": "Lacag-celin: {amount} ({percent})",
-      "rules": "In ka badan 24 saacadood ka hor: 100 %. Inta u dhexeysa 2 iyo 24 saacadood: 50 %. In ka yar 2 saacadood: lacag-celin ma jirto.",
+      "rules": "In ka badan {full} saacadood ka hor: 100 %. Inta u dhexeysa {partial} iyo {full} saacadood: 50 %. In ka yar {partial} saacadood: lacag-celin ma jirto.",
       "doctorRule": "Marka dhakhtarku joojiyo, bukaanka si buuxda ayaa lacagta loogu celiyaa waana la ogeysiiyaa."
     },
     "reasonRequired": "Sababta (waa qasab, bukaanka ayaa arkaya)",
@@ -965,7 +1022,15 @@
     "rescheduleBody": "Ballantan hal mar ayaad bilaash ugu wareejin kartaa wakhti kale oo furan oo isla dhakhtarkan ah.",
     "rescheduleTo": "U wareeji {time}",
     "joinConsultation": "Ku biir la-tashiga",
-    "joinOpensAt": "Waxaad ku biiri kartaa la-tashiga muuqaalka laga bilaabo {time}."
+    "joinOpensAt": "Waxaad ku biiri kartaa la-tashiga muuqaalka laga bilaabo {time}.",
+    "noShowRefund": {
+      "explain": "Dhakhtarkaagu kuuma oggolaan 15 daqiiqo kadib wakhtiga bilowga. Waad joojin kartaa oo codsan kartaa lacag-celin buuxda.",
+      "button": "Codso lacag-celin buuxda",
+      "confirm": "Xaqiiji: jooji oo lacagta celi",
+      "done": "Waa la joojiyay. Lacag-celin buuxda oo ah {amount} ayaa la codsaday.",
+      "notAllowed": "Lacag-celin sababtan ah lama heli karo ballantan.",
+      "failed": "Lacag-celinta lama codsan karin. Fadlan isku day mar kale."
+    }
   },
   "bookingErrors": {
     "SLOT_UNAVAILABLE": "Wakhtigaas hadda ayaa la qaatay. Fadlan dooro wakhti kale.",
@@ -981,7 +1046,7 @@
     "reschedule": {
       "NOT_CONFIRMED": "Ballamaha la bixiyay oo keliya ayaa dib loo dhigi karaa.",
       "ALREADY_RESCHEDULED": "Dib-u-dhigista bilaashka ah horay ayaa loo isticmaalay.",
-      "TOO_LATE": "Dib-u-dhigista bilaashka ah waxay xirantaa 24 saacadood ka hor ballanta."
+      "TOO_LATE": "Dib-u-dhigista bilaashka ah way u xirantay ballantan."
     }
   },
   "payments": {
@@ -1011,7 +1076,7 @@
       },
       "failed": {
         "title": "Lacag-bixintu way fashilantay",
-        "body": "Waxba lagama jarin. Mar kale isku day inta kaydintaadu ay weli shaqaynayso."
+        "body": "Waxba lagaa ma jarin. Wakhtigii isla markiiba waa la sii daayay, fadlan dooro wakhti oo mar kale ballan qabso."
       },
       "pending": {
         "title": "Sugaya oggolaansho",
@@ -1043,7 +1108,9 @@
     "historyTitle": "Lacag-bixinta",
     "historySubtitle": "Lacag-bixintaada jilidda ah, lacag-celinta iyo rasiidyada tijaabada.",
     "noPayments": "Weli lacag-bixin ma jirto.",
-    "attemptsCount": "Isku-dayo: {count}"
+    "attemptsCount": "Isku-dayo: {count}",
+    "refundReceipt": "Rasiidka lacag-celinta",
+    "receiptFailed": "Rasiidka lama soo dejin karin."
   },
   "paymentErrors": {
     "PAYMENT_ALREADY_SUCCEEDED": "Ballantan horay ayaa loo bixiyay.",
@@ -1618,7 +1685,9 @@
     "fields": {
       "qualifications": "Shahaadooyinka",
       "qualificationsHint": "Shahaadooyin iyo shahaado-xirfadeed, tusaale: MBBS (Jaamacadda Camuud), MSc Caafimaadka Bulshada. Ikhtiyaari.",
-      "feeHint": "Kharash cusub wuxuu khuseeyaa ballamaha cusub oo keliya; ballamaha jira qiimahooda ayay haystaan."
+      "feeHint": "Kharash cusub wuxuu khuseeyaa ballamaha cusub oo keliya; ballamaha jira qiimahooda ayay haystaan.",
+      "country": "Dalka",
+      "countryHint": "Halka aad ka shaqeyso. Saacaddaada waxaa la dejiyaa marka aad dejiso wakhtiyadaada."
     },
     "savedFee": "Bogga waa la keydiyay. Kharashka cusub wuxuu khuseeyaa ballamaha cusub oo keliya.",
     "verification": {
@@ -1685,7 +1754,8 @@
       "file": "Dooro faylka shatiga cusub",
       "licenceNumber": "Lambarka shatiga: 3–60 xaraf, tiro, meel bannaan, \"-\", \"/\" ama \".\"",
       "licenceCountry": "Geli dalka shatiga (xarfo keliya)",
-      "ack": "Fadlan xaqiiji inaad fahantay"
+      "ack": "Fadlan xaqiiji inaad fahantay",
+      "country": "Geli magaca dal (2–100 xaraf)."
     }
   },
   "security": {
@@ -1891,7 +1961,13 @@
     "DOCUMENT_ARCHIVED": "Dukumentigan horay ayaa loo kaydiyay.",
     "DOCUMENT_FORBIDDEN": "Bukaanka ama qofka wadaagay keliya ayaa kaydin kara dukumentigan.",
     "CONSULTATION_NOT_ELIGIBLE": "Dukumentiyada waxaa la wadaagi karaa oo keliya la-tashi dhacay.",
-    "DOCUMENT_INTEGRITY": "Dukumentigu wuu ku guuldareystay hubinta saxnaanta, lamana furin."
+    "DOCUMENT_INTEGRITY": "Dukumentigu wuu ku guuldareystay hubinta saxnaanta, lamana furin.",
+    "UPLOAD_INTENT_INVALID": "Soo gelintan lama dhammaystiri karo. Fadlan mar kale dooro faylka.",
+    "UPLOAD_NOT_FOUND": "Faylku ma iman ama wuu dhacay. Fadlan isku day mar kale.",
+    "UPLOAD_ALREADY_FINALISED": "Faylkan horay ayaa loo keydiyay.",
+    "UPLOAD_FAILED": "Soo gelintu ma dhammaan. Hubi xiriirkaaga oo isku day mar kale.",
+    "DOWNLOAD_LINK_INVALID": "Xiriirka soo dejintu wuu dhacay. Fadlan isku day mar kale.",
+    "DOWNLOAD_FAILED": "Soo dejintu ma dhammaan. Fadlan isku day mar kale."
   },
   "docs": {
     "title": "Dukumentiyada caafimaadka",
@@ -2044,5 +2120,373 @@
       "uploaded": "La soo geliyay",
       "archived": "La kaydiyay"
     }
+  },
+  "myPatients": {
+    "title": "Bukaannadayda",
+    "subtitle": "Bukaannada ballan la bixiyay kula yeeshay.",
+    "search": "Ku raadi bukaannada magac",
+    "visits": "{count} la dhammeeyay oo ka mid ah {total} ballan",
+    "next": "Xiga: {when}",
+    "last": "U dambeeyay: {when}",
+    "empty": "Weli bukaan ma jiro. Bukaannadu halkan ayay ka muuqdaan marka ay ballan la bixiyay kula yeeshaan.",
+    "noMatch": "Bukaan ku habboon raadintaada ma jiro.",
+    "error": "Bukaannada lama soo rari karin. Fadlan isku day mar kale.",
+    "inactive": "Akoonkaaga dhakhtar ma shaqaynayo, sidaas darteed macluumaadka bukaanka lama heli karo.",
+    "denied": "Waxaad arki kartaa oo keliya bukaannada ballan la bixiyay kula yeeshay.",
+    "detailSubtitle": "Guudmarka bukaanka",
+    "appointmentsTitle": "Ballamaha bukaankan"
+  },
+  "myEarnings": {
+    "title": "Dakhligayga",
+    "subtitle": "Waxa aad ka heshay la-tashiyada la bixiyay muddada la doortay.",
+    "statusFilter": "Xaaladda dakhliga",
+    "allStatuses": "Dhammaan xaaladaha",
+    "gross": "Lacagaha la-tashiga",
+    "commission": "Komishanka madasha",
+    "deductions": "Ka-goynta lacag-celinta",
+    "net": "Dakhligaaga",
+    "empty": "Muddadan la-tashi la bixiyay ma jiro.",
+    "noPayouts": "Kuwani waa dakhli la xisaabiyay. Lacag-bixintu waa jilid, bixinta dakhliguna weli ma jirto, sidaas darteed lacag lama wareejin.",
+    "note": "Dakhligu wuxuu ku salaysan yahay lacagta iyo komishanka la keydiyay markii la-tashi kasta la bixiyay, laga jaray qaybtaada lacag-celin kasta.",
+    "col": {
+      "consultation": "La-tashi",
+      "status": "Xaalad",
+      "month": "Bisha",
+      "consultations": "La-tashiyada"
+    },
+    "byMonth": "Dakhliga bil kasta",
+    "byMonthNote": "Lacagaha la ururiyay marka laga jaro komishanka goobta iyo lacag-celinta. La-tashiyada si buuxda loo celiyay lama xisaabiyo."
+  },
+  "earningStatus": {
+    "PENDING": "Sugaya",
+    "AVAILABLE": "Diyaar",
+    "PARTIALLY_REFUNDED": "Qayb ahaan la celiyay",
+    "REFUNDED": "La celiyay"
+  },
+  "accountStatus": {
+    "ACTIVE": "Firfircoon",
+    "SUSPENDED": "La hakiyay",
+    "DISABLED": "La joojiyay",
+    "PENDING_VERIFICATION": "Lama xaqiijin"
+  },
+  "consultStatus": {
+    "WAITING": "Sugaya",
+    "IN_PROGRESS": "Socda",
+    "COMPLETED": "Dhammaaday",
+    "CANCELLED": "La joojiyay"
+  },
+  "auditAction": {
+    "CREATE": "Abuuris",
+    "UPDATE": "Cusboonaysiin",
+    "DELETE": "Tirtirid",
+    "LOGIN": "Gelid",
+    "LOGOUT": "Ka bixid",
+    "VERIFY": "Xaqiijin",
+    "SUSPEND": "Hakin",
+    "REFUND": "Lacag-celin",
+    "RESCHEDULE": "Dib u qorshayn",
+    "OTHER": "Kale"
+  },
+  "adminConsole": {
+    "errors": {
+      "PATIENT_ALREADY_SUSPENDED": "Akoonkan horay ayaa loo hakiyay.",
+      "PATIENT_NOT_SUSPENDED": "Akoonkan lama hakin.",
+      "PATIENT_ACCOUNT_PROTECTED": "Akoonnada maamulaha halkan lagama hakin karo.",
+      "PATIENT_IS_ACTIVE_DOCTOR": "Qofkani waa dhakhtar firfircoon. Marka hore ka hakii Maamulka › Dhakhaatiirta.",
+      "SELF_ACTION_FORBIDDEN": "Tan kuma samayn kartid akoonkaaga.",
+      "FINANCE_RANGE_INVALID": "Muddadaas taariikheed ma ansaxna.",
+      "VALIDATION_ERROR": "Fadlan hubi faahfaahinta oo isku day mar kale.",
+      "NOT_FOUND": "Diiwaankan lama helin.",
+      "RATE_LIMITED": "Codsiyo badan. Fadlan wax yar sug oo isku day mar kale.",
+      "NETWORK_ERROR": "Lama gaari karin server-ka. Hubi xiriirkaaga.",
+      "GENERIC": "Wax baa khaldamay. Fadlan isku day mar kale.",
+      "BOOKING_POLICY_INVALID": "Qiimayaal qaar ayaa ka baxsan xadka. Hubi meelaha la calaamadeeyay.",
+      "BOOKING_POLICY_UNCHANGED": "Waxba isma beddelin."
+    }
+  },
+  "adminPatients": {
+    "title": "Bukaannada",
+    "subtitle": "Akoonnada bukaannada, ballamahooda iyo lacag-bixintooda.",
+    "search": "Ku raadi magac, iimayl ama telefoon",
+    "tabs": {
+      "all": "Dhammaan ({count})",
+      "active": "Firfircoon ({count})",
+      "suspended": "La hakiyay ({count})"
+    },
+    "empty": "Weli bukaan halkan ma jiro.",
+    "noMatch": "Bukaan ku habboon raadintaada ma jiro.",
+    "rowFacts": "{appointments} ballan · {paid} la bixiyay · ku biiray {joined}",
+    "detailSubtitle": "Akoonka bukaanka",
+    "privacyNote": "Macluumaadka akoonka oo keliya. Taariikhda caafimaadka, dukumentiyada iyo daawo-qorista waxaa arki kara oo keliya bukaanka iyo dhakhaatiirta loo xilsaaray.",
+    "email": "Iimayl",
+    "phone": "Telefoon",
+    "language": "Luqad",
+    "joined": "Ku biiray",
+    "lastLogin": "Gelitaankii u dambeeyay",
+    "totalPaid": "Wadarta la bixiyay",
+    "suspend": "Hakii",
+    "reactivate": "Dib u firfircooni",
+    "activity": "Dhaqdhaqaaqa akoonka",
+    "blocker": {
+      "PATIENT_ACCOUNT_PROTECTED": "Kani waa akoon maamule, sidaas darteed halkan lagama hakin karo.",
+      "PATIENT_IS_ACTIVE_DOCTOR": "Qofkani sidoo kale waa dhakhtar firfircoon. Marka hore ka hakii Maamulka › Dhakhaatiirta, si bukaannadiisa lacagta loogu celiyo."
+    },
+    "appointmentsTitle": "Ballamaha ({count})",
+    "noAppointments": "Weli ballan ma jiro.",
+    "paymentsTitle": "Lacag-bixinta",
+    "noPayments": "Weli lacag-bixin ma jirto.",
+    "refunded": "{amount} ayaa la celiyay",
+    "suspended": "{name} waa la hakiyay oo laga saaray. Ballamihiisii jiray isma beddelin.",
+    "reactivated": "{name} mar kale ayuu geli karaa.",
+    "suspendTitle": "Ma hakinaysaa {name}?",
+    "reactivateTitle": "Ma dib u firfircoonaynaysaa {name}?",
+    "consequence": {
+      "access": "Meel kasta waa laga saarayaa mana geli karaan, ballanna ma qabsan karaan.",
+      "appointments": "Ballamaha jira lama joojinayo, wakhtiyadoodana lama sii deynayo, lacag-celinna lama codsanayo.",
+      "refunds": "Hakin kasta iyo dib-u-firfircoonin kasta waxaa lagu diiwaangeliyaa diiwaanka hubinta."
+    },
+    "reactivateBody": "Waxay awoodi doonaan inay galaan oo mar kale ballan qabsadaan. Hakintu ma beddelin ballamahooda.",
+    "reasonLabel": "Sababta (waxaa lagu kaydiyaa diiwaanka hubinta)",
+    "noteLabel": "Qoraal (ikhtiyaari)",
+    "confirmSuspend": "Hakii akoonka",
+    "confirmReactivate": "Dib u firfircooni akoonka"
+  },
+  "adminAppointments": {
+    "title": "Ballamaha",
+    "subtitle": "Ballan kasta oo madasha ku jira. Lacag-celinta waxaa lagu maamulaa Maaliyadda.",
+    "status": "Xaalad",
+    "allStatuses": "Dhammaan xaaladaha",
+    "search": "Ku raadi bukaan ama dhakhtar",
+    "empty": "Ballan ku habboon shaandhooyinkan ma jiro.",
+    "col": {
+      "when": "Bilow",
+      "patient": "Bukaan",
+      "doctor": "Dhakhtar",
+      "fee": "Lacag"
+    },
+    "detailTitle": "Ballan",
+    "followUp": "Dabagal",
+    "start": "Bilaabanaya",
+    "end": "Dhammaanaya",
+    "bookedAt": "La qabsaday",
+    "commission": "komishan {rate}",
+    "cancelledAt": "La joojiyay",
+    "cancellationReason": "Sababta joojinta",
+    "consultation": "La-tashi",
+    "notStarted": "Ma bilaaban",
+    "historyTitle": "Taariikhda xaaladda",
+    "paymentTitle": "Lacag-bixin",
+    "noPayment": "Ballankan lacag-bixin uma jirto.",
+    "amount": "Qadar",
+    "provider": "Hab",
+    "paidAt": "La bixiyay",
+    "doctorShare": "Qaybta dhakhtarka",
+    "platformShare": "Komishanka madasha",
+    "openInFinance": "Ka fur Maaliyadda",
+    "refundsTitle": "Lacag-celinta",
+    "noRefunds": "Lacag-celin ma jirto."
+  },
+  "adminReports": {
+    "title": "Warbixinno & falanqayn",
+    "subtitle": "Dhaqdhaqaaqa madasha muddada la doortay.",
+    "financeLink": "Warbixinnada maaliyadda",
+    "export": "Soo deji CSV",
+    "exported": "Warbixinta waa la soo dejiyay.",
+    "newPatients": "Bukaanno cusub",
+    "newDoctors": "Dhakhaatiir cusub oo la xaqiijiyay",
+    "totalPatients": "Wadarta bukaannada",
+    "activeDoctors": "Dhakhaatiirta firfircoon",
+    "appointments": "Ballamaha",
+    "completionRate": "Heerka dhammaystirka",
+    "noShowRate": "Heerka maqnaanshaha",
+    "cancellationRate": "Heerka joojinta",
+    "trendDaily": "Ballamaha maalintii",
+    "trendMonthly": "Ballamaha bishii",
+    "trendHint": "Iyadoo lagu salaynayo wakhtiga bilowga ballanka. {booked} ballan ayaa la qabsaday muddadan.",
+    "notEnoughData": "Weli xog ku filan oo jaantus ah ma jirto.",
+    "byStatus": "Xaalad ahaan",
+    "none": "Waxba muddadan kuma jiraan.",
+    "topSpecialties": "Takhasusyada ugu sarreeya",
+    "topDoctors": "La-tashiyada ugu badan ee la dhammaystiray",
+    "note": "Heerarka dhammaystirka iyo maqnaanshaha waxay tiriyaan oo keliya la-tashiyada dhammaadkooda gaaray (la dhammaystiray ama maqnaansho). Tirooyinka lacagta waxay ku jiraan Maaliyadda."
+  },
+  "adminAudit": {
+    "title": "Diiwaanka hubinta",
+    "subtitle": "Yaa sameeyay maxay, iyo goorma.",
+    "clinicalNote": "Diiwaannada caafimaadka (daawo-qorista, dukumentiyada caafimaadka iyo gelitaanka taariikhda caafimaadka) waxay leeyihiin diiwaan hubineed oo gaar ah oo ku jira Diiwaannada caafimaadka. Qiimayaasha halkan ku jira waxay ku kooban yihiin meelo aan shakhsi ahayn.",
+    "action": "Ficil",
+    "allActions": "Dhammaan ficillada",
+    "entity": "Nooca diiwaanka",
+    "allEntities": "Dhammaan noocyada diiwaanka",
+    "search": "Ku raadi qof",
+    "oneActor": "Waxaa la muujinayaa hal qof dhaqdhaqaaqiisa",
+    "empty": "Dhacdo ku habboon shaandhooyinkan ma jirto.",
+    "system": "Nidaamka",
+    "before": "Kahor",
+    "after": "Kadib"
+  },
+  "adminSettings": {
+    "title": "Dejinta",
+    "subtitle": "Xeerarka ballan-qabsiga ee madasha oo dhan.",
+    "groups": {
+      "payments": {
+        "title": "Waqtiyada lacag-bixinta",
+        "body": "Inta wakhti la xajiyay loo hayo inta bukaanku lacagta bixinayo."
+      },
+      "reschedule": {
+        "title": "Dib-u-dhigis bilaash ah",
+        "body": "Inta jeer, iyo ilaa goorma, bukaanku bilaash u dib-u-dhigi karo ballan la bixiyay."
+      },
+      "refunds": {
+        "title": "Lacag-celinta joojinta",
+        "body": "Bukaannada joojiya ka hor xadka koowaad waxay helayaan 100 %, inta u dhexeysa labada xad 50 %, kadib waxba. Joojinta dhakhtarka mar walba si buuxda ayaa loo celiyaa."
+      }
+    },
+    "fields": {
+      "paymentHoldMinutes": "Ballan caadi ah: wakhtiga lacag-bixinta",
+      "followUpDeadlineHours": "Ballan dabagal: wakhtiga lacag-bixinta",
+      "maxFreeReschedules": "Dib-u-dhigis bilaash ah ballankiiba",
+      "freeRescheduleMinHours": "Dib-u-dhigista bilaashka ah waxay xirantaa ka hor ballanka",
+      "fullRefundMinHours": "Lacag-celin buuxda haddii la joojiyo in ka badan",
+      "partialRefundMinHours": "50 % lacag-celin haddii la joojiyo ugu yaraan"
+    },
+    "units": {
+      "minutes": "daqiiqo",
+      "hours": "saacadood ka hor",
+      "times": "jeer"
+    },
+    "default": "Caadi: {value}",
+    "errors": {
+      "range": "Geli tiro dhan oo u dhexeysa {min} iyo {max}.",
+      "order": "Waa inuu ka yaraadaa xadka lacag-celinta buuxda."
+    },
+    "save": "Kaydi isbeddellada",
+    "resetDefaults": "Ku celi kuwii caadiga ahaa",
+    "confirmTitle": "Ma dabaqaysaa {count} isbeddel?",
+    "change": "{field}: {from} → {to}",
+    "confirmBody": "Xeerarka cusub waxay khuseeyaan hadda wixii ka dambeeya ballamaha cusub, joojinta iyo dib-u-dhigista. Lacag-celinta jirta iyo waqtiyada lacag-bixinta dib looma xisaabinayo.",
+    "confirmSave": "Haa, dabaq",
+    "saved": "Xeerarka ballan-qabsiga waa la cusboonaysiiyay.",
+    "lastChanged": "Waxaa ugu dambeyntii beddelay {by} {when}.",
+    "usingDefaults": "Waxaa la isticmaalayaa xeerarka caadiga ah.",
+    "commissionTitle": "Komishanka madasha",
+    "commissionBody": "Waxaa lagu beddelaa dejinta Maaliyadda, oo leh xaqiijin iyo taariikh u gaar ah.",
+    "commissionLink": "Fur dejinta Maaliyadda",
+    "historyTitle": "Taariikhda isbeddellada",
+    "noHistory": "Weli isbeddel ma jiro."
+  },
+  "messages": {
+    "title": "Fariimaha",
+    "subtitlePatient": "U dir fariin dhakhtarkaaga ku saabsan ballan la bixiyay. Wadahadallada way furan yihiin ilaa {days} maalmood kadib la-tashiga.",
+    "subtitleDoctor": "Fariimaha bukaannadaada ee ku saabsan ballamahooda la bixiyay. Wadahadallada way furan yihiin ilaa {days} maalmood kadib la-tashiga.",
+    "conversations": "Wadahadallada",
+    "empty": "Weli wadahadal ma jiro. Wadahadal wuxuu furmaa marka ballan la bixiyo.",
+    "pick": "Dooro wadahadal.",
+    "you": "Adiga",
+    "noMessagesYet": "Weli fariin ma jirto.",
+    "startHint": "Dir fariinta ugu horreysa.",
+    "aboutAppointment": "Ballan {when}",
+    "older": "Tus fariimihii hore",
+    "placeholder": "Qor fariin…",
+    "send": "Dir",
+    "sent": "La diray",
+    "seen": "La arkay",
+    "back": "Ku noqo wadahadallada",
+    "closed": "Xiran",
+    "closedNote": "Wadahadalkani wuu xirmay. Weli waad akhrin kartaa.",
+    "closesOn": "Wuu furan yahay ilaa {when}. Xaaladaha degdegga ah, wac adeegyada gurmadka degdegga ah.",
+    "notEmergency": "Looma isticmaalo xaaladaha degdegga ah — wac adeegyada gurmadka degdegga ah.",
+    "errors": {
+      "CONVERSATION_NOT_FOUND": "Wadahadalkan lama heli karo.",
+      "CONVERSATION_CLOSED": "Wadahadalkani wuu xirmay, sidaas darteed fariimo cusub lama diri karo.",
+      "MESSAGING_PROFILE_REQUIRED": "Fariimaha waxaa heli kara bukaannada iyo dhakhaatiirta.",
+      "VALIDATION_ERROR": "Qor fariin aan ka badnayn 2,000 xaraf.",
+      "RATE_LIMITED": "Fariimo aad u degdeg ah ayaad dirtaa. Fadlan wax yar sug.",
+      "NETWORK_ERROR": "Lama gaari karin server-ka. Hubi xiriirkaaga.",
+      "GENERIC": "Wax baa khaldamay. Fadlan isku day mar kale."
+    }
+  },
+  "dashboard": {
+    "loadError": "Lama soo rari karin bogga guud.",
+    "retry": "Isku day mar kale"
+  },
+  "reviews": {
+    "title": "Faallooyinka bukaannada",
+    "none": "Weli faallo ma jirto.",
+    "average": "{avg} ka mid ah 5 · {count} faallo",
+    "starsLabel": "{n} ka mid ah 5 xiddigood",
+    "yourRating": "Qiimeyntaada",
+    "rateTitle": "Qiimee la-tashigaaga",
+    "rateSubtitle": "Kaliya la-tashiyada la dhammeeyay ayaa la qiimeyn karaa, mid walba hal mar.",
+    "commentPlaceholder": "Ku dar faallo (ikhtiyaari)",
+    "submit": "Gudbi qiimeynta",
+    "pickStars": "Marka hore dooro 1 ilaa 5 xiddigood.",
+    "thanks": "Waad ku mahadsan tahay qiimeyntaada.",
+    "already": "Horey ayaad u qiimeysay la-tashigan.",
+    "failed": "Qiimeynta lama keydin karin. Fadlan isku day mar kale."
+  },
+  "followUp": {
+    "title": "Qabso ballan dabagal ah",
+    "subtitle": "Dooro mid ka mid ah wakhtiyadaada bannaan iyo lacagta. Bukaanku waa inuu xaqiijiyaa (oo bixiyaa, haddaan bilaash ahayn) 48 saacadood gudahood, haddii kale wakhtiga waa la sii deynayaa.",
+    "pickSlot": "Marka hore dooro wakhti.",
+    "feeLabel": "Lacagta",
+    "fee": {
+      "NORMAL": "Caadi",
+      "DISCOUNTED": "Qiimo dhimis (50%)",
+      "FREE": "Bilaash"
+    },
+    "submit": "Qabso dabagal",
+    "booked": "Dabagal waa la qabtay. Bukaanka waxaa laga codsaday inuu xaqiijiyo.",
+    "ofConsultation": "Dabagalka",
+    "free": "Dabagal bilaash ah — lacag looma baahna",
+    "confirmFree": "Xaqiiji dabagalka bilaashka ah",
+    "confirmed": "Dabagalka waa la xaqiijiyay.",
+    "errors": {
+      "exists": "La-tashigan horey ayuu u leeyahay dabagal firfircoon.",
+      "slot": "Wakhtigaas hadda ma bannaana. Dooro mid kale.",
+      "notAllowed": "Dabagal waxaa la qaban karaa marka la-tashigu dhammaado.",
+      "generic": "Dabagalka lama qaban karin. Fadlan isku day mar kale."
+    }
+  },
+  "bookingFiles": {
+    "title": "Ku lifaaq faylal (ikhtiyaari)",
+    "subtitle": "Natiijooyinka shaybaarka ama warbixinno dhakhtarkaaga. PDF, JPG ama PNG.",
+    "body": "Ku dar natiijooyinka shaybaarka ama warbixinno kale oo dhakhtarkaagu arko ka hor la-tashiga.",
+    "button": "Ku lifaaq natiijooyinka shaybaarka",
+    "failed": "Faylal laguma lifaaqi karo ballantan."
+  },
+  "sms": {
+    "title": "Sanduuqa SMS-ka (la jilay)",
+    "subtitle": "Fariimaha qoraalka ah ee nidaamku u diri lahaa telefoonkaaga. SMS-ku waa la jilay: waxba kama baxaan nidaamka.",
+    "adminTitle": "Sanduuqa SMS-ka",
+    "adminSubtitle": "SMS kasta oo la jilay oo nidaamku qoray. Fariimo dhab ah lama diro.",
+    "search": "Ku raadi lambar ama qoraal",
+    "empty": "Weli fariin SMS ah ma jirto.",
+    "noPhone": "Lambar telefoon ma jiro — gudaha app-ka oo keliya",
+    "status": {
+      "QUEUED": "Safka",
+      "SENT": "La diray (la jilay)",
+      "FAILED": "Fashilmay"
+    }
+  },
+  "specialties": {
+    "title": "Takhasusyada",
+    "subtitle": "Liiska ay dhakhaatiirtu ka doortaan marka ay codsadaan. Joojintu waxay ka qarisaa takhasuska codsiyada cusub iyo raadinta; dhakhaatiirta haysata way sii haystaan.",
+    "nameEn": "Magaca Ingiriisiga",
+    "nameSo": "Magaca Soomaaliga",
+    "add": "Ku dar takhasus",
+    "save": "Keydi",
+    "rename": "Magac beddel",
+    "activate": "Hawlgeli",
+    "deactivate": "Jooji",
+    "inactive": "Aan firfircoonayn",
+    "doctors": "{count} dhakhtar",
+    "added": "Takhasus waa lagu daray.",
+    "saved": "Takhasuska magaca waa la beddelay.",
+    "activated": "Takhasuska waa la hawlgeliyay.",
+    "deactivated": "Takhasuska waa la joojiyay.",
+    "exists": "Takhasus magacan Ingiriisiga ah leh horey ayuu u jiraa.",
+    "failed": "Isbeddelka lama keydin karin.",
+    "namesRequired": "Geli magaca Ingiriisiga iyo Soomaaliga labadaba."
   }
 }

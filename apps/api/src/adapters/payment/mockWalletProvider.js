@@ -25,6 +25,7 @@ const SOMALI_MOBILE = /^\+2526\d{7,8}$|^\+2527\d{7,8}$|^\+2529\d{7,8}$/;
 const reference = (prefix) => `${prefix}-DEMO-${Date.now().toString(36).toUpperCase()}-${randomBytes(4).toString('hex').toUpperCase()}`;
 const suffix = (msisdn) => String(msisdn).slice(-4);
 
+/** Builds one SIMULATED mobile-money adapter ({ code, name, prefix }) implementing validateWallet, charge, checkStatus and refund. Outcomes depend only on the wallet number. */
 export function createMockWalletProvider({ code, name, prefix }) {
   return Object.freeze({
     code,

@@ -12,7 +12,10 @@ export const refreshPayment = (appointmentId) => apiRequest(`/v1/appointments/${
 
 export const listMyPayments = () => apiRequest('/v1/payments');
 
-export const downloadMyReceipt = (paymentId) => apiRequest(`/v1/payments/${encodeURIComponent(paymentId)}/receipt`, { responseType: 'blob' });
+/** A refund receipt PDF (Blob) for one of the patient's refunds. */
+export const downloadMyRefundReceipt = (paymentId, refundId, lang = 'en') =>
+  apiRequest(`/v1/payments/${encodeURIComponent(paymentId)}/refunds/${encodeURIComponent(refundId)}/receipt?lang=${lang === 'so' ? 'so' : 'en'}`, { responseType: 'blob' });
+export const downloadMyReceipt = (paymentId, lang = 'en') => apiRequest(`/v1/payments/${encodeURIComponent(paymentId)}/receipt?lang=${lang === 'so' ? 'so' : 'en'}`, { responseType: 'blob' });
 
 /** Admin finance (ADMIN + finance:manage). */
 const qs = (params) => {
@@ -23,7 +26,7 @@ const qs = (params) => {
 export const financeOverview = () => apiRequest('/v1/admin/finance/overview');
 export const financePayments = (params) => apiRequest(`/v1/admin/finance/payments${qs(params)}`);
 export const financePayment = (id) => apiRequest(`/v1/admin/finance/payments/${encodeURIComponent(id)}`);
-export const financeReceipt = (id) => apiRequest(`/v1/admin/finance/payments/${encodeURIComponent(id)}/receipt`, { responseType: 'blob' });
+export const financeReceipt = (id, lang = 'en') => apiRequest(`/v1/admin/finance/payments/${encodeURIComponent(id)}/receipt?lang=${lang === 'so' ? 'so' : 'en'}`, { responseType: 'blob' });
 export const financeRefunds = (params) => apiRequest(`/v1/admin/finance/refunds${qs(params)}`);
 export const processRefund = (id) => apiRequest(`/v1/admin/finance/refunds/${encodeURIComponent(id)}/process`, { method: 'POST', body: {} });
 export const retryRefund = (id) => apiRequest(`/v1/admin/finance/refunds/${encodeURIComponent(id)}/retry`, { method: 'POST', body: {} });

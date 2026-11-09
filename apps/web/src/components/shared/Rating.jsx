@@ -1,3 +1,4 @@
+/** Star rating with the number of reviews (read-only). */
 import { Star } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 

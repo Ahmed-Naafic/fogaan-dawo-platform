@@ -27,6 +27,7 @@ function keySetFor(jwksUri) {
   return keySet;
 }
 
+/** Google sign-in URL for a sealed OAuth transaction (state, nonce, PKCE challenge, redirect_uri). Returns a string. */
 export function buildAuthorizationUrl(config, { state, nonce, codeChallenge, language }) {
   const url = new URL(config.authorizationEndpoint);
   url.search = new URLSearchParams({

@@ -1,3 +1,4 @@
+/** Doctor application form: professional details, licence and documents upload, completion checklist and submission for verification. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { AlertTriangle, BadgeCheck, Clock3, DollarSign, Hourglass, Send, ShieldCheck, Stethoscope, Upload } from 'lucide-react';

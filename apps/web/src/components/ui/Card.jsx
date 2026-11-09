@@ -1,3 +1,4 @@
+/** Card container and CardHeader (title, subtitle, optional action). */
 import { cn } from '@/lib/cn';
 
 export default function Card({ as: Tag = 'section', className, children, ...props }) {

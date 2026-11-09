@@ -55,6 +55,24 @@ export function AppointmentRow({ item, href, viewer }) {
   );
 }
 
+/** A short appointment line (date, time, status) for lists inside another page, e.g. a patient's visits. */
+export function AppointmentRowCompact({ item, href }) {
+  const { t } = useI18n();
+  return (
+    <Link to={href} className="flex items-center gap-3 rounded-xl border border-line px-3.5 py-2.5 transition-colors hover:bg-subtle" data-appointment={item.id}>
+      <div className="min-w-0 flex-1">
+        <AppointmentWhen startAtUtc={item.startAtUtc} endAtUtc={item.endAtUtc} className="text-xs font-semibold" />
+        {item.reason && <p className="mt-0.5 truncate text-xs text-muted">{item.reason}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        {item.rescheduled && <Badge tone="purple">{t('appointments.rescheduledBadge')}</Badge>}
+        <AppointmentStatusBadge status={item.status} />
+      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted" />
+    </Link>
+  );
+}
+
 /**
  * Live countdown of a reservation's payment window. Uses the server time from the response, so a wrong
  * device clock cannot extend or shorten the hold. Calls onExpire once when it reaches zero.

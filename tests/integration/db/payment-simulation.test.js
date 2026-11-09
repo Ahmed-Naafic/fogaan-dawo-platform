@@ -109,23 +109,23 @@ describe('simulated payments and refunds (Neon, isolated schema)', { skip: skip 
     assert.equal(refs.size, 3, 'unique transaction references');
   });
 
-  test('FAILED leaves the reservation payable; a retry with a valid wallet succeeds', async () => {
+  test('FAILED releases the slot immediately; paying again is refused and the slot can be booked again', async () => {
     const p = await account(['PATIENT']);
     const r = await reservation(p);
     const failed = await pay(p, r.id, 'EVC_PLUS', WALLET.fail);
     assert.equal(failed.body.data.outcome, 'FAILED');
     assert.match(failed.body.data.payment.lastMessage, /Insufficient/);
-    let a = await appt(r.id);
-    assert.equal(a.status, 'PENDING_PAYMENT', 'a failed payment confirms nothing');
-    assert.equal(a.slot.status, 'HELD', 'the reservation is kept while it is valid');
-    assert.equal(a.payment.status, 'FAILED');
+    const a = await appt(r.id);
+    assert.equal(a.status, 'EXPIRED', 'a failed payment ends the reservation');
+    assert.equal(a.slot.status, 'AVAILABLE', 'the slot is released at once');
+    assert.equal(a.payment.status, 'FAILED', 'the failed attempt stays on record');
+    assert.equal(await prisma.financialTransaction.count({ where: { paymentId: a.payment.id } }), 0, 'nothing posted to the ledger');
     const retry = await pay(p, r.id, 'ZAAD', WALLET.ok);
-    assert.equal(retry.body.data.outcome, 'SUCCESS');
-    a = await appt(r.id);
-    assert.equal(a.status, 'CONFIRMED');
-    assert.deepEqual(a.payment.attempts.map((x) => x.status).sort(), ['FAILED', 'SUCCEEDED']);
-    assert.equal(a.payment.provider, 'ZAAD');
-    assert.equal(await prisma.financialTransaction.count({ where: { paymentId: a.payment.id, type: 'PAYMENT' } }), 1);
+    assert.equal(retry.status, 409);
+    assert.equal(retry.body.error.code, 'APPOINTMENT_NOT_PAYABLE');
+    // The released slot can be reserved again straight away.
+    const again = await api('POST', '/api/v1/appointments', { token: p.token, body: { slotId: a.slotId } });
+    assert.equal(again.status, 201);
   });
 
   test('PENDING never confirms; it resolves on a status check or expires with the reservation', async () => {
@@ -300,8 +300,8 @@ describe('simulated payments and refunds (Neon, isolated schema)', { skip: skip 
   test('admin finance: simulated overview, filters, details with ledger and audit; admins only', async () => {
     const p = await account(['PATIENT']);
     const admin = await account(['ADMIN']);
+    await pay(p, (await reservation(p)).id, 'ZAAD', WALLET.fail); // a failed attempt (its slot is released)
     const r = await reservation(p);
-    await pay(p, r.id, 'ZAAD', WALLET.fail);
     await pay(p, r.id, 'ZAAD', WALLET.ok);
     const paymentId = (await appt(r.id)).payment.id;
     for (const path of ['/api/v1/admin/finance/overview', '/api/v1/admin/finance/payments', `/api/v1/admin/finance/payments/${paymentId}`, '/api/v1/admin/finance/refunds']) {
@@ -321,9 +321,9 @@ describe('simulated payments and refunds (Neon, isolated schema)', { skip: skip 
     const ref = zaad.find((x) => x.id === paymentId).reference;
     assert.deepEqual((await api('GET', `/api/v1/admin/finance/payments?q=${encodeURIComponent(ref)}`, { token: admin.token })).body.data.items.map((x) => x.id), [paymentId], 'search by reference');
     const detail = (await api('GET', `/api/v1/admin/finance/payments/${paymentId}`, { token: admin.token })).body.data;
-    assert.equal(detail.attempts.length, 2);
+    assert.equal(detail.attempts.length, 1);
     assert.deepEqual(detail.ledger.map((e) => e.type).sort(), ['DOCTOR_EARNING', 'PAYMENT', 'PLATFORM_COMMISSION']);
-    assert.equal(detail.audit.filter((x) => x.entity === 'PaymentAttempt').length, 2, 'every attempt audited');
+    assert.equal(detail.audit.filter((x) => x.entity === 'PaymentAttempt').length, 1, 'every attempt audited');
     assert.ok(detail.appointment.patient.name);
     assert.equal((await api('GET', '/api/v1/admin/finance/payments?status=BOGUS', { token: admin.token })).status, 400);
   });

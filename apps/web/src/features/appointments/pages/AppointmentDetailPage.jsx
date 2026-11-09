@@ -12,6 +12,10 @@ import { browserTimeZone, formatDateTime } from '@/lib/timezone';
 import { bookingErrorKey } from '../booking';
 import { AppointmentStatusBadge, AppointmentWhen, HoldCountdown } from '../components/AppointmentParts';
 import { CancelDialog, RescheduleDialog } from '../components/AppointmentDialogs';
+import NoShowRefundButton from '../components/NoShowRefundButton';
+import RatingCard from '../components/RatingCard';
+import FollowUpCard from '../components/FollowUpCard';
+import BookingAttachments from '../components/BookingAttachments';
 import * as api from '../services/appointmentApi';
 import PatientInformationPanel from '@/features/profile/components/PatientInformationPanel';
 import usePrivateImage from '@/features/profile/usePrivateImage';
@@ -86,6 +90,19 @@ export default function AppointmentDetailPage({ viewer = 'PATIENT' }) {
     }
   };
 
+  const confirmFree = async () => {
+    setBusy(true);
+    try {
+      await api.confirmFreeFollowUp(appointmentId);
+      notify(t('followUp.confirmed'));
+      load();
+    } catch (error) {
+      notify(t(bookingErrorKey(error)), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (missing) {
     return (
       <>
@@ -145,6 +162,14 @@ export default function AppointmentDetailPage({ viewer = 'PATIENT' }) {
                 </Row>
               ))}
               {data.cancellationReason && <Row label={t('appointments.cancellationReason')}>{data.cancellationReason}</Row>}
+              {data.followUpOf && (
+                <Row label={t('followUp.ofConsultation')}>
+                  <Link className="text-primary hover:underline" to={`${base}/${data.followUpOf.appointmentId}`} data-follow-up-of>
+                    {fmt(data.followUpOf.startAtUtc)}
+                  </Link>
+                </Row>
+              )}
+              {pending && data.freeFollowUp && <Row label={t('appointments.payment')}>{t('followUp.free')}</Row>}
               {data.rescheduledFrom && (
                 <Row label={t('appointments.rescheduledFrom')}>
                   <Link className="text-primary hover:underline" to={`${base}/${data.rescheduledFrom.id}`}>
@@ -167,7 +192,12 @@ export default function AppointmentDetailPage({ viewer = 'PATIENT' }) {
                   <Video className="h-4 w-4" /> {t('appointments.joinConsultation')} <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
-              {pending && isPatient && (
+              {pending && isPatient && data.freeFollowUp && (
+                <Button size="lg" className="sm:order-last" disabled={busy} onClick={confirmFree} data-confirm-free>
+                  {t('followUp.confirmFree')} <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
+              {pending && isPatient && !data.freeFollowUp && (
                 <Button size="lg" className="sm:order-last" to={`/patient/appointments/${data.id}/pay`}>
                   <CreditCard className="h-4 w-4" /> {t('appointments.continueToPayment')} <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -188,13 +218,16 @@ export default function AppointmentDetailPage({ viewer = 'PATIENT' }) {
                 </Button>
               )}
             </div>
+            {isPatient && data.actions.noShowRefund && (
+              <NoShowRefundButton className="mt-4 text-right" appointmentId={data.id} action={data.actions.noShowRefund} onDone={() => load()} />
+            )}
             {data.actions.join?.blocker === 'TOO_EARLY' && data.status === 'CONFIRMED' && (
               <p className="mt-3 text-right text-2xs text-muted" data-join-opens>
                 {t('appointments.joinOpensAt', { time: fmt(data.actions.join.opensAt) })}
               </p>
             )}
             {isPatient && data.status === 'CONFIRMED' && !data.actions.reschedule.allowed && (
-              <p className="mt-3 text-right text-2xs text-muted">{t(`appointments.rescheduleBlocked.${data.actions.reschedule.blocker}`)}</p>
+              <p className="mt-3 text-right text-2xs text-muted">{t(`appointments.rescheduleBlocked.${data.actions.reschedule.blocker}`, { hours: data.policy?.freeRescheduleMinHours ?? 24 })}</p>
             )}
           </Card>
           {!isPatient && data.patient?.id && (
@@ -202,7 +235,14 @@ export default function AppointmentDetailPage({ viewer = 'PATIENT' }) {
               <PatientInformationPanel patientId={data.patient.id} appointmentId={data.id} status={data.status} />
             </Card>
           )}
-          {data.consultation?.id && (
+          {!isPatient && data.status === 'COMPLETED' && data.consultation?.status === 'COMPLETED' && (
+            <FollowUpCard consultationId={data.consultation.id} doctor={{ id: data.doctor.id, timeZone: data.doctor.timeZone }} fee={data.fee} onDone={(r) => navigate(`/doctor/appointments/${r.appointmentId}`)} />
+          )}
+          {isPatient && (data.review || data.actions.rate?.allowed) && <RatingCard appointmentId={data.id} action={data.actions.rate} review={data.review} onDone={() => load()} />}
+          {isPatient && ['PENDING_PAYMENT', 'CONFIRMED'].includes(data.status) && (
+            <BookingAttachments appointmentId={data.id} consultationId={data.consultation?.id} onCreated={() => load()} />
+          )}
+          {data.consultation?.id && ['WAITING', 'IN_PROGRESS', 'COMPLETED'].includes(data.status) && (
             <>
               <Card className="p-5 sm:p-6">
                 <ConsultationSummaryCard consultationId={data.consultation.id} role={viewer} refreshKey={data.status} />
@@ -210,10 +250,12 @@ export default function AppointmentDetailPage({ viewer = 'PATIENT' }) {
               <Card className="p-5 sm:p-6">
                 <ConsultationPrescriptions consultationId={data.consultation.id} role={viewer} refreshKey={data.status} />
               </Card>
-              <Card className="p-5 sm:p-6">
-                <DocumentsPanel consultationId={data.consultation.id} />
-              </Card>
             </>
+          )}
+          {data.consultation?.id && !(isPatient && ['PENDING_PAYMENT', 'CONFIRMED'].includes(data.status)) && ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'COMPLETED'].includes(data.status) && (
+            <Card className="p-5 sm:p-6">
+              <DocumentsPanel consultationId={data.consultation.id} />
+            </Card>
           )}
         </div>
 

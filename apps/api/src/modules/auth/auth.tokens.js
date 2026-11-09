@@ -24,6 +24,7 @@ export async function signAccessToken({ userId, sessionId, role }, { expiresInSe
   return { token, expiresIn: ttl };
 }
 
+/** Verifies a JWT access token (signature, expiry, issuer, audience) and returns its claims. Throws TOKEN_EXPIRED / TOKEN_INVALID. */
 export async function verifyAccessToken(token) {
   const config = getAuthConfig();
   try {
@@ -51,10 +52,12 @@ export async function verifyAccessToken(token) {
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+/** A new random refresh token "<sessionId>.<secret>" (only its hash is stored). */
 export function generateRefreshToken(sessionId, role) {
   return `v1.${sessionId}.${role}.${randomBytes(32).toString('base64url')}`;
 }
 
+/** Splits a refresh token into { sessionId, secret }, or null when malformed. */
 export function parseRefreshToken(token) {
   const parts = typeof token === 'string' ? token.split('.') : [];
   if (parts.length !== 4 || parts[0] !== 'v1' || !UUID.test(parts[1]) || !/^(PATIENT|DOCTOR|ADMIN)$/.test(parts[2]) || parts[3].length < 40) {
@@ -63,8 +66,10 @@ export function parseRefreshToken(token) {
   return { sessionId: parts[1], role: parts[2] };
 }
 
+/** SHA-256 hash of a token (what the database stores). */
 export const hashToken = (token) => createHash('sha256').update(token, 'utf8').digest('hex');
 
+/** Constant-time comparison of a token with its stored hash. */
 export function tokenMatchesHash(token, storedHash) {
   const a = Buffer.from(hashToken(token), 'hex');
   const b = Buffer.from(String(storedHash), 'hex');
