@@ -60,5 +60,7 @@ export const ROLE_PERMISSIONS = Object.freeze({
   ADMIN: Object.freeze([Permission.ownProfileRead, Permission.ownSessionsManage, Permission.rolesAssign, Permission.doctorsVerify, Permission.doctorsManage, Permission.financeManage, Permission.medicalRecordsMonitor, Permission.patientsManage, Permission.appointmentsMonitor, Permission.reportsRead, Permission.auditRead, Permission.settingsManage]),
 });
 
+/** All permissions granted to a role (empty for unknown roles). */
 export const permissionsFor = (role) => ROLE_PERMISSIONS[role] ?? [];
+/** True when `role` grants `permission`. */
 export const roleHasPermission = (role, permission) => permissionsFor(role).includes(permission);

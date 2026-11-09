@@ -1,3 +1,4 @@
+/** GET /api/health (liveness, no database) and GET /api/health/ready (configuration + database reachable). */
 import { Router } from 'express';
 import * as healthController from './health.controller.js';
 

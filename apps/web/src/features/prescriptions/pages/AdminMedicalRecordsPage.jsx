@@ -1,3 +1,4 @@
+/** Admin › Medical records: prescriptions, documents and the clinical audit trail as metadata only (no clinical content). */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, ClipboardCheck, ClipboardList, ClipboardX, FileStack, HardDrive, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';

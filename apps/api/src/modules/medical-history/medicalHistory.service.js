@@ -58,6 +58,7 @@ export function entryPermissions(entry, actor) {
   return { canEdit: false, canArchive: false };
 }
 
+/** Response shape of a medical-history entry with source, author and the viewer's edit/archive rights. */
 export function presentEntry(entry, actor) {
   return {
     id: entry.id,
@@ -78,6 +79,7 @@ export function presentEntry(entry, actor) {
 
 const changedFields = (changes) => Object.keys(changes).sort();
 
+/** Adds a medical-history entry as the patient or an assigned doctor (inside an eligible appointment). Audited. */
 export async function addEntry({ actorUserId, patientId, consultationId = null, ...fields }) {
   return withTransaction(async (tx) => {
     const actor = await resolveActor(tx, actorUserId, patientId);
@@ -113,6 +115,7 @@ async function loadForChange(tx, actorUserId, entryId, ownPatientIdOnly = null) 
   return { entry, actor, rules: entryPermissions(entry, { kind: actor.kind, userId: actorUserId }) };
 }
 
+/** Edits an entry; only its author (or the patient for their own entries) may, and archived entries are frozen. */
 export async function updateEntry({ actorUserId, entryId, changes, ownPatientIdOnly = null }) {
   return withTransaction(async (tx) => {
     const { entry, actor, rules } = await loadForChange(tx, actorUserId, entryId, ownPatientIdOnly);
@@ -129,6 +132,7 @@ export async function updateEntry({ actorUserId, entryId, changes, ownPatientIdO
   });
 }
 
+/** Archives an entry (never deleted); the patient may archive any entry of their own history. */
 export async function archiveEntry({ actorUserId, entryId, ownPatientIdOnly = null, now = new Date() }) {
   return withTransaction(async (tx) => {
     const { entry, rules } = await loadForChange(tx, actorUserId, entryId, ownPatientIdOnly);
@@ -149,21 +153,25 @@ function ownPatientId(auth) {
 
 const patientActor = (auth) => ({ kind: 'PATIENT', userId: auth.user.id });
 
+/** GET /api/v1/me/medical-history: the patient's own history (archived entries optional). */
 export async function listMyHistory(auth, { includeArchived = false } = {}) {
   const entries = await medicalHistoryRepository.listEntriesForPatient(prisma, ownPatientId(auth), { includeArchived });
   return { entries: entries.map((e) => presentEntry(e, patientActor(auth))) };
 }
 
+/** POST /api/v1/me/medical-history: the patient adds an entry to their own history. */
 export async function addMyEntry(auth, fields) {
   const entry = await addEntry({ actorUserId: auth.user.id, patientId: ownPatientId(auth), ...fields });
   return presentEntry(entry, patientActor(auth));
 }
 
+/** PATCH /api/v1/me/medical-history/entries/:id: the patient edits one of their own entries. */
 export async function updateMyEntry(auth, entryId, changes) {
   const patientId = ownPatientId(auth);
   return presentEntry(await updateEntry({ actorUserId: auth.user.id, entryId, changes, ownPatientIdOnly: patientId }), patientActor(auth));
 }
 
+/** POST /api/v1/me/medical-history/entries/:id/archive: the patient archives an entry. */
 export async function archiveMyEntry(auth, entryId) {
   const patientId = ownPatientId(auth);
   return presentEntry(await archiveEntry({ actorUserId: auth.user.id, entryId, ownPatientIdOnly: patientId }), patientActor(auth));

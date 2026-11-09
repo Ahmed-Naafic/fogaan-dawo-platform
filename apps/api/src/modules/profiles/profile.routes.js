@@ -1,3 +1,7 @@
+/**
+ * /api/v1/me (own profile, photo, medical history, prescriptions) and the doctor-side profile and
+ * patient-information routes. Every route requires the matching role and permission.
+ */
 import express, { Router } from 'express';
 import { authenticate } from '../../middleware/authenticate.js';
 import { requirePermission, requireRole } from '../../middleware/authorize.js';

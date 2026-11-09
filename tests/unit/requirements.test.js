@@ -8,7 +8,7 @@ import { ratingAction } from '../../apps/api/src/modules/reviews/review.service.
 import { hasNoteText } from '../../apps/api/src/modules/consultations/consultation.service.js';
 import { isSmsKind } from '../../apps/api/src/modules/notifications/sms.service.js';
 import { getSmsProvider } from '../../apps/api/src/adapters/sms/index.js';
-import { renderDemoReceipt } from '../../apps/api/src/modules/payments/paymentReceipt.js';
+import { renderDemoReceipt, renderRefundReceipt } from '../../apps/api/src/modules/payments/paymentReceipt.js';
 
 const at = (iso) => new Date(iso);
 const appt = (status = 'CONFIRMED') => ({ status, startAtUtc: at('2026-11-10T10:00:00Z'), endAtUtc: at('2026-11-10T10:30:00Z') });
@@ -88,4 +88,18 @@ test('receipt PDF (baseline): English and Somali', () => {
   assert.ok(en.startsWith('%PDF'));
   assert.ok(so.startsWith('%PDF'));
   assert.notEqual(en, so, 'the two languages produce different documents');
+});
+
+test('refund receipt PDF (req. 11): recorded with a receipt, English and Somali', () => {
+  const payment = {
+    id: 'pay-1', reference: 'EVC-DEMO-1', paidAt: '2026-11-10T08:00:00Z', provider: 'EVC_PLUS', currency: 'USD', amount: '20.00', status: 'SUCCEEDED',
+    attempts: [], refunds: [],
+    appointment: { startAtUtc: '2026-11-11T10:00:00Z', patient: { name: 'Amina Cabdi' }, doctor: { name: 'Dr. Maxamed Faarax', specialty: { nameEn: 'Cardiology', nameSo: 'Wadnaha' } } },
+  };
+  const refund = { id: '0d3c0f0e-0000-4000-8000-000000000001', amount: '10.00', currency: 'USD', status: 'SUCCEEDED', reason: 'Cancelled 2-24 h before - 50% refund', reference: 'EVC-RFD-1', createdAt: '2026-11-10T09:00:00Z', processedAt: '2026-11-10T09:05:00Z' };
+  const en = renderRefundReceipt(payment, refund, { lang: 'en' });
+  const so = renderRefundReceipt(payment, { ...refund, processedAt: null, status: 'REQUESTED' }, { lang: 'so' });
+  assert.ok(en.toString('latin1').startsWith('%PDF'));
+  assert.ok(so.toString('latin1').startsWith('%PDF'));
+  assert.notEqual(en.toString('latin1'), so.toString('latin1'));
 });

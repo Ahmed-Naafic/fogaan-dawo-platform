@@ -1108,7 +1108,9 @@
     "historyTitle": "Lacag-bixinta",
     "historySubtitle": "Lacag-bixintaada jilidda ah, lacag-celinta iyo rasiidyada tijaabada.",
     "noPayments": "Weli lacag-bixin ma jirto.",
-    "attemptsCount": "Isku-dayo: {count}"
+    "attemptsCount": "Isku-dayo: {count}",
+    "refundReceipt": "Rasiidka lacag-celinta",
+    "receiptFailed": "Rasiidka lama soo dejin karin."
   },
   "paymentErrors": {
     "PAYMENT_ALREADY_SUCCEEDED": "Ballantan horay ayaa loo bixiyay.",

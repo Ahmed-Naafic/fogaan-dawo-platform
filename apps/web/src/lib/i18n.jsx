@@ -1,3 +1,4 @@
+/** Internationalisation: English/Somali dictionaries, the language provider, t() with {placeholders} and locale-aware formatting. */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import en from '@/locales/en.json';
 import so from '@/locales/so.json';

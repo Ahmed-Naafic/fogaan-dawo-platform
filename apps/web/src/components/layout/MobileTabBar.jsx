@@ -1,3 +1,4 @@
+/** Bottom tab bar for phone-sized screens (role-specific tabs plus "More"). */
 import { NavLink } from 'react-router';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/cn';

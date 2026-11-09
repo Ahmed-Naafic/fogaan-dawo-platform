@@ -43,12 +43,14 @@ function fail(error, what) {
 
 const toBuffer = async (data) => Buffer.from(await data.arrayBuffer());
 
+/** Uploads a private object to its Supabase bucket (no overwrite). Throws on storage errors. */
 export async function put(key, buffer) {
   const { bucket, contentType } = bucketOf(key);
   const { error } = await storage().from(bucket).upload(key, buffer, { contentType, upsert: false, cacheControl: '0' });
   if (error) throw fail(error, 'upload');
 }
 
+/** Downloads a private object from Supabase as a Buffer. Throws when missing. */
 export async function get(key) {
   const { bucket } = bucketOf(key);
   const { data, error } = await storage().from(bucket).download(key);
@@ -56,12 +58,14 @@ export async function get(key) {
   return toBuffer(data);
 }
 
+/** Deletes a private object from Supabase. */
 export async function remove(key) {
   const { bucket } = bucketOf(key);
   const { error } = await storage().from(bucket).remove([key]);
   if (error) throw fail(error, 'remove');
 }
 
+/** True when a private object exists in its Supabase bucket. */
 export async function exists(key) {
   const { bucket } = bucketOf(key);
   const slash = key.lastIndexOf('/');
@@ -88,6 +92,7 @@ export async function signedStagingUpload(key) {
   return { url: data.signedUrl, method: 'PUT', headers: { 'x-upsert': 'false' } };
 }
 
+/** Downloads a staged upload from the staging bucket, or null when it does not exist. */
 export async function getStaging(key) {
   assertStagingKey(key);
   const { data, error } = await storage().from(STAGING_BUCKET.bucket).download(key);
@@ -103,6 +108,7 @@ export async function claimStaging(key) {
   return Array.isArray(data) && data.length === 1;
 }
 
+/** Staging keys whose day folder is older than `cutoff` (for the cleanup job). */
 export async function listStagingOlderThan(cutoff) {
   const out = [];
   const { data: days, error } = await storage().from(STAGING_BUCKET.bucket).list('', { limit: 1000 });

@@ -285,6 +285,7 @@ The admin dashboard uses `GET /api/v1/admin/reports/overview` (30-day cards; Mon
 | `GET /api/v1/notifications/sms?page=` | any | The signed-in user's simulated SMS outbox. |
 | `GET /api/v1/admin/sms-outbox?q=&page=` | ADMIN | Every simulated SMS (number, text, status, recipient name). |
 | `GET /api/v1/payments/:id/receipt?lang=en\|so` | PATIENT / ADMIN | Receipt PDF in English or Somali (default: the reader's language). |
+| `GET /api/v1/payments/:paymentId/refunds/:refundId/receipt?lang=en\|so` | PATIENT | Req. 11: refund receipt PDF (refund id and reference, original payment, requested/paid-back dates, reason, amount, status), simulated. 404 for anyone else's. Admins: `GET /api/v1/admin/finance/payments/:paymentId/refunds/:refundId/receipt`. |
 
 Other rule changes: the join window is **[start − 10 min, start + 30 min]**; a FAILED payment releases the slot
 immediately (`EXPIRED`, pay again → `409 APPOINTMENT_NOT_PAYABLE`); search lists only doctors with a free slot

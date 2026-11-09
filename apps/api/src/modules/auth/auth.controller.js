@@ -14,14 +14,17 @@ function respondWithSession(req, res, status, result) {
   res.status(status).json({ data: { ...body, ...delivered } });
 }
 
+/** POST /api/v1/auth/register — register. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function register(req, res) {
   respondWithSession(req, res, 201, await authService.register(req.body, requestMeta(req)));
 }
 
+/** POST /api/v1/auth/login — login. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function login(req, res) {
   respondWithSession(req, res, 200, await authService.login(req.body, requestMeta(req)));
 }
 
+/** POST /api/v1/auth/refresh — refresh. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function refresh(req, res) {
   const token = readRefreshToken(req);
   try {
@@ -33,26 +36,31 @@ export async function refresh(req, res) {
   }
 }
 
+/** POST /api/v1/auth/logout — logout. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function logout(req, res) {
   await authService.logout({ sessionId: req.auth?.sessionId ?? null, refreshToken: readRefreshToken(req), actorUserId: req.auth?.user.id ?? null });
   clearRefreshCookie(res);
   res.status(204).end();
 }
 
+/** POST /api/v1/auth/logout-all — logout all. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function logoutAll(req, res) {
   const revokedSessions = await authService.logoutAll(req.auth.user.id);
   clearRefreshCookie(res);
   res.status(200).json({ data: { revokedSessions } });
 }
 
+/** POST /api/v1/auth/switch-role — switch role. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function switchRole(req, res) {
   respondWithSession(req, res, 200, await authService.switchRole(req.auth, req.body.role, requestMeta(req)));
 }
 
+/** GET /api/v1/auth/me — me. Thin HTTP adapter: validated input in, service result out as JSON. */
 export function me(req, res) {
   res.status(200).json({ data: authService.getMe(req.auth) });
 }
 
+/** POST /api/v1/auth/password — change password. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function changePassword(req, res) {
   res.json({ data: await authService.changePassword(req.auth, req.body) });
 }

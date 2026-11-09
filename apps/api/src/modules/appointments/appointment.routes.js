@@ -40,6 +40,7 @@ const reviewSchema = z.object({ rating: z.number().int().min(1).max(5), comment:
 
 const summaryQuerySchema = z.object({ tz: z.string().max(64).optional() }).strict();
 
+/** Router for /api/v1/doctors/me/appointments (DOCTOR): list, summary, detail and cancel. */
 export function createDoctorAppointmentRouter() {
   const router = Router();
   router.use(authenticate, requireRole('DOCTOR'), requirePermission(Permission.doctorAppointmentsManage));

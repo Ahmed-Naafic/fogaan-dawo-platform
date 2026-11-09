@@ -26,11 +26,13 @@ const TABLES = new Set([
 /** Sequences usable from raw SQL (same allow-list rule as tables). */
 const SEQUENCES = new Set(['prescription_reference_seq']);
 
+/** Schema-qualified, quoted sequence name for raw SQL (follows ?schema= in DATABASE_URL). */
 export function qualifiedSequence(name) {
   if (!SEQUENCES.has(name)) throw new Error(`Sequence "${name}" is not allowed in raw SQL`);
   return `"${databaseSchema}"."${name}"`;
 }
 
+/** Schema-qualified, quoted table name for raw SQL (follows ?schema= in DATABASE_URL). */
 export function qualifiedTable(name) {
   if (!TABLES.has(name)) throw new Error(`Table "${name}" is not allowed in raw SQL`);
   return `"${databaseSchema}"."${name}"`;

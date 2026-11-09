@@ -21,6 +21,7 @@ const shortName = (fullName = '') => {
   return last ? `${first} ${last[0].toUpperCase()}.` : first;
 };
 
+/** Response shape of a rating: { id, rating, comment, createdAt }. */
 export const presentReview = (r) => ({ id: r.id, rating: r.rating, comment: r.comment ?? null, createdAt: r.createdAt.toISOString() });
 
 /** Whether the appointment can be rated now: { allowed, blocker }. */

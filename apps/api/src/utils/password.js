@@ -7,6 +7,7 @@ import { getBcryptRounds } from '../config/auth.js';
  */
 export const MAX_PASSWORD_BYTES = 72;
 
+/** bcrypt hash of a password (cost from BCRYPT_ROUNDS). */
 export function hashPassword(password) {
   return bcrypt.hash(password, getBcryptRounds());
 }

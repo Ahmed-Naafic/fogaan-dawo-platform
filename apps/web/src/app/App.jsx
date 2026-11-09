@@ -1,3 +1,4 @@
+/** Root component: providers (theme, language, auth, notifications, toasts) around the router; scrolls to top on navigation. */
 import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import AppRouter from './router';

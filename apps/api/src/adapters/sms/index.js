@@ -17,6 +17,7 @@ const simulated = Object.freeze({
   },
 });
 
+/** The SMS adapter in use (SIMULATED today). Interface: send({ to, message }) → { status, providerReference, error? }. */
 export function getSmsProvider() {
   return simulated;
 }

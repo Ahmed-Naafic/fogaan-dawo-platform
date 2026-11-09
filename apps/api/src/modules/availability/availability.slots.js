@@ -42,6 +42,7 @@ export function planSlots({ rules, blocks = [], now = new Date(), horizonDays = 
   return result;
 }
 
+/** True when two [start, end) intervals overlap. */
 export const overlaps = (aStart, aEnd, bStart, bEnd) => aStart < bEnd && bStart < aEnd;
 
 const key = (s) => `${s.startAtUtc.getTime()}|${s.endAtUtc.getTime()}|${s.sourceRuleId ?? ''}`;

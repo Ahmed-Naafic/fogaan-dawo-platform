@@ -1,3 +1,4 @@
+/** Video consultation: pre-join checks, waiting room, doctor admission, WebRTC call with mute/camera/end/timer, side panel (notes, prescriptions, chat, files). */
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {

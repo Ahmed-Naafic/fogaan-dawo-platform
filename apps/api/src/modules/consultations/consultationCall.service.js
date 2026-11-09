@@ -186,6 +186,7 @@ export async function reconnectTicket(auth, consultationId, now = new Date()) {
   return { signaling: { ticket, expiresAt: expiresAt.toISOString(), path: hub.SIGNAL_PATH }, iceServers: await iceServersForCall({ userId: auth.user.id, consultationId: c.id }) };
 }
 
+/** GET /api/v1/consultations/:id: call state for a participant (admission, presence, timer, note for the doctor). */
 export async function getState(auth, consultationId, now = new Date()) {
   return presentState(prisma, await loadOwnedConsultation(prisma, auth, consultationId), auth.activeRole, now);
 }

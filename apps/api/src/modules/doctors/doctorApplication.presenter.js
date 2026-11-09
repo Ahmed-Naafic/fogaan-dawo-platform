@@ -2,6 +2,7 @@ import { APPLICATION_DOCUMENT_TYPES, EDITABLE_STATUSES, REQUIRED_DOCUMENT_TYPES 
 
 /** Shapes doctor-application records for API responses. Storage keys are never included. */
 
+/** Safe shape of a doctor document (type, version, file name, size, dates); never the storage key. */
 export const presentDocument = (d) => ({
   id: d.id,
   documentType: d.documentType,

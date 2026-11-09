@@ -12,6 +12,9 @@ export const refreshPayment = (appointmentId) => apiRequest(`/v1/appointments/${
 
 export const listMyPayments = () => apiRequest('/v1/payments');
 
+/** A refund receipt PDF (Blob) for one of the patient's refunds. */
+export const downloadMyRefundReceipt = (paymentId, refundId, lang = 'en') =>
+  apiRequest(`/v1/payments/${encodeURIComponent(paymentId)}/refunds/${encodeURIComponent(refundId)}/receipt?lang=${lang === 'so' ? 'so' : 'en'}`, { responseType: 'blob' });
 export const downloadMyReceipt = (paymentId, lang = 'en') => apiRequest(`/v1/payments/${encodeURIComponent(paymentId)}/receipt?lang=${lang === 'so' ? 'so' : 'en'}`, { responseType: 'blob' });
 
 /** Admin finance (ADMIN + finance:manage). */

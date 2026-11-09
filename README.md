@@ -44,7 +44,7 @@ Status: **Done** = working end to end and tested; **Partial** = works with the l
 | 8 | In-call chat and files | **Done** | Chat panel beside the video; images/PDFs up to 5 MB; saved to the consultation record; messages are stored on the server, so they reach someone who was reconnecting. |
 | 9 | Consultation notes | **Done** | Complaint, assessment, diagnosis, advice; advice always visible to the patient, other sections when marked shareable; editable for 24 h then locked; a consultation cannot be completed without notes. |
 | 10 | E-prescription | **Done** | Medicines (name, dose, frequency, duration); PDF with doctor details, licence, date and QR code; public verification page shows "Valid" or "Cancelled", never the diagnosis. |
-| 11 | Cancel and reschedule | **Done** | Patient: >24 h 100 %, 2–24 h 50 %, <2 h none; doctor: always 100 %; one free reschedule >24 h before; refunds simulated with receipts; doctors with >3 cancellations in a month are flagged for admins. |
+| 11 | Cancel and reschedule | **Done** | Patient: >24 h 100 %, 2–24 h 50 %, <2 h none; doctor: always 100 %; one free reschedule >24 h before; refunds simulated with a refund receipt PDF in both languages (Payments page); doctors with >3 cancellations in a month are flagged for admins. |
 | 12 | Follow-up | **Done** | Doctor books a follow-up in one of their free slots with a normal, 50 % discounted or free fee; the patient confirms (and pays unless free) within 48 h or the slot is released; linked to the original consultation. |
 | 13 | Ratings and earnings | **Done** | 1–5 stars and a comment, completed consultations only, once each; doctors see earnings per month (fees minus the admin-set commission); refunded consultations are excluded. |
 

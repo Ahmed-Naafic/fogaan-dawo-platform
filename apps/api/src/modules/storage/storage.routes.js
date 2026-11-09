@@ -17,6 +17,7 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
  */
 const tokenParams = z.object({ token: z.string().min(20).max(4096) }).strict();
 
+/** Router for /api/v1/storage/local: signed upload/download URLs when the local storage driver is in use. */
 export function createLocalStorageRouter() {
   const router = Router();
   const limiter = rateLimiter({ windowMs: 15 * 60_000, limit: Number.parseInt(process.env.UPLOAD_RATE_LIMIT_MAX ?? '120', 10) });

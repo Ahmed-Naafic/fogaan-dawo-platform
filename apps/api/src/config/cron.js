@@ -8,6 +8,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
  */
 const MIN_LENGTH = 32;
 
+/** Startup check for CRON_SECRET: a problem description or null. */
 export function cronConfigProblem() {
   const secret = process.env.CRON_SECRET ?? '';
   if (!secret) return 'CRON_SECRET is not set';

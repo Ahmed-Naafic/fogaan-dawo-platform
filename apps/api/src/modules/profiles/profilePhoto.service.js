@@ -32,6 +32,7 @@ export function photoInfo(user, { publicDoctorId = null } = {}) {
 
 const discard = (key) => (key ? removePrivateObject(key).catch(() => {}) : Promise.resolve());
 
+/** PUT /api/v1/me/photo: validates, strips metadata, resizes and stores the user's photo (replacing the old one). */
 export async function uploadMyPhoto(auth, buffer, now = new Date()) {
   const image = await processProfilePhoto(buffer); // throws 413/415/422 before anything is stored
   const key = avatarKeyFor(auth.user.id);
@@ -60,6 +61,7 @@ export async function uploadMyPhoto(auth, buffer, now = new Date()) {
   return photoInfo(saved);
 }
 
+/** DELETE /api/v1/me/photo: removes the user's photo. */
 export async function removeMyPhoto(auth) {
   let previousKey = null;
   await withTransaction(async (tx) => {

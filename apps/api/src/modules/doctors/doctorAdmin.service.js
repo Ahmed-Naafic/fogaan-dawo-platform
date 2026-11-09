@@ -92,6 +92,7 @@ export async function updateDoctor({ doctorId, adminUserId, input }) {
   return { doctor: (await withCancellationFlags(prisma, await withSuspensions(prisma, [updated])))[0] };
 }
 
+/** GET /api/v1/admin/doctors: registered doctors per tab with suspension details and the monthly cancellation flag. */
 export async function listDoctors({ tab, q, page, pageSize }, client = prisma) {
   const [rows, total, ...tabCounts] = await Promise.all([
     doctorRepository.listDoctorsForAdmin(client, { tab, q, skip: (page - 1) * pageSize, take: pageSize }),

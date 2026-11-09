@@ -17,6 +17,7 @@ export const DOWNLOAD_URL_TTL_SECONDS = 60;
 export const UPLOAD_INTENT_TTL_SECONDS = 2 * 60 * 60; // matches Supabase signed-upload validity
 export const STAGING_MAX_AGE_HOURS = 24;
 
+/** Name of the configured storage driver: "local" or "supabase". */
 export function storageDriverName() {
   return process.env.STORAGE_DRIVER === 'supabase' ? 'supabase' : 'local';
 }
@@ -58,9 +59,11 @@ export function storageDescription(env = process.env) {
 
 /** Stores a new object; never overwrites (throws code STORAGE_OBJECT_EXISTS). */
 export const putPrivateObject = (key, buffer) => driver().put(key, buffer);
+/** Reads a private object (Buffer) through the configured driver. */
 export const getPrivateObject = (key) => driver().get(key);
 /** Only used to clean up a file whose database record could not be created. */
 export const removePrivateObject = (key) => driver().remove(key);
+/** True when a private object exists in the configured driver. */
 export const privateObjectExists = (key) => driver().exists(key);
 
 /**

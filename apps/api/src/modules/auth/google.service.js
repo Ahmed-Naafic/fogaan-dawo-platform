@@ -43,6 +43,7 @@ function requireConfig() {
   return config;
 }
 
+/** True when Google sign-in is configured on this server. */
 export const isGoogleAvailable = () => getGoogleConfig() !== null;
 
 /* ------------------------------------------------------------------ start */
@@ -233,6 +234,7 @@ export async function handleCallback({ query, cookie, meta, onFailure = () => {}
 
 /* ---------------------------------------------------- account security */
 
+/** GET /api/v1/auth/methods: which sign-in methods (password, Google) the signed-in user has. */
 export async function getSignInMethods(auth) {
   const methods = await authRepository.findSignInMethods(prisma, auth.user.id);
   const google = methods.identities.find((i) => i.provider === PROVIDER) ?? null;

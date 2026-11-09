@@ -38,12 +38,15 @@ export async function put(key, buffer) {
   }
 }
 
+/** Reads a private object from local disk as a Buffer. Throws when the key is invalid or the file is missing. */
 export const get = (key) => readFile(pathFor(key));
 
+/** Deletes a private object from local disk (missing files are ignored). */
 export async function remove(key) {
   await rm(pathFor(key), { force: true });
 }
 
+/** True when a private object exists on local disk. */
 export async function exists(key) {
   try {
     await stat(pathFor(key));
@@ -55,12 +58,14 @@ export async function exists(key) {
 
 /* ------------------------------------------------------------ staging */
 
+/** Writes an unvalidated upload to the local staging area (never served). */
 export async function putStaging(key, buffer) {
   const full = stagingPathFor(key);
   await mkdir(dirname(full), { recursive: true });
   await writeFile(full, buffer, { flag: 'wx' });
 }
 
+/** Reads a staged upload (Buffer) or null when it does not exist. */
 export async function getStaging(key) {
   try {
     return await readFile(stagingPathFor(key));

@@ -98,8 +98,16 @@ describe('requirements: refunds, ratings, follow-ups, flags, admin edit, SMS (Ne
     assert.equal(row.status, 'CANCELLED');
     assert.match(row.cancellationReason, /did not admit/);
     assert.equal((await api('POST', `/api/v1/appointments/${late.id}/no-show-refund`, { token: p.token, body: {} })).status, 409, 'only once');
+    // Req. 11: the refund is recorded with a receipt (owner only).
+    const pay = await prisma.payment.findUnique({ where: { appointmentId: late.id }, include: { refunds: true } });
+    const receiptUrl = `/api/v1/payments/${pay.id}/refunds/${pay.refunds[0].id}/receipt?lang=so`;
+    const rr = await fetch(base + receiptUrl, { headers: { authorization: `Bearer ${p.token}`, 'x-fogaan-client': 'native' } });
+    assert.equal(rr.status, 200);
+    assert.equal(rr.headers.get('content-type'), 'application/pdf');
+    assert.ok(Buffer.from(await rr.arrayBuffer()).toString('latin1').startsWith('%PDF'));
     const other = await person('PATIENT');
     assert.equal((await api('POST', `/api/v1/appointments/${late.id}/no-show-refund`, { token: other.token, body: {} })).status, 404);
+    assert.equal((await fetch(base + receiptUrl, { headers: { authorization: `Bearer ${other.token}`, 'x-fogaan-client': 'native' } })).status, 404, 'another patient cannot read the receipt');
   });
 
   test('req. 13: only completed consultations can be rated, once; public list shows first name + initial', async () => {

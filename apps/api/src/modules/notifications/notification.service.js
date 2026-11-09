@@ -102,6 +102,7 @@ function parseCursor(cursor) {
   return { createdAt, id };
 }
 
+/** GET /api/v1/notifications: the user's notifications, newest first, rendered in their language and zone (keyset paging). */
 export async function listMine(auth, { unreadOnly, cursor, limit = 20, lang, timeZone }) {
   const rows = await repo.listForUser(prisma, auth.user.id, { unreadOnly, before: parseCursor(cursor), limit });
   const page = rows.slice(0, limit);
@@ -113,6 +114,7 @@ export async function listMine(auth, { unreadOnly, cursor, limit = 20, lang, tim
   };
 }
 
+/** GET /api/v1/notifications/unread-count: number of unread notifications. */
 export const unreadCount = async (auth) => ({ unreadCount: await repo.countUnread(prisma, auth.user.id) });
 
 async function afterChange(userId) {
@@ -121,17 +123,20 @@ async function afterChange(userId) {
   return count;
 }
 
+/** PATCH /api/v1/notifications/:id: marks one notification read or unread. */
 export async function setReadState(auth, id, read, now = new Date()) {
   const { count } = await repo.setRead(prisma, auth.user.id, id, read ? now : null);
   if (count === 0) throw new ApiError(404, 'Notification not found', undefined, NotificationErrorCode.notFound); // also for other users' ids
   return { id, read, unreadCount: await afterChange(auth.user.id) };
 }
 
+/** POST /api/v1/notifications/read-all: marks every notification read. */
 export async function readAll(auth, now = new Date()) {
   const { count } = await repo.markAllRead(prisma, auth.user.id, now);
   return { updated: count, unreadCount: await afterChange(auth.user.id) };
 }
 
+/** DELETE /api/v1/notifications/:id: removes one of the user's notifications. */
 export async function deleteMine(auth, id) {
   const { count } = await repo.deleteOwned(prisma, auth.user.id, id);
   if (count === 0) throw new ApiError(404, 'Notification not found', undefined, NotificationErrorCode.notFound);
@@ -146,6 +151,7 @@ export async function presentOwned(userId, id, reader) {
 
 /* ----------------------------------------------------------------- preferences */
 
+/** GET /api/v1/notifications/preferences: in-app, push and reminder settings plus push availability. */
 export async function getPreferences(auth) {
   const [pref, devices] = await Promise.all([repo.findPreference(prisma, auth.user.id), repo.countSubscriptions(prisma, auth.user.id)]);
   const config = getPushConfig();
@@ -153,6 +159,7 @@ export async function getPreferences(auth) {
   return { inAppEnabled, pushEnabled, remindersEnabled, push: { available: Boolean(config), publicKey: config?.publicKey ?? null, devices } };
 }
 
+/** PUT /api/v1/notifications/preferences: updates the notification settings. */
 export async function updatePreferences(auth, changes) {
   await repo.upsertPreference(prisma, auth.user.id, changes);
   return getPreferences(auth);
@@ -160,6 +167,7 @@ export async function updatePreferences(auth, changes) {
 
 /* ------------------------------------------------------------ push subscriptions */
 
+/** POST /api/v1/notifications/push-subscriptions: stores this device's Web Push subscription. 503 when push is not configured. */
 export async function subscribePush(auth, { endpoint, keys, userAgent }) {
   const config = getPushConfig();
   if (!config) throw new ApiError(503, 'Push notifications are not available', undefined, NotificationErrorCode.pushUnavailable);

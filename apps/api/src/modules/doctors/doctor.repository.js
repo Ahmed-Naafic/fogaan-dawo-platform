@@ -2,12 +2,16 @@ import { BOOKABLE_DOCTOR_WHERE } from './doctor.constants.js';
 
 /** Data access for doctor profiles, documents, verification and published slots. */
 
+/** Data access: find doctor by id (doctorProfile.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findDoctorById = (client, id) => client.doctorProfile.findUnique({ where: { id } });
 
+/** Data access: find doctor by user id (doctorProfile.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findDoctorByUserId = (client, userId) => client.doctorProfile.findUnique({ where: { userId } });
 
+/** Data access: find bookable doctor (doctorProfile.findFirst: first matching row). `client` is the Prisma client or a transaction. */
 export const findBookableDoctor = (client, doctorId) => client.doctorProfile.findFirst({ where: { id: doctorId, ...BOOKABLE_DOCTOR_WHERE } });
 
+/** Data access: update doctor (doctorProfile.update: updates a row). `client` is the Prisma client or a transaction. */
 export const updateDoctor = (client, id, data) => client.doctorProfile.update({ where: { id }, data });
 
 /** Public search: verified, active doctors only, public fields only. */
@@ -29,26 +33,35 @@ export const searchDoctors = (client, { specialtyId, take = 20, skip = 0 } = {})
     skip,
   });
 
+/** Data access: create slots (availabilitySlot.createManyAndReturn: createManyAndReturn). `client` is the Prisma client or a transaction. */
 export const createSlots = (client, rows) => client.availabilitySlot.createManyAndReturn({ data: rows });
 
+/** Data access: find current document (doctorDocument.findFirst: first matching row). `client` is the Prisma client or a transaction. */
 export const findCurrentDocument = (client, doctorId, documentType) =>
   client.doctorDocument.findFirst({ where: { doctorId, documentType, isCurrent: true } });
 
+/** Data access: find latest document version (doctorDocument.aggregate: aggregate values). `client` is the Prisma client or a transaction. */
 export async function findLatestDocumentVersion(client, doctorId) {
   const result = await client.doctorDocument.aggregate({ where: { doctorId }, _max: { versionNumber: true } });
   return result._max.versionNumber ?? 0;
 }
 
+/** Data access: mark document not current (doctorDocument.update: updates a row). `client` is the Prisma client or a transaction. */
 export const markDocumentNotCurrent = (client, id) => client.doctorDocument.update({ where: { id }, data: { isCurrent: false } });
 
+/** Data access: create document (doctorDocument.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createDocument = (client, data) => client.doctorDocument.create({ data });
 
+/** Data access: find verification request by id (verificationRequest.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findVerificationRequestById = (client, id) => client.verificationRequest.findUnique({ where: { id } });
 
+/** Data access: create verification request (verificationRequest.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createVerificationRequest = (client, data) => client.verificationRequest.create({ data });
 
+/** Data access: update verification request (verificationRequest.update: updates a row). `client` is the Prisma client or a transaction. */
 export const updateVerificationRequest = (client, id, data) => client.verificationRequest.update({ where: { id }, data });
 
+/** Data access: create verification review (verificationReview.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createVerificationReview = (client, data) => client.verificationReview.create({ data });
 
 /* ------------------------------------------------------ doctor applications */
@@ -75,10 +88,13 @@ const APPLICATION_INCLUDE = Object.freeze({
   },
 });
 
+/** Data access: find application by user id (doctorProfile.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findApplicationByUserId = (client, userId) => client.doctorProfile.findUnique({ where: { userId }, include: APPLICATION_INCLUDE });
 
+/** Data access: find application by id (doctorProfile.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findApplicationById = (client, id) => client.doctorProfile.findUnique({ where: { id }, include: APPLICATION_INCLUDE });
 
+/** Data access: create doctor profile (doctorProfile.create: inserts a row). `client` is the Prisma client or a transaction. */
 export const createDoctorProfile = (client, data) => client.doctorProfile.create({ data });
 
 /** Replaces the applicant's language list (only ever called on their own draft/rejected application). */
@@ -87,6 +103,7 @@ export async function replaceDoctorLanguages(client, doctorId, languages) {
   if (languages.length) await client.doctorLanguage.createMany({ data: languages.map((language) => ({ doctorId, language })) });
 }
 
+/** Data access: find latest verification request (verificationRequest.findFirst: first matching row). `client` is the Prisma client or a transaction. */
 export const findLatestVerificationRequest = (client, doctorId) =>
   client.verificationRequest.findFirst({ where: { doctorId }, orderBy: { submittedAt: 'desc' } });
 
@@ -105,6 +122,7 @@ export const listApplicationsByStatus = (client, statuses) =>
     take: 200,
   });
 
+/** Data access: count applications by status (doctorProfile.groupBy: grouped counts/sums). `client` is the Prisma client or a transaction. */
 export async function countApplicationsByStatus(client) {
   const rows = await client.doctorProfile.groupBy({ by: ['verificationStatus'], _count: { _all: true } });
   return Object.fromEntries(rows.map((r) => [r.verificationStatus, r._count._all]));
@@ -114,8 +132,10 @@ export async function countApplicationsByStatus(client) {
 export const findDocumentForDownload = (client, { doctorId, documentId }) =>
   client.doctorDocument.findFirst({ where: { id: documentId, doctorId }, select: { id: true, fileKey: true, fileName: true, mimeType: true, fileSize: true } });
 
+/** Data access: find specialty by id (specialty.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findSpecialtyById = (client, id) => client.specialty.findUnique({ where: { id } });
 
+/** Data access: list active specialties (specialty.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const listActiveSpecialties = (client) =>
   client.specialty.findMany({ where: { isActive: true }, orderBy: { nameEn: 'asc' }, select: { id: true, nameEn: true, nameSo: true, description: true } });
 
@@ -138,19 +158,24 @@ const PUBLIC_DOCTOR_SELECT = Object.freeze({
   user: { select: { fullName: true, timeZone: true, avatarUpdatedAt: true } },
 });
 
+/** Data access: find public doctors (doctorProfile.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const findPublicDoctors = (client, where, take) =>
   client.doctorProfile.findMany({ where: { ...where, ...BOOKABLE_DOCTOR_WHERE }, select: PUBLIC_DOCTOR_SELECT, orderBy: { createdAt: 'asc' }, take });
 
+/** Data access: find public doctor (doctorProfile.findFirst: first matching row). `client` is the Prisma client or a transaction. */
 export const findPublicDoctor = (client, id) => client.doctorProfile.findFirst({ where: { id, ...BOOKABLE_DOCTOR_WHERE }, select: PUBLIC_DOCTOR_SELECT });
 
+/** Data access: ratings for (review.groupBy: grouped counts/sums). `client` is the Prisma client or a transaction. */
 export const ratingsFor = (client, doctorIds) =>
   doctorIds.length ? client.review.groupBy({ by: ['doctorId'], where: { doctorId: { in: doctorIds } }, _avg: { rating: true }, _count: { _all: true } }) : [];
 
+/** Data access: next available for (availabilitySlot.groupBy: grouped counts/sums). `client` is the Prisma client or a transaction. */
 export const nextAvailableFor = (client, doctorIds, now) =>
   doctorIds.length
     ? client.availabilitySlot.groupBy({ by: ['doctorId'], where: { doctorId: { in: doctorIds }, status: 'AVAILABLE', startAtUtc: { gt: now } }, _min: { startAtUtc: true } })
     : [];
 
+/** Data access: find active schedule zone (availabilityRule.findFirst: first matching row). `client` is the Prisma client or a transaction. */
 export const findActiveScheduleZone = (client, doctorId) =>
   client.availabilityRule.findFirst({ where: { doctorId, isActive: true }, select: { timeZone: true, slotDurationMinutes: true } });
 
@@ -187,11 +212,14 @@ const ADMIN_DOCTOR_SELECT = Object.freeze({
 const adminSearch = (q) =>
   q ? { OR: [{ user: { fullName: { contains: q, mode: 'insensitive' } } }, { user: { email: { contains: q, mode: 'insensitive' } } }, { licenceNumber: { contains: q, mode: 'insensitive' } }] } : {};
 
+/** Data access: list doctors for admin (doctorProfile.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const listDoctorsForAdmin = (client, { tab, q, skip, take }) =>
   client.doctorProfile.findMany({ where: { ...ADMIN_DOCTOR_TABS[tab], ...adminSearch(q) }, select: ADMIN_DOCTOR_SELECT, orderBy: { createdAt: 'desc' }, skip, take });
 
+/** Data access: count doctors for admin (doctorProfile.count: count of matching rows). `client` is the Prisma client or a transaction. */
 export const countDoctorsForAdmin = (client, { tab, q }) => client.doctorProfile.count({ where: { ...ADMIN_DOCTOR_TABS[tab], ...adminSearch(q) } });
 
+/** Data access: find doctor for admin (doctorProfile.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findDoctorForAdmin = (client, id) => client.doctorProfile.findUnique({ where: { id }, select: ADMIN_DOCTOR_SELECT });
 
 /** The most recent SUSPEND audit entry per doctor (reason, when, by whom) — suspension history lives in the audit log. */

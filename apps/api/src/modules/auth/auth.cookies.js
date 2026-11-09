@@ -11,6 +11,7 @@ import { CLIENT_HEADER, ClientType } from './auth.constants.js';
  */
 export const clientTypeOf = (req) => (req.get(CLIENT_HEADER) === ClientType.native ? ClientType.native : ClientType.web);
 
+/** Sets the HTTP-only refresh-token cookie (path /api/v1/auth, SameSite=Strict, Secure in production). */
 export function setRefreshCookie(res, token, expiresAt) {
   const config = getAuthConfig();
   res.cookie(config.refreshCookieName, token, {
@@ -22,6 +23,7 @@ export function setRefreshCookie(res, token, expiresAt) {
   });
 }
 
+/** Clears the refresh-token cookie. */
 export function clearRefreshCookie(res) {
   const config = getAuthConfig();
   res.clearCookie(config.refreshCookieName, { httpOnly: true, secure: config.cookieSecure, sameSite: 'strict', path: config.refreshCookiePath });

@@ -22,6 +22,7 @@ export function getAuthRateLimitConfig() {
   });
 }
 
+/** Validated auth settings (JWT secret, token lifetimes, cookie flags, bcrypt rounds). Throws when a required secret is missing. */
 export function getAuthConfig() {
   const secret = process.env.JWT_ACCESS_SECRET ?? '';
   if (secret.length < 32) throw new Error('JWT_ACCESS_SECRET must be set to a random value of at least 32 characters');

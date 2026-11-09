@@ -9,13 +9,16 @@ import { EventEmitter } from 'node:events';
 const hub = new EventEmitter();
 hub.setMaxListeners(0);
 
+/** Sends a realtime event to every open stream of a user (in-process). */
 export function publish(userId, event) {
   hub.emit(`user:${userId}`, event);
 }
 
+/** Registers a listener for a user's realtime events; returns an unsubscribe function. */
 export function subscribe(userId, listener) {
   hub.on(`user:${userId}`, listener);
   return () => hub.off(`user:${userId}`, listener);
 }
 
+/** Number of open realtime listeners for a user. */
 export const listenerCount = (userId) => hub.listenerCount(`user:${userId}`);

@@ -1,3 +1,4 @@
+/** All routes of the web app: public pages, sign-in, and the patient, doctor and admin areas (each guarded by role). */
 import { Navigate, Route, Routes } from 'react-router';
 import ComingSoonPage from '@/components/shared/ComingSoonPage';
 import LandingPage from '@/features/landing/pages/LandingPage';

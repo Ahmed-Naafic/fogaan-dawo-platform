@@ -18,6 +18,7 @@ const TOP = 5;
 
 const rate = (part, whole) => (whole > 0 ? Number((part / whole).toFixed(4)) : null);
 
+/** GET /api/v1/admin/reports/overview: users, appointment counts and rates, top specialties and doctors, daily or monthly trend for a date range. Money stays in finance reports. */
 export async function overview(query = {}, client = prisma) {
   const range = resolveAdminRange(query, '30d');
   const when = (field) => (range.from ? { [field]: inRange(range) } : {});

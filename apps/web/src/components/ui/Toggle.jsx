@@ -1,3 +1,4 @@
+/** Accessible on/off switch (role="switch"). */
 import { cn } from '@/lib/cn';
 
 export default function Toggle({ checked, onChange, label, className }) {

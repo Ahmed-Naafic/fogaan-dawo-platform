@@ -37,6 +37,7 @@ async function patientOf(client, auth) {
 
 const attemptOutcome = (a) => a.responseData?.outcome ?? (a.status === 'SUCCEEDED' ? 'SUCCESS' : a.status === 'FAILED' ? 'FAILED' : 'PENDING');
 
+/** Response shape of a payment with attempts (wallet masked), refunds and the last provider message. */
 export function presentPayment(p, { forAdmin = false } = {}) {
   if (!p) return null;
   const last = p.attempts?.at(-1) ?? null;
@@ -209,12 +210,30 @@ export async function refreshPayment(auth, appointmentId, now = new Date()) {
 
 /* ------------------------------------------------------------ history and receipts */
 
+/** GET /api/v1/payments: the signed-in patient's payments, attempts and refunds. */
 export async function listMyPayments(auth) {
   const patient = await patientOf(prisma, auth);
   return (await paymentRepository.listPaymentsForPatient(prisma, patient.id)).map((p) => presentPayment(p));
 }
 
 /** Receipt data for a SUCCEEDED payment: the owner (patient) or an administrator only. */
+/**
+ * A refund of a payment for its receipt: the payment's patient or an administrator only (404 otherwise).
+ * Returns { payment, refund } with the presented payment; any refund status is allowed.
+ */
+export async function getRefundReceipt(auth, paymentId, refundId, { asAdmin = false } = {}) {
+  const payment = await paymentRepository.findPaymentDetail(prisma, paymentId);
+  if (!payment) throw ApiError.notFound('Payment not found');
+  if (!asAdmin) {
+    const patient = await patientOf(prisma, auth);
+    if (payment.patientId !== patient.id) throw ApiError.notFound('Payment not found');
+  }
+  const presented = presentPayment(payment, { forAdmin: true });
+  const refund = presented.refunds.find((r) => r.id === refundId);
+  if (!refund) throw ApiError.notFound('Refund not found');
+  return { payment: presented, refund };
+}
+
 export async function getReceipt(auth, paymentId, { asAdmin = false } = {}) {
   const payment = await paymentRepository.findPaymentDetail(prisma, paymentId);
   if (!payment) throw ApiError.notFound('Payment not found');

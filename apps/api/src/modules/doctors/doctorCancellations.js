@@ -10,6 +10,7 @@ import * as notificationEvents from '../notifications/notification.events.js';
 export const DOCTOR_CANCEL_FLAG_THRESHOLD = 3;
 export const DOCTOR_CANCEL_REASON_PREFIX = 'Cancelled by the doctor';
 
+/** Start and end (UTC) of the calendar month containing `now`. */
 export function monthBounds(now = new Date()) {
   const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
@@ -28,6 +29,7 @@ export async function doctorCancellationsThisMonth(client, doctorIds, now = new 
   return new Map(rows.map((r) => [r.doctorId, r._count._all]));
 }
 
+/** True when a doctor's cancellations this month exceed the threshold (more than 3). */
 export const isFlagged = (count) => count > DOCTOR_CANCEL_FLAG_THRESHOLD;
 
 /** Called inside the doctor-cancel transaction: notifies admins + audits exactly when the count first exceeds 3. */

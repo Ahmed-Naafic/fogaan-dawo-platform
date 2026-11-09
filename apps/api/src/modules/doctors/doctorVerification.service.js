@@ -24,6 +24,7 @@ const DECISIONS = Object.freeze({
   REJECT: { from: ['PENDING', 'UNDER_REVIEW'], request: 'REJECTED', doctor: 'REJECTED', resolves: true },
 });
 
+/** GET /api/v1/admin/doctor-applications: applications per tab (pending, under review, verified, rejected). */
 export async function listApplications({ tab = 'pending' } = {}) {
   const [rows, counts] = await Promise.all([doctorRepository.listApplicationsByStatus(prisma, ADMIN_TABS[tab]), doctorRepository.countApplicationsByStatus(prisma)]);
   return {
@@ -45,12 +46,14 @@ export async function listApplications({ tab = 'pending' } = {}) {
   };
 }
 
+/** GET /api/v1/admin/doctor-applications/:id: one application with documents and review history. */
 export async function getApplication(doctorId) {
   const profile = await doctorRepository.findApplicationById(prisma, doctorId);
   if (!profile || profile.verificationStatus === 'NOT_SUBMITTED') throw ApiError.notFound('Application not found'); // drafts stay private
   return presentApplicationForAdmin(profile);
 }
 
+/** An application document file for an administrator (bytes and content type). Audited. */
 export async function getApplicationDocumentFile({ doctorId, documentId }) {
   const profile = await doctorRepository.findDoctorById(prisma, doctorId);
   const doc = profile && profile.verificationStatus !== 'NOT_SUBMITTED' ? await doctorRepository.findDocumentForDownload(prisma, { doctorId, documentId }) : null;

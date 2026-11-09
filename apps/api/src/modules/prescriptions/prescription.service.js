@@ -12,7 +12,9 @@ import * as prescriptionRepository from './prescription.repository.js';
 
 /** QR tokens are random; only their SHA-256 hash is stored (verification_token_hash). */
 export const hashVerificationToken = (token) => createHash('sha256').update(token, 'utf8').digest('hex');
+/** A random verification token for the QR code (only its hash is stored). */
 export const newVerificationToken = () => randomBytes(32).toString('base64url');
+/** SHA-256 hex digest of a buffer or string (prescription PDF checksum). */
 export const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex');
 
 /** Where the QR code points: the public verification page of the web app (never a PDF or record). */
@@ -136,6 +138,7 @@ async function doctorView(client, id, now) {
 
 /* ------------------------------------------------------------------ drafts */
 
+/** POST /api/v1/consultations/:id/prescriptions: the assigned doctor starts a DRAFT with medicines. Audited. */
 export async function createDraft(auth, consultationId, input, now = new Date()) {
   const id = await withTransaction(async (tx) => {
     const doctor = await activeDoctor(tx, auth);
@@ -158,6 +161,7 @@ async function ownDraft(tx, auth, id, now) {
   return { doctor, rx, c, window: issueWindow(c, now) };
 }
 
+/** PATCH /api/v1/prescriptions/:id: edits a DRAFT (issued prescriptions are immutable). Audited. */
 export async function updateDraft(auth, id, input, now = new Date()) {
   await withTransaction(async (tx) => {
     const { c } = await ownDraft(tx, auth, id, now);
@@ -169,6 +173,7 @@ export async function updateDraft(auth, id, input, now = new Date()) {
   return doctorView(prisma, id, now);
 }
 
+/** DELETE /api/v1/prescriptions/:id: discards a DRAFT. Audited. */
 export async function discardDraft(auth, id, now = new Date()) {
   await withTransaction(async (tx) => {
     await ownDraft(tx, auth, id, now);
@@ -226,6 +231,7 @@ async function inTransactionWithFiles(fn) {
   }
 }
 
+/** POST /api/v1/prescriptions/:id/issue: issues a DRAFT (reference, verification token, PDF with QR) within the issue window. Audited and notified. */
 export async function issueDraft(auth, id, now = new Date()) {
   await inTransactionWithFiles(async (tx, stored) => {
     const { c } = await ownDraft(tx, auth, id, now);
@@ -267,6 +273,7 @@ export async function replacePrescription(auth, id, { reason, items, generalNote
   return doctorView(prisma, newId, now);
 }
 
+/** POST /api/v1/prescriptions/:id/cancel: the doctor cancels a VALID prescription with a reason; the QR page then shows "Cancelled". */
 export async function cancelPrescription(auth, id, { reason }, now = new Date()) {
   await withTransaction(async (tx) => {
     const doctor = await activeDoctor(tx, auth);
@@ -300,6 +307,7 @@ async function doctorPrescription(auth, id) {
   return rx;
 }
 
+/** GET /api/v1/prescriptions/:id: a prescription for its patient (issued only) or its doctor. */
 export async function getPrescription(auth, id, now = new Date()) {
   if (auth.activeRole === 'DOCTOR') {
     await doctorPrescription(auth, id);
@@ -325,6 +333,7 @@ const presentListRow = (r) => ({
   appointmentId: r.consultation.appointmentId,
 });
 
+/** GET /api/v1/me/prescriptions: the patient's issued prescriptions with paging. */
 export async function listMine(auth, { status, page, pageSize }) {
   const patientId = ownPatientId(auth);
   if (!patientId) throw ApiError.forbidden('A patient profile is required');
@@ -333,6 +342,7 @@ export async function listMine(auth, { status, page, pageSize }) {
   return { items: rows.map(presentListRow), total, page, pageSize };
 }
 
+/** GET /api/v1/doctors/me/prescriptions: prescriptions the doctor wrote, including drafts. */
 export async function listForDoctor(auth, { status, page, pageSize }) {
   const doctor = await doctorRepository.findDoctorByUserId(prisma, auth.user.id);
   if (!doctor) throw ApiError.forbidden('Doctors only');

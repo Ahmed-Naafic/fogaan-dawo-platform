@@ -122,6 +122,7 @@ const MESSAGES = {
 };
 
 export const SUPPORTED_LANGUAGES = Object.freeze(['en', 'so']);
+/** All notification message keys defined for a language (used by the i18n parity test). */
 export const messageKeys = (lang) => Object.keys(MESSAGES[lang]);
 
 function format(date, lang, timeZone, options) {

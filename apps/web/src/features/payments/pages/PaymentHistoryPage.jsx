@@ -27,6 +27,13 @@ export default function PaymentHistoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once
   }, []);
 
+  const refundReceipt = async (p, r) => {
+    try {
+      saveBlob(await api.downloadMyRefundReceipt(p.id, r.id, lang), `fogaan-dawo-refund-receipt-${r.id.slice(0, 8)}.pdf`);
+    } catch {
+      notify(t('payments.receiptFailed'), 'error');
+    }
+  };
   const receipt = async (p) => {
     try {
       saveBlob(await api.downloadMyReceipt(p.id, lang), `fogaan-dawo-demo-receipt-${p.reference}.pdf`);
@@ -72,8 +79,11 @@ export default function PaymentHistoryPage() {
               </p>
               {p.reference && <p className="mt-1 font-mono text-2xs text-muted">{p.reference}</p>}
               {p.refunds.map((r) => (
-                <p key={r.id} className="mt-2 flex items-center gap-2 text-xs">
+                <p key={r.id} className="mt-2 flex flex-wrap items-center gap-2 text-xs" data-refund={r.id}>
                   <Badge tone={REFUND_TONE[r.status] ?? 'neutral'}>{t(`refundStatus.${r.status}`)}</Badge> {formatFee(r.amount, r.currency)}
+                  <button type="button" className="ml-auto inline-flex items-center gap-1 font-semibold text-primary hover:underline" onClick={() => refundReceipt(p, r)} data-refund-receipt>
+                    <Download className="h-3 w-3" /> {t('payments.refundReceipt')}
+                  </button>
                 </p>
               ))}
               <div className="mt-4 flex flex-wrap justify-end gap-2">

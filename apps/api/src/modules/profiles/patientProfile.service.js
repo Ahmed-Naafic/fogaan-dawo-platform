@@ -23,6 +23,7 @@ export const NAME_LOCKED_DOCTOR_STATUSES = Object.freeze(['PENDING', 'UNDER_REVI
 
 const dateOnly = (d) => (d ? d.toISOString().slice(0, 10) : null);
 
+/** The patient's own profile: personal details, emergency contact, address, account and completeness. */
 export function presentPatientProfile(user, { medicalHistoryCount = 0, signInMethods = null, roles = [] } = {}) {
   const p = user.patientProfile;
   const address = p.addresses[0] ?? null;
@@ -50,6 +51,7 @@ async function loadUser(client, auth) {
   return user;
 }
 
+/** GET /api/v1/me/profile: the signed-in patient's profile. */
 export async function getMyPatientProfile(auth) {
   const user = await loadUser(prisma, auth);
   const [medicalHistoryCount, signInMethods] = await Promise.all([

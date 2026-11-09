@@ -3,39 +3,48 @@ import * as realtime from './notification.realtime.js';
 
 /** /api/v1/notifications — every handler acts on req.auth.user only (ownership is in the queries). */
 
+/** GET /api/v1/notifications — list. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function list(req, res) {
   const q = req.validatedQuery;
   res.json({ data: await service.listMine(req.auth, { unreadOnly: q.unread ?? false, cursor: q.cursor, limit: q.limit ?? 20, lang: q.lang, timeZone: q.tz }) });
 }
 
+/** GET /api/v1/notifications/unread-count — unread. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function unread(req, res) {
   res.json({ data: await service.unreadCount(req.auth) });
 }
 
+/** PATCH /api/v1/notifications/:id — set read. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function setRead(req, res) {
   res.json({ data: await service.setReadState(req.auth, req.params.id, req.body.read) });
 }
 
+/** POST /api/v1/notifications/read-all — read all. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function readAll(req, res) {
   res.json({ data: await service.readAll(req.auth) });
 }
 
+/** DELETE /api/v1/notifications/:id — remove. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function remove(req, res) {
   res.json({ data: await service.deleteMine(req.auth, req.params.id) });
 }
 
+/** GET /api/v1/notifications/preferences — get preferences. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function getPreferences(req, res) {
   res.json({ data: await service.getPreferences(req.auth) });
 }
 
+/** PUT /api/v1/notifications/preferences — update preferences. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function updatePreferences(req, res) {
   res.json({ data: await service.updatePreferences(req.auth, req.body) });
 }
 
+/** POST /api/v1/notifications/push-subscriptions — subscribe. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function subscribe(req, res) {
   res.status(201).json({ data: await service.subscribePush(req.auth, { ...req.body, userAgent: req.get('user-agent') }) });
 }
 
+/** DELETE /api/v1/notifications/push-subscriptions — unsubscribe. Thin HTTP adapter: validated input in, service result out as JSON. */
 export async function unsubscribe(req, res) {
   res.json({ data: await service.unsubscribePush(req.auth, req.body) });
 }

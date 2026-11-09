@@ -1,3 +1,4 @@
+/** English / Somali switch; the choice is remembered and applies to every screen. */
 import { useCallback, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import useClickOutside from '@/hooks/useClickOutside';

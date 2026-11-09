@@ -10,6 +10,7 @@ export const RECORD_AUDIT_ENTITIES = Object.freeze(['Prescription', 'MedicalDocu
 
 const shortRef = (id) => id.slice(0, 8).toUpperCase();
 
+/** Admin › Medical records overview: counts of prescriptions, documents and clinical audit events (metadata only, no clinical content). */
 export async function overview({ from = null } = {}) {
   const since = from ?? new Date(Date.now() - 30 * 86_400_000);
   const [byStatus, issued30, docs, archived, bytes, byCategory, byType] = await Promise.all([
@@ -35,6 +36,7 @@ export async function overview({ from = null } = {}) {
   };
 }
 
+/** Admin › Medical records: prescriptions as metadata (reference, status, doctor, dates) with filters and paging. Never medicines or diagnoses. */
 export async function listPrescriptions({ status, q, page, pageSize }) {
   const where = {
     status: status ? status : { not: 'DRAFT' },
@@ -84,6 +86,7 @@ export async function listPrescriptions({ status, q, page, pageSize }) {
   };
 }
 
+/** Admin › Medical records: medical documents as metadata (category, size, uploader, dates). Never the files. */
 export async function listDocuments({ category, archived, page, pageSize }) {
   const where = { ...(category ? { category } : {}), ...(archived === 'true' ? { archivedAt: { not: null } } : archived === 'false' ? { archivedAt: null } : {}) };
   const [total, rows] = await Promise.all([
@@ -135,6 +138,7 @@ function actorView(actor) {
 
 const pickSafe = (v) => (v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([k]) => SAFE_AUDIT_KEYS.includes(k))) : null);
 
+/** Admin › Medical records: clinical audit trail (who opened or changed which record, when). */
 export async function listAudit({ entityType, page, pageSize }) {
   const where = { entityType: entityType ? entityType : { in: RECORD_AUDIT_ENTITIES } };
   const [total, rows] = await Promise.all([

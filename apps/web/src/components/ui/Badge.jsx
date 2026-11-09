@@ -1,3 +1,4 @@
+/** Small coloured status label (tone: teal, green, gold, red, blue, purple, neutral). */
 import { cn } from '@/lib/cn';
 
 const tones = {

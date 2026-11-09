@@ -31,6 +31,7 @@ export const DoctorProfileErrorCode = Object.freeze({
 
 const isListed = (p) => p.verificationStatus === 'VERIFIED' && p.accountStatus === 'ACTIVE' && p.user.status === 'ACTIVE';
 
+/** The doctor's own professional profile with verification state, photo, public listing and completeness. */
 export function presentDoctorProfile(profile) {
   const base = presentApplication(profile);
   const latest = base.latestRequest;
@@ -62,10 +63,12 @@ async function loadOwn(client, auth) {
   return profile;
 }
 
+/** GET /api/v1/doctors/me/profile: the signed-in doctor's professional profile. */
 export async function getMyProfessionalProfile(auth) {
   return presentDoctorProfile(await loadOwn(prisma, auth));
 }
 
+/** PATCH /api/v1/doctors/me/profile: edits bio, qualifications, experience, country, fee (new bookings only) and languages. 409 unless verified and active. Audited. */
 export async function updateMyProfessionalProfile(auth, input) {
   await withTransaction(async (tx) => {
     const own = await doctorRepository.findDoctorByUserId(tx, auth.user.id);

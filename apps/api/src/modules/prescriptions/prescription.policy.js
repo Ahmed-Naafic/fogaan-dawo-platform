@@ -32,6 +32,7 @@ const TRANSITIONS = Object.freeze({
   REPLACED: [],
 });
 
+/** True when a prescription may move from `from` to `to` (DRAFT → VALID, VALID → CANCELLED/REPLACED). */
 export const canTransition = (from, to) => (TRANSITIONS[from] ?? []).includes(to);
 
 /** { open, reason, closesAt } for issuing on `consultation` at `now`. */

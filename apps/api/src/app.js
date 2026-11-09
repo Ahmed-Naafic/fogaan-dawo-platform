@@ -1,3 +1,9 @@
+/**
+ * Express application factory (no network listener here; see server.js and index.js).
+ * Order: security headers, CORS, JSON body, cookies, no-store caching, health and job routes, then every
+ * /api/v1 feature router, and finally the 404 and error handlers. Each router authenticates, checks the
+ * permission for the active role and validates input with Zod before its controller runs.
+ */
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import { env } from './config/env.js';

@@ -89,3 +89,70 @@ export function renderDemoReceipt(payment, { lang = 'en' } = {}) {
   ];
   return renderTextPdf(lines, { title: `${L.docTitle} ${payment.reference}` });
 }
+
+const REFUND_TEXT = Object.freeze({
+  en: {
+    title: 'DEMO REFUND RECEIPT',
+    refundId: 'Refund ID',
+    reference: 'Refund reference',
+    payment: 'Original payment',
+    requested: 'Requested on',
+    processed: 'Paid back on',
+    pending: 'not yet paid back',
+    reason: 'Reason',
+    amount: 'Refund amount',
+    of: 'of',
+    status: 'Status',
+    statuses: { REQUESTED: 'Requested', PROCESSING: 'Processing', SUCCEEDED: 'Refunded', FAILED: 'Failed', REJECTED: 'Rejected' },
+    note: 'Simulated refund back to the same mobile wallet. No real money was transferred.',
+  },
+  so: {
+    title: 'RASIIDKA LACAG-CELINTA (TIJAABO)',
+    refundId: 'Aqoonsiga lacag-celinta',
+    reference: 'Tixraaca lacag-celinta',
+    payment: 'Lacag-bixintii asalka ahayd',
+    requested: 'La codsaday',
+    processed: 'La celiyay',
+    pending: 'weli lama celin',
+    reason: 'Sababta',
+    amount: 'Lacagta la celinayo',
+    of: 'ka mid ah',
+    status: 'Xaaladda',
+    statuses: { REQUESTED: 'La codsaday', PROCESSING: 'Socota', SUCCEEDED: 'La celiyay', FAILED: 'Fashilmay', REJECTED: 'La diiday' },
+    note: 'Lacag-celin la jilay oo loo celiyay isla boorsada mobilka. Lacag dhab ah lama wareejin.',
+  },
+});
+
+/**
+ * DEMO refund receipt PDF (requirement 11: "Refunds are simulated and recorded with a receipt"), in English
+ * or Somali. `payment` is a presented payment; `refund` one of its refunds.
+ */
+export function renderRefundReceipt(payment, refund, { lang = 'en' } = {}) {
+  const language = TEXT[lang] ? lang : 'en';
+  const L = TEXT[language];
+  const R = REFUND_TEXT[language];
+  const specialty = language === 'so' ? payment.appointment.doctor.specialty.nameSo : payment.appointment.doctor.specialty.nameEn;
+  const lines = [
+    { text: 'FOGAAN DAWO', size: 20, bold: true, gap: 0 },
+    { text: R.title, size: 14, bold: true },
+    { text: L.simulated, size: 10, bold: true },
+    { rule: true, gap: 18 },
+    { text: `${R.refundId}: ${refund.id}`, bold: true },
+    ...(refund.reference ? [{ text: `${R.reference}: ${refund.reference}`, size: 9 }] : []),
+    { text: `${R.payment}: ${payment.reference} (${payment.currency} ${payment.amount}, ${PROVIDER_NAMES[payment.provider] ?? payment.provider})` },
+    { text: `${R.requested}: ${when(refund.createdAt, language)}` },
+    { text: `${R.processed}: ${refund.processedAt ? when(refund.processedAt, language) : R.pending}` },
+    { rule: true, gap: 18 },
+    { text: `${L.patient}: ${payment.appointment.patient?.name ?? '-'}` },
+    { text: `${L.doctor}: ${payment.appointment.doctor.name} - ${specialty}` },
+    { text: `${L.consultation}: ${when(payment.appointment.startAtUtc, language)}` },
+    { text: `${R.reason}: ${refund.reason ?? '-'}` },
+    { rule: true, gap: 18 },
+    { text: `${R.amount}: ${refund.currency} ${refund.amount} ${R.of} ${payment.currency} ${payment.amount}`, size: 14, bold: true },
+    { text: `${R.status}: ${R.statuses[refund.status] ?? refund.status}` },
+    { rule: true, gap: 22 },
+    { text: R.note, size: 9 },
+    { text: L.footer2, size: 9 },
+  ];
+  return renderTextPdf(lines, { title: `${L.docTitle} ${refund.id}` });
+}

@@ -51,6 +51,7 @@ export const inRange = (range) => (range.from ? { gte: range.from, lt: range.to 
 
 /** Calendar day / month (in the range's zone) of an instant, for trend buckets. */
 export const dayKey = (date, tz) => dateInZone(date, tz);
+/** YYYY-MM of an instant in the given time zone (monthly report buckets). */
 export const monthKey = (date, tz) => dateInZone(date, tz).slice(0, 7);
 
 /** Public description of the range (ISO strings), returned with every report. */

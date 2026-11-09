@@ -19,6 +19,7 @@ export const succeededPayments = (client, range) =>
 export const paymentStatusCounts = (client, range) =>
   client.payment.groupBy({ by: ['status'], where: range.from ? { createdAt: inRange(range) } : {}, _count: { _all: true }, _sum: { amount: true } });
 
+/** Data access: failed attempt count (paymentAttempt.count: count of matching rows). `client` is the Prisma client or a transaction. */
 export const failedAttemptCount = (client, range) => client.paymentAttempt.count({ where: { status: 'FAILED', ...(range.from ? { createdAt: inRange(range) } : {}) } });
 
 /** Refunds paid out in the range (by processed_at). */
@@ -66,10 +67,13 @@ export const earningsInRange = (client, range, { q } = {}) =>
     orderBy: { createdAt: 'asc' },
   });
 
+/** Data access: find setting (platformSetting.findUnique: one row by unique key). `client` is the Prisma client or a transaction. */
 export const findSetting = (client, key) => client.platformSetting.findUnique({ where: { key }, include: { updatedByUser: { select: { fullName: true } } } });
 
+/** Data access: setting history (auditLog.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const settingHistory = (client, key, take = 20) =>
   client.auditLog.findMany({ where: { entityType: 'PlatformSetting', entityId: key }, orderBy: { createdAt: 'desc' }, take, select: { oldValues: true, newValues: true, createdAt: true, actor: { select: { fullName: true } } } });
 
+/** Data access: refund audit (auditLog.findMany: matching rows). `client` is the Prisma client or a transaction. */
 export const refundAudit = (client, refundId) =>
   client.auditLog.findMany({ where: { entityType: 'Refund', entityId: refundId }, orderBy: { createdAt: 'asc' }, select: { action: true, oldValues: true, newValues: true, createdAt: true, actor: { select: { fullName: true } } } });

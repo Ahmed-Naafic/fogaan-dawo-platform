@@ -60,6 +60,7 @@ export async function getBookingPolicy(client) {
   return mergePolicy(row?.value);
 }
 
+/** Throws a 400 VALIDATION_ERROR listing every out-of-range booking-policy value. */
 export function assertValidPolicy(candidate) {
   const problems = policyProblems(candidate);
   if (problems.length) throw ApiError.badRequest('The booking rules are not valid', problems, BookingPolicyErrorCode.INVALID);

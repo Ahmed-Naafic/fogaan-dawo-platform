@@ -59,4 +59,5 @@ export function admissionState(consultation, events = []) {
 
 /** Lifecycle transitions allowed for a consultation status. */
 const TRANSITIONS = Object.freeze({ WAITING: ['IN_PROGRESS', 'CANCELLED'], IN_PROGRESS: ['COMPLETED'], COMPLETED: [], CANCELLED: [] });
+/** True when a consultation may move from status `from` to `to` (WAITING → IN_PROGRESS/CANCELLED, IN_PROGRESS → COMPLETED). */
 export const canTransition = (from, to) => (TRANSITIONS[from] ?? []).includes(to);

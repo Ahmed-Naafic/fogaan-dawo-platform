@@ -139,6 +139,7 @@ export function presentDocument(d, auth) {
   };
 }
 
+/** Stores a validated medical document for a consultation participant (type from bytes, size, SHA-256). Audited and notified. */
 export async function uploadDocument(auth, consultationId, { buffer, fileName, category, description }) {
   // Authorise first: strangers never get the (potentially expensive) file validation.
   const { c, role } = await participation(prisma, auth, consultationId);
@@ -213,6 +214,7 @@ export async function getDownloadUrl(auth, id) {
   return signedDownloadUrl(d.fileKey, { downloadName: d.fileName });
 }
 
+/** GET /api/v1/consultations/:id/documents: the consultation's documents for a participant (archived ones optional). */
 export async function listForConsultation(auth, consultationId, { includeArchived = false } = {}) {
   await participation(prisma, auth, consultationId);
   const rows = await prisma.consultationAttachment.findMany({
@@ -248,10 +250,12 @@ async function accessibleDocument(client, auth, id) {
   return d;
 }
 
+/** GET /api/v1/medical-documents/:id: document metadata for someone allowed to see it. */
 export async function getDocument(auth, id) {
   return presentDocument(await accessibleDocument(prisma, auth, id), auth);
 }
 
+/** GET /api/v1/medical-documents/:id/download: the document bytes for someone allowed to see it. Audited. */
 export async function downloadDocument(auth, id) {
   const d = await accessibleDocument(prisma, auth, id);
   let buffer;

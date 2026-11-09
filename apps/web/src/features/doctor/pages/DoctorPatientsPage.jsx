@@ -1,3 +1,4 @@
+/** Doctor › Patients: patients with a paid appointment with this doctor, with search and next/last visit. */
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { CalendarClock, ChevronRight, History, Search, Users } from 'lucide-react';

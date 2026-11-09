@@ -33,6 +33,7 @@ const REF_KEYS = Object.freeze(['doctorId', 'patientId', 'appointmentId', 'payme
 
 const shortRef = (id) => (typeof id === 'string' ? id.slice(0, 8).toUpperCase() : null);
 
+/** Keeps only allow-listed, non-personal keys of an audit value object; ids become 8-character references. */
 export function safeValues(v) {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
   const out = {};

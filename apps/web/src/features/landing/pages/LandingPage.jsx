@@ -1,3 +1,4 @@
+/** Public landing page: hero with live platform figures, specialties with real doctor counts, featured doctors, how it works. */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {

@@ -20,6 +20,7 @@ import { appointmentParamsSchema, consultationParamsSchema, emptyBodySchema, not
 /** Follow-up booking (requirement 12): one of the doctor's free slots and the fee choice. */
 const followUpSchema = z.object({ slotId: z.string().uuid(), fee: z.enum(FOLLOW_UP_FEES) }).strict();
 
+/** Router for /api/v1/consultations: join, ticket, state, admit, reject, leave, end, notes, follow-up, documents and prescriptions. */
 export function createConsultationRouter() {
   const router = Router();
   const limiter = rateLimiter({ windowMs: 5 * 60_000, limit: Number.parseInt(process.env.CONSULTATION_RATE_LIMIT_MAX ?? '200', 10) });

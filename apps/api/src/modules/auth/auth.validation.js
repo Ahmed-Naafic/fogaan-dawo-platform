@@ -10,6 +10,7 @@ import { MAX_PASSWORD_BYTES } from '../../utils/password.js';
  */
 export const normalizeEmail = (value) => value.trim().toLowerCase();
 
+/** Normalises a phone number to E.164 (+252…) or returns null when it is not a valid number. */
 export function normalizePhone(value) {
   let v = value.trim().replace(/[\s().-]/g, '');
   if (v.startsWith('00')) v = `+${v.slice(2)}`;

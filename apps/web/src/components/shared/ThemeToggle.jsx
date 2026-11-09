@@ -1,3 +1,4 @@
+/** Light / dark theme toggle. */
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/lib/i18n';

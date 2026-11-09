@@ -35,6 +35,9 @@ describe('video consultations (Neon, isolated schema)', { skip: skip ?? false },
     process.env.CONSULTATION_RATE_LIMIT_MAX = '100000';
     process.env.WEBRTC_STUN_URLS = 'stun:stun.l.google.com:19302';
     db = await setupTestDatabase();
+    // Deterministic ICE config: no live Cloudflare TURN calls from tests (TURN has its own unit test).
+    delete process.env.CLOUDFLARE_TURN_KEY_ID;
+    delete process.env.CLOUDFLARE_TURN_API_TOKEN;
     prisma = db.prisma;
     ctx = await baseData(prisma);
     ({ hashPassword } = await import('../../../apps/api/src/utils/password.js'));

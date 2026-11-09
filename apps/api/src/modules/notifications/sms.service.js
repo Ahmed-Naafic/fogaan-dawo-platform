@@ -13,6 +13,7 @@ export const SMS_KINDS = Object.freeze(
 );
 const MAX_SMS = 320;
 
+/** True when a notification kind also produces a (simulated) SMS. */
 export const isSmsKind = (kind) => SMS_KINDS.has(kind) || [...SMS_KINDS].some((k) => kind.startsWith(`${k}.`));
 
 /** Writes one SMS per recipient inside the caller's transaction. `messages`: [{ userId, phone, text }]. */

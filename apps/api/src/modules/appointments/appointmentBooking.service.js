@@ -146,11 +146,13 @@ export async function bookSlot(auth, { slotId, reason }, now = new Date()) {
   return presentDetail(prisma, await appointmentRepository.findAppointmentDetail(prisma, appointment.id), 'PATIENT', now);
 }
 
+/** GET /api/v1/appointments?scope=upcoming|past: the signed-in patient's appointments (expired holds shown as EXPIRED). */
 export async function listMine(auth, { scope }, now = new Date()) {
   const patient = await patientOf(prisma, auth);
   return (await appointmentRepository.listAppointments(prisma, { patientId: patient.id, scope, now })).map((a) => presentListItem(a, 'PATIENT', now));
 }
 
+/** GET /api/v1/appointments/:id: one of the patient's appointments with payment, refunds, history and allowed actions. 404 for anyone else's. */
 export async function getMine(auth, id, now = new Date()) {
   const patient = await patientOf(prisma, auth);
   return presentDetail(prisma, await loadOwned(prisma, id, { patientId: patient.id }), 'PATIENT', now);
@@ -234,6 +236,7 @@ export async function ensureConsultationRecord(auth, id, now = new Date()) {
   });
 }
 
+/** POST /api/v1/appointments/:id/cancel: patient cancellation with the refund tier (>24 h 100 %, 2–24 h 50 %, <2 h none); slot offered again. */
 export async function cancelMine(auth, id, { reason }, now = new Date()) {
   const patient = await patientOf(prisma, auth);
   const { rate, refund } = await cancelOwned({ id, ownerWhere: { patientId: patient.id }, viewer: 'PATIENT', reason, actorUserId: auth.user.id, now });
@@ -297,11 +300,13 @@ export async function rescheduleMine(auth, id, { slotId }, now = new Date()) {
 
 /* ------------------------------------------------------------ doctor */
 
+/** GET /api/v1/doctors/me/appointments: the signed-in doctor's appointments (patient name and gated photo, never contact details). */
 export async function listForDoctor(auth, { scope }, now = new Date()) {
   const doctor = await doctorOf(prisma, auth);
   return (await appointmentRepository.listAppointments(prisma, { doctorId: doctor.id, scope, now })).map((a) => presentListItem(a, 'DOCTOR', now));
 }
 
+/** GET /api/v1/doctors/me/appointments/:id: one of the doctor's appointments with actions. 404 for anyone else's. */
 export async function getForDoctor(auth, id, now = new Date()) {
   const doctor = await doctorOf(prisma, auth);
   return presentDetail(prisma, await loadOwned(prisma, id, { doctorId: doctor.id }), 'DOCTOR', now);

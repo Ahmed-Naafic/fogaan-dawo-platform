@@ -14,6 +14,7 @@ const B64URL = /^[A-Za-z0-9_-]+$/;
 /** Push services browsers actually use. Subscriptions to any other host are refused (no SSRF). */
 const PUSH_HOST_SUFFIXES = Object.freeze(['fcm.googleapis.com', 'push.services.mozilla.com', 'notify.windows.com', 'push.apple.com']);
 
+/** Startup check for the Web Push VAPID keys: a problem description or null. */
 export function pushConfigProblem() {
   const missing = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'].filter((n) => !read(n));
   if (missing.length) return `not configured (missing ${missing.join(', ')})`;
@@ -26,6 +27,7 @@ export function pushConfigProblem() {
 /** Test-only extra endpoint origins (a local fake push service). Ignored in production. */
 const testOrigins = () => (isProduction ? [] : read('PUSH_TEST_ALLOWED_ORIGINS').split(',').map((o) => o.trim()).filter(Boolean));
 
+/** VAPID settings { publicKey, privateKey, subject } or null when push is not configured. */
 export function getPushConfig() {
   if (pushConfigProblem()) return null;
   return Object.freeze({ publicKey: read('VAPID_PUBLIC_KEY'), privateKey: read('VAPID_PRIVATE_KEY'), subject: read('VAPID_SUBJECT'), testOrigins: testOrigins() });

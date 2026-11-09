@@ -50,6 +50,7 @@ export function iceServersFor(/* { userId, consultationId } — for future per-u
  */
 const TURN_ENDPOINT = (keyId) => `https://rtc.live.cloudflare.com/v1/turn/keys/${encodeURIComponent(keyId)}/credentials/generate-ice-servers`;
 
+/** True when Cloudflare TURN credentials are configured (CLOUDFLARE_TURN_KEY_ID and CLOUDFLARE_TURN_API_TOKEN). */
 export const turnConfigured = (env = process.env) => Boolean(env.CLOUDFLARE_TURN_KEY_ID && env.CLOUDFLARE_TURN_API_TOKEN);
 
 /** Normalises Cloudflare's response ({ iceServers: [...] } or { iceServers: {...} }); drops port-53 URLs that browsers block. */
@@ -60,6 +61,7 @@ export function normaliseTurnResponse(body) {
     .filter((s) => s.urls.length && s.urls.some((u) => /^turns?:/i.test(u)) && s.username && s.credential);
 }
 
+/** Fresh short-lived TURN servers from Cloudflare for one participant; [] when not configured or on any error (STUN fallback). */
 export async function turnServers({ fetchImpl = fetch, env = process.env } = {}) {
   if (!turnConfigured(env)) return [];
   const ttl = Math.min(Math.max(Number(env.TURN_CREDENTIAL_TTL_SECONDS) || 7200, 600), 86400);

@@ -6,6 +6,10 @@ import { validate } from '../../middleware/validate.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { Permission } from '../auth/auth.permissions.js';
 import * as f from '../finance/finance.controller.js';
+import { z } from 'zod';
+
+/** Path parameters of a refund receipt. */
+const refundReceiptParams = z.object({ paymentId: z.string().uuid(), refundId: z.string().uuid() }).strict();
 import { commissionSchema, earningsQuerySchema, exportQuerySchema, rangeQuerySchema, rejectRefundSchema } from '../finance/finance.validation.js';
 import { rateLimiter } from '../../middleware/rateLimit.js';
 import { requireClientHeader } from '../../middleware/requireClientHeader.js';
@@ -25,6 +29,7 @@ export function createPatientPaymentRouter() {
   router.use(authenticate, requireRole('PATIENT'), requirePermission(Permission.ownAppointmentsManage));
   router.get('/', asyncHandler(c.myPayments));
   router.get('/:paymentId/receipt', validate({ params: paymentParamsSchema }), asyncHandler(c.myReceipt));
+  router.get('/:paymentId/refunds/:refundId/receipt', validate({ params: refundReceiptParams }), asyncHandler(c.myRefundReceipt));
   return router;
 }
 
@@ -40,6 +45,7 @@ export function createAdminFinanceRouter() {
   router.get('/payments', validate({ query: adminPaymentQuerySchema }), asyncHandler(f.listPayments));
   router.get('/payments/:paymentId', validate({ params: paymentParamsSchema }), asyncHandler(c.getPayment));
   router.get('/payments/:paymentId/receipt', validate({ params: paymentParamsSchema }), asyncHandler(c.adminReceipt));
+  router.get('/payments/:paymentId/refunds/:refundId/receipt', validate({ params: refundReceiptParams }), asyncHandler(c.adminRefundReceipt));
   router.get('/refunds', validate({ query: adminRefundQuerySchema }), asyncHandler(f.listRefunds));
   router.get('/refunds/:refundId', validate({ params: refundParamsSchema }), asyncHandler(f.getRefund));
   router.post('/refunds/:refundId/process', validate({ params: refundParamsSchema, body: emptyBodySchema }), asyncHandler(c.processRefund));

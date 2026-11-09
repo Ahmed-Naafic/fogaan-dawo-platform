@@ -47,4 +47,5 @@ export class ApiError extends Error {
   }
 }
 
+/** The default error code for an HTTP status (e.g. 404 → NOT_FOUND). */
 export const defaultErrorCode = (status) => DEFAULT_CODES[status] ?? 'ERROR';

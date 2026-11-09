@@ -1108,7 +1108,9 @@
     "historyTitle": "Payments",
     "historySubtitle": "Your simulated payments, refunds and demo receipts.",
     "noPayments": "No payments yet.",
-    "attemptsCount": "Attempts: {count}"
+    "attemptsCount": "Attempts: {count}",
+    "refundReceipt": "Refund receipt",
+    "receiptFailed": "The receipt could not be downloaded."
   },
   "paymentErrors": {
     "PAYMENT_ALREADY_SUCCEEDED": "This appointment is already paid.",

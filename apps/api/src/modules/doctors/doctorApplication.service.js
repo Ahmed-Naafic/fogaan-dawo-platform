@@ -26,6 +26,7 @@ const locked = (status) =>
 /** Public list of active specialties for the application form (bilingual names). */
 export const listSpecialties = () => doctorRepository.listActiveSpecialties(prisma);
 
+/** GET /api/v1/doctor-application: the caller's application with completion, documents and history, or null before the first save. */
 export async function getMyApplication(auth) {
   const profile = await doctorRepository.findApplicationByUserId(prisma, auth.user.id);
   return profile ? presentApplication(profile) : null;

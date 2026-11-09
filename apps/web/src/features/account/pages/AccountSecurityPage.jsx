@@ -1,3 +1,4 @@
+/** Account › Security: change password, sign-in methods (password / Google) and active sessions with sign-out. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { AlertCircle, CheckCircle2, KeyRound, Link2, Unlink, X } from 'lucide-react';

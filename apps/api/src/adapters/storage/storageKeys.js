@@ -23,6 +23,7 @@ export const STAGING_BUCKET = Object.freeze({ bucket: 'fd-staging', maxBytes: 10
 
 const MIME_FOR_EXT = Object.freeze({ pdf: 'application/pdf', jpg: 'image/jpeg', png: 'image/png' });
 
+/** Validates a server-generated storage key and returns its bucket, size limit, allowed types and content type. Throws on an invalid key or prefix. */
 export function assertKey(key) {
   if (typeof key !== 'string' || !KEY_PATTERN.test(key)) throw new Error('Invalid storage key');
   const prefix = key.split('/')[0];
@@ -31,6 +32,7 @@ export function assertKey(key) {
   return { prefix, ...target, contentType: MIME_FOR_EXT[key.split('.').pop()] };
 }
 
+/** Validates a staging key (<yyyymmdd>/<uuid>) and returns it. Throws when invalid. */
 export function assertStagingKey(key) {
   if (typeof key !== 'string' || !STAGING_KEY_PATTERN.test(key)) throw new Error('Invalid staging key');
   return key;
@@ -41,4 +43,5 @@ export function newStagingKey(now = new Date()) {
   return `${now.toISOString().slice(0, 10).replace(/-/g, '')}/${randomUUID()}`;
 }
 
+/** The yyyymmdd day folder of a staging key (used by cleanup). */
 export const stagingDay = (key) => key.slice(0, 8);

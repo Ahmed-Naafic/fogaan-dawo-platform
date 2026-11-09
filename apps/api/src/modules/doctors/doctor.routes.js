@@ -1,3 +1,7 @@
+/**
+ * Doctor routers: specialties, the doctor application, the doctor's own profile, availability and
+ * appointments, the public directory, and the admin verification and doctor management routes.
+ */
 import express, { Router } from 'express';
 import { listDoctorReviews } from '../reviews/review.service.js';
 import { z } from 'zod';

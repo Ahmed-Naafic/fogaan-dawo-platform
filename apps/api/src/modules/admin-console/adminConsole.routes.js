@@ -1,3 +1,7 @@
+/**
+ * Admin console routers (ADMIN role + per-area permission): patients, appointments, reports, audit logs,
+ * booking settings, specialties and the SMS outbox. Mounted in app.js under /api/v1/admin/*.
+ */
 import { Router } from 'express';
 import { listAllSms } from '../notifications/sms.service.js';
 import * as specialtiesAdmin from './adminSpecialties.service.js';

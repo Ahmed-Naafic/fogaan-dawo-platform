@@ -17,6 +17,7 @@ const HOUR = 3_600_000;
 /** The approved defaults; Admin › Settings may override them (see settings/bookingPolicy.js). */
 const DEFAULTS = Object.freeze({ fullRefundMinHours: FULL_REFUND_MIN_HOURS, partialRefundMinHours: PARTIAL_REFUND_MIN_HOURS, freeRescheduleMinHours: FREE_RESCHEDULE_MIN_HOURS, maxFreeReschedules: MAX_FREE_RESCHEDULES });
 
+/** Hours from `now` until the appointment start (negative once it has started). */
 export const hoursUntil = (startAtUtc, now) => (new Date(startAtUtc).getTime() - now.getTime()) / HOUR;
 
 /**

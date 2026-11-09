@@ -52,6 +52,7 @@ export const parseDate = (s) => {
   const [year, month, day] = s.split('-').map(Number);
   return { year, month, day };
 };
+/** Formats an instant in an IANA time zone with Intl options. */
 export const formatDate = ({ year, month, day }) => `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
 /** Adds days to a civil date string (calendar arithmetic, unaffected by DST). */
@@ -105,4 +106,5 @@ export const timeToMinutes = (hhmm) => {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 };
+/** Minutes after midnight → "HH:MM". */
 export const minutesToTime = (mins) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;

@@ -19,6 +19,7 @@ function keyFor(purpose) {
   return createHmac('sha256', base).update(`fogaan-storage:${purpose}`).digest();
 }
 
+/** Signs a short-lived JWT for storage operations (purpose-scoped claims, TTL in seconds). */
 export async function signStorageToken(purpose, claims, expiresInSeconds) {
   return new SignJWT({ ...claims })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
